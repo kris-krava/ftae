@@ -1,0 +1,364 @@
+/* ─── Variables ──────────────────────────────────────────── */
+:root {
+  --bg:          #f2d2c8;
+  --primary:     #333333;
+  --secondary:   #6d6360;
+  --accent:      #c45c3a;
+  --accent-hover:#b04e30;
+  --divider:     #d0b2aa;
+  --border:      #c4a69d;
+  --placeholder: #a8928c;
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Page shell ─────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── Hero ───────────────────────────────────────────────── */
+.hero {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 80px 32px 48px;
+}
+
+.accent-line {
+  width: 48px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.wordmark {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 42px;
+  letter-spacing: -0.5px;
+  color: var(--primary);
+  text-align: center;
+  width: 100%;
+}
+
+.tagline {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--secondary);
+  text-align: center;
+  width: 100%;
+}
+
+.body-copy {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--primary);
+  text-align: center;
+  width: 100%;
+}
+
+.founding-line {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--primary);
+  text-align: center;
+  width: 100%;
+}
+
+/* ─── Stats ──────────────────────────────────────────────── */
+.stats {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 56px;
+}
+
+.stats-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--secondary);
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.stats-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 64px;
+  letter-spacing: -1.5px;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--secondary);
+}
+
+/* Mobile: horizontal rule between stacked stats */
+.stat-divider {
+  width: 326px;
+  height: 1px;
+  background: var(--divider);
+  flex-shrink: 0;
+}
+
+/* ─── CTA ────────────────────────────────────────────────── */
+.cta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 56px 24px 80px;
+}
+
+.cta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.cta-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--primary);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cta-input::placeholder {
+  color: var(--placeholder);
+}
+
+.cta-input:focus {
+  border-color: var(--accent);
+}
+
+.cta-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.cta-button:hover  { background: var(--accent-hover); }
+.cta-button:active { background: #9c4529; transform: scale(0.99); }
+
+.cta-helper {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--secondary);
+  text-align: center;
+}
+
+/* ─── Tablet (768px+) ────────────────────────────────────── */
+@media (min-width: 768px) {
+  .hero {
+    gap: 24px;
+    padding: 96px 24px 72px;
+  }
+
+  .wordmark {
+    font-size: 44px;
+    line-height: 52px;
+  }
+
+  .tagline {
+    font-size: 20px;
+    line-height: 30px;
+  }
+
+  .body-copy,
+  .founding-line {
+    font-size: 16px;
+    line-height: 27px;
+  }
+
+  .stats {
+    padding: 56px 24px 72px;
+  }
+
+  .stats-grid {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 32px 16px;
+  }
+
+  .stat-number {
+    font-size: 64px;
+    line-height: 72px;
+  }
+
+  /* Tablet: become a vertical rule between side-by-side stats */
+  .stat-divider {
+    width: 1px;
+    height: 88px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  .cta {
+    padding: 64px 24px 96px;
+  }
+
+  .cta-input {
+    padding: 12px 14px;
+  }
+}
+
+/* ─── Desktop (1280px+) ──────────────────────────────────── */
+@media (min-width: 1280px) {
+  .hero {
+    gap: 28px;
+    padding: 120px 160px 80px;
+  }
+
+  .accent-line {
+    width: 56px;
+  }
+
+  .wordmark {
+    font-size: 56px;
+    line-height: 64px;
+    letter-spacing: -1px;
+  }
+
+  /* Single line on wide container */
+  .wordmark br {
+    display: none;
+  }
+
+  .tagline {
+    font-size: 22px;
+    line-height: 34px;
+  }
+
+  .body-copy,
+  .founding-line {
+    font-size: 17px;
+    line-height: 28px;
+  }
+
+  .stats {
+    padding: 64px 160px 80px;
+  }
+
+  .stats-eyebrow {
+    margin-bottom: 40px;
+  }
+
+  .stat {
+    padding: 32px 24px;
+  }
+
+  .stat-number {
+    font-size: 80px;
+    line-height: 88px;
+    letter-spacing: -2px;
+  }
+
+  .stat-label {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .stat-divider {
+    height: 100px;
+  }
+
+  .cta {
+    padding: 72px 160px 120px;
+  }
+
+  /* Side-by-side input + button on desktop */
+  .cta-form {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .cta-input {
+    padding: 14px 16px;
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  .cta-button {
+    flex-shrink: 0;
+    width: auto;
+    padding: 14px 28px;
+    font-size: 17px;
+    line-height: 26px;
+  }
+}

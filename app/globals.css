@@ -1,0 +1,50 @@
+/* ─── Design tokens ─────────────────────────────────────── */
+:root {
+  --bg:           #f2d2c8;
+  --primary:      #333333;
+  --secondary:    #6d6360;
+  --accent:       #c45c3a;
+  --accent-hover: #b04e30;
+  --accent-active:#9c4529;
+  --divider:      #d0b2aa;
+  --border:       #c4a69d;
+  --placeholder:  #a8928c;
+  --stats-bg:     #333333;
+  --stat-card-bg: #6d6360;
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}

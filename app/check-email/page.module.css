@@ -1,0 +1,71 @@
+.page {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 48px 32px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.iconWrap {
+  margin-bottom: 24px;
+}
+
+.heading {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 36px;
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+
+.body {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--secondary);
+  margin-bottom: 40px;
+}
+
+.emailHighlight {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.backLink {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 21px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.backLink:hover {
+  color: var(--accent-hover);
+}
+
+@media (min-width: 768px) {
+  .heading {
+    font-size: 32px;
+    line-height: 42px;
+  }
+
+  .body {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,258 @@
+.page {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
+  padding: 64px 32px;
+}
+
+.card {
+  width: 100%;
+  max-width: 326px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ─── Progress ───────────────────────────────────────────── */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.progressLabel {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--secondary);
+  text-align: center;
+}
+
+.progressSegments {
+  display: flex;
+  gap: 6px;
+  height: 3px;
+}
+
+.segment {
+  flex: 1;
+  background: var(--divider);
+  border-radius: 2px;
+}
+
+.segmentActive {
+  background: var(--accent);
+}
+
+/* ─── Heading ────────────────────────────────────────────── */
+.heading {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.25;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.helper {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--secondary);
+  margin-top: 6px;
+}
+
+/* ─── Form ───────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--secondary);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--primary);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input:disabled {
+  opacity: 0.7;
+}
+
+/* ─── Social row ─────────────────────────────────────────── */
+.socialRow {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.socialRow:focus-within {
+  border-color: var(--accent);
+}
+
+.platformSelect {
+  width: 128px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.platformSelect:disabled {
+  opacity: 0.7;
+}
+
+.socialDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.handleInput {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--primary);
+  outline: none;
+  min-width: 0;
+}
+
+.handleInput::placeholder {
+  color: var(--placeholder);
+}
+
+.handleInput:disabled {
+  opacity: 0.7;
+}
+
+/* ─── Error ──────────────────────────────────────────────── */
+.errorMsg {
+  font-size: 13px;
+  color: var(--accent);
+  text-align: center;
+  margin: 0;
+}
+
+/* ─── Buttons ────────────────────────────────────────────── */
+.continueButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  background: var(--accent);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #fff;
+  transition: background 0.15s ease, transform 0.1s ease;
+  margin-top: 12px;
+}
+
+.continueButton:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.continueButton:active:not(:disabled) {
+  background: var(--accent-active);
+  transform: scale(0.99);
+}
+
+.continueButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.skipButton {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--secondary);
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.12s ease;
+}
+
+.skipButton:hover:not(:disabled) {
+  color: var(--primary);
+}
+
+.skipButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ─── Tablet ─────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .card {
+    max-width: 528px;
+  }
+
+  .heading {
+    font-size: 34px;
+  }
+}
+
+/* ─── Desktop ────────────────────────────────────────────── */
+@media (min-width: 1280px) {
+  .card {
+    max-width: 640px;
+  }
+
+  .heading {
+    font-size: 40px;
+  }
+}
