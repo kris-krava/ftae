@@ -24,6 +24,17 @@ export async function getLandingStats(): Promise<LandingStats> {
       .maybeSingle(),
   ]);
 
+  // TEMP DIAGNOSTIC — remove after debugging stale stats issue
+  console.log('[landing-stats]', {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    foundingCount: foundingRes.count,
+    foundingError: foundingRes.error?.message ?? null,
+    piecesCount: piecesRes.count,
+    piecesError: piecesRes.error?.message ?? null,
+    launchValue: launchRes.data?.value ?? null,
+    at: new Date().toISOString(),
+  });
+
   let daysUntilLaunch: number | null = null;
   const launchValue = launchRes.data?.value;
   if (launchValue) {
