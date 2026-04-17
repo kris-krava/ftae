@@ -1,179 +1,269 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import styles from './page.module.css'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { SearchSm, XCircle } from '@/components/icons';
+import { DiscoverArtworkTile } from '@/components/DiscoverArtworkTile';
+import { ArtistCard } from '@/components/ArtistCard';
+import { loadMoreArtworks, searchArtistsAction } from '@/app/_actions/discover';
+import type { DiscoverArtwork } from '@/app/_lib/artworks';
+import type { DiscoverArtist } from '@/app/_lib/artists';
 
-interface Medium {
-  name: string
+const SEARCH_DEBOUNCE_MS = 300;
+
+interface DiscoverClientProps {
+  initialArtworks: DiscoverArtwork[];
+  initialCursor: string | null;
+  isAuthenticated: boolean;
 }
 
-interface Artist {
-  id: string
-  name: string | null
-  avatar_url: string | null
-  location_city: string | null
-  bio: string | null
-  is_founding_member: boolean
-  // Supabase returns the joined relation as an array
-  user_mediums: { mediums: Medium[] | Medium | null }[]
-}
+export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated }: DiscoverClientProps) {
+  const [query, setQuery] = useState('');
+  const [searchActive, setSearchActive] = useState(false);
 
-interface Props {
-  currentUserId: string
-  artists: Artist[]
-  followingSet: string[]
-  artworkCounts: Record<string, number>
-}
+  const [artworks, setArtworks] = useState(initialArtworks);
+  const [artworksCursor, setArtworksCursor] = useState(initialCursor);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-function initials(name: string | null): string {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map(w => w[0]?.toUpperCase() ?? '')
-    .join('')
-}
+  const [artists, setArtists] = useState<(DiscoverArtist & { is_following: boolean })[]>([]);
+  const [artistsCursor, setArtistsCursor] = useState<string | null>(null);
+  const [artistsLoading, setArtistsLoading] = useState(false);
+  const [artistsLoadingMore, setArtistsLoadingMore] = useState(false);
+  const [, startSearch] = useTransition();
 
-export default function DiscoverClient({ currentUserId, artists, followingSet, artworkCounts }: Props) {
-  const [query, setQuery] = useState('')
-  const [following, setFollowing] = useState<Set<string>>(new Set(followingSet))
-  const [pending, setPending] = useState<Set<string>>(new Set())
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const filtered = artists.filter(a => {
-    if (!query.trim()) return true
-    const q = query.toLowerCase()
-    return (
-      a.name?.toLowerCase().includes(q) ||
-      a.location_city?.toLowerCase().includes(q) ||
-      a.bio?.toLowerCase().includes(q) ||
-      a.user_mediums.some(um => {
-        const m = um.mediums
-        if (!m) return false
-        if (Array.isArray(m)) return m.some(x => x.name.toLowerCase().includes(q))
-        return m.name.toLowerCase().includes(q)
-      })
-    )
-  })
-
-  async function toggleFollow(artistId: string) {
-    if (pending.has(artistId)) return
-    setPending(prev => new Set(prev).add(artistId))
-
-    const supabase = createClient()
-    if (following.has(artistId)) {
-      await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', currentUserId)
-        .eq('following_id', artistId)
-      setFollowing(prev => {
-        const next = new Set(prev)
-        next.delete(artistId)
-        return next
-      })
-    } else {
-      await supabase
-        .from('follows')
-        .insert({ follower_id: currentUserId, following_id: artistId })
-      setFollowing(prev => new Set(prev).add(artistId))
+  // Debounced search
+  useEffect(() => {
+    if (!searchActive) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (query.trim().length === 0) {
+      setArtists([]);
+      setArtistsCursor(null);
+      return;
     }
+    setArtistsLoading(true);
+    searchDebounceRef.current = setTimeout(() => {
+      startSearch(async () => {
+        const r = await searchArtistsAction(query, null);
+        setArtists(r.items);
+        setArtistsCursor(r.nextCursor);
+        setArtistsLoading(false);
+      });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [query, searchActive]);
 
-    setPending(prev => {
-      const next = new Set(prev)
-      next.delete(artistId)
-      return next
-    })
+  async function loadMoreArtists() {
+    if (artistsLoadingMore || !artistsCursor) return;
+    setArtistsLoadingMore(true);
+    const r = await searchArtistsAction(query, artistsCursor);
+    setArtists((prev) => [...prev, ...r.items]);
+    setArtistsCursor(r.nextCursor);
+    setArtistsLoadingMore(false);
+  }
+
+  // Infinite scroll for artworks (default state only)
+  const fetchNext = useCallback(async () => {
+    if (loadingMore || !artworksCursor) return;
+    setLoadingMore(true);
+    const r = await loadMoreArtworks(artworksCursor);
+    setArtworks((prev) => [...prev, ...r.items]);
+    setArtworksCursor(r.nextCursor);
+    setLoadingMore(false);
+  }, [artworksCursor, loadingMore]);
+
+  useEffect(() => {
+    if (searchActive) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void fetchNext();
+      },
+      { rootMargin: '200px' },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [searchActive, fetchNext]);
+
+  function clearSearch() {
+    setQuery('');
+    setSearchActive(false);
+    setArtists([]);
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.heading}>Discover</h1>
-        <div className={styles.searchWrap}>
-          <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="m11 11 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <input
-            className={styles.searchInput}
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search artists, mediums, locations…"
+    <>
+      <header
+        className={
+          'bg-canvas h-[56px] flex items-center pt-[30px] ' +
+          'px-[32px] tab:px-[120px] desk:px-[320px]'
+        }
+      >
+        <h1 className="font-sans font-semibold text-[18px] text-ink">Discover</h1>
+      </header>
+
+      <div className="pt-[12px] pb-[14px] px-[32px] tab:px-[120px] desk:px-[320px]">
+        <div
+          className={
+            'bg-surface rounded-[10px] h-[44px] flex items-center gap-[8px] px-[14px] ' +
+            (searchActive ? 'border-[1.5px] border-accent/50' : 'border border-divider/60')
+          }
+        >
+          <SearchSm
+            className={`w-[20px] h-[20px] shrink-0 ${searchActive ? 'text-ink' : 'text-muted'}`}
           />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (!searchActive) setSearchActive(true);
+            }}
+            onFocus={() => setSearchActive(true)}
+            placeholder="Search artists or medium…"
+            className="flex-1 min-w-0 bg-transparent font-sans text-[15px] text-ink placeholder:text-placeholder focus:outline-none"
+          />
+          {searchActive && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label="Clear search"
+              className="shrink-0"
+            >
+              <XCircle className="w-[20px] h-[20px] text-muted" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className={styles.list}>
-        {filtered.length === 0 && (
-          <p className={styles.emptyText}>No artists found.</p>
-        )}
-        {filtered.map(artist => {
-          const isFollowing = following.has(artist.id)
-          const isPending = pending.has(artist.id)
-          const mediumNames = artist.user_mediums
-            .flatMap(um => {
-              const m = um.mediums
-              if (!m) return []
-              if (Array.isArray(m)) return m.map(x => x.name)
-              return [m.name]
-            })
-            .filter(Boolean) as string[]
+      {searchActive ? (
+        <SearchResults
+          query={query}
+          artists={artists}
+          loading={artistsLoading}
+          isAuthenticated={isAuthenticated}
+          hasMore={Boolean(artistsCursor)}
+          loadingMore={artistsLoadingMore}
+          onLoadMore={loadMoreArtists}
+        />
+      ) : (
+        <ArtworkGridSection
+          artworks={artworks}
+          sentinelRef={sentinelRef}
+          loadingMore={loadingMore}
+          hasMore={Boolean(artworksCursor)}
+        />
+      )}
+    </>
+  );
+}
 
-          return (
-            <div key={artist.id} className={styles.card}>
-              {/* Avatar */}
-              <div className={styles.avatarWrap}>
-                {artist.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={artist.avatar_url}
-                    alt={artist.name ?? ''}
-                    className={styles.avatar}
-                  />
-                ) : (
-                  <div className={styles.avatarInitials}>
-                    {initials(artist.name)}
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className={styles.info}>
-                <div className={styles.nameRow}>
-                  <span className={styles.name}>{artist.name}</span>
-                  {artist.is_founding_member && (
-                    <span className={styles.foundingBadge}>FOUNDING MEMBER</span>
-                  )}
-                </div>
-                {artist.location_city && (
-                  <p className={styles.location}>{artist.location_city}</p>
-                )}
-                {mediumNames.length > 0 && (
-                  <div className={styles.mediumTags}>
-                    {mediumNames.slice(0, 3).map(m => (
-                      <span key={m} className={styles.mediumTag}>{m}</span>
-                    ))}
-                  </div>
-                )}
-                <p className={styles.worksCount}>
-                  {artworkCounts[artist.id] ?? 0} works ready to trade
-                </p>
-              </div>
-
-              {/* Follow button */}
-              <button
-                className={isFollowing ? styles.followingBtn : styles.followBtn}
-                onClick={() => toggleFollow(artist.id)}
-                disabled={isPending}
-              >
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
-            </div>
-          )
-        })}
+function ArtworkGridSection({
+  artworks,
+  sentinelRef,
+  loadingMore,
+  hasMore,
+}: {
+  artworks: DiscoverArtwork[];
+  sentinelRef: React.RefObject<HTMLDivElement>;
+  loadingMore: boolean;
+  hasMore: boolean;
+}) {
+  if (artworks.length === 0) {
+    return (
+      <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
+        <p className="font-sans text-muted text-[15px]">
+          No artwork yet. Be among the first to add some.
+        </p>
       </div>
+    );
+  }
+  return (
+    <>
+      <div className="grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 gap-[4px]">
+        {artworks.map((art, i) => (
+          <DiscoverArtworkTile key={art.id} artwork={art} index={i} />
+        ))}
+      </div>
+      <div ref={sentinelRef} aria-hidden className="h-[1px]" />
+      {hasMore && (
+        <p className="font-sans text-muted text-[13px] text-center py-[24px]">
+          {loadingMore ? 'Loading…' : ''}
+        </p>
+      )}
+    </>
+  );
+}
+
+function SearchResults({
+  query,
+  artists,
+  loading,
+  isAuthenticated,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  query: string;
+  artists: (DiscoverArtist & { is_following: boolean })[];
+  loading: boolean;
+  isAuthenticated: boolean;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+}) {
+  if (query.trim().length === 0) {
+    return (
+      <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
+        <p className="font-sans text-muted text-[15px]">
+          Type a name or medium to find artists.
+        </p>
+      </div>
+    );
+  }
+  if (loading && artists.length === 0) {
+    return (
+      <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
+        <p className="font-sans text-muted text-[15px]">Searching…</p>
+      </div>
+    );
+  }
+  if (artists.length === 0) {
+    return (
+      <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
+        <p className="font-sans text-muted text-[15px]">
+          No artists matched &ldquo;{query.trim()}&rdquo;.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="px-[32px] tab:px-[120px] desk:px-[320px]">
+      <ul className="flex flex-col gap-[16px]">
+        {artists.map((a) => (
+          <li key={a.id}>
+            <ArtistCard
+              artist={a}
+              initialFollowing={a.is_following}
+              isAuthenticated={isAuthenticated}
+            />
+          </li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onLoadMore}
+          disabled={loadingMore}
+          className="mt-[16px] mx-auto block font-sans text-[13px] text-accent underline disabled:opacity-50"
+        >
+          {loadingMore ? 'Loading…' : 'Load more'}
+        </button>
+      )}
     </div>
-  )
+  );
 }

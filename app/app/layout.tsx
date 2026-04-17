@@ -1,25 +1,51 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import BottomNav from '@/components/BottomNav'
-import styles from './layout.module.css'
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { deriveInitials } from '@/lib/initials';
+import { MobileNav } from '@/components/MobileNav';
+import { MobileBell } from '@/components/MobileBell';
+import { Sidebar } from '@/components/Sidebar';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/');
 
-  if (!user) redirect('/')
+  const { data: profile } = await supabaseAdmin
+    .from('users')
+    .select('username, name, avatar_url')
+    .eq('id', user.id)
+    .single();
 
-  // Fetch unread notification count
-  const { count } = await supabase
+  if (!profile) redirect('/');
+
+  const { count: unreadCount } = await supabaseAdmin
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('is_read', false)
+    .eq('is_read', false);
+
+  const username = profile.username;
+  const displayName = profile.name?.trim() || username;
+  const initials = deriveInitials(profile.name, user.email ?? null);
+  const unread = unreadCount ?? 0;
 
   return (
-    <div className={styles.shell}>
-      <main className={styles.content}>{children}</main>
-      <BottomNav notificationCount={count ?? 0} />
-    </div>
-  )
+    <>
+      <Sidebar
+        username={username}
+        displayName={displayName}
+        initials={initials}
+        avatarUrl={profile.avatar_url ?? null}
+        unreadCount={unread}
+      />
+      <MobileBell userId={user.id} initialUnread={unread} />
+      <div className="min-h-screen pb-[80px] tab:pb-0 tab:pl-[60px]">{children}</div>
+      <MobileNav username={username} initials={initials} avatarUrl={profile.avatar_url ?? null} />
+    </>
+  );
 }

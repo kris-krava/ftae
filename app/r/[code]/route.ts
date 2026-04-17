@@ -1,27 +1,35 @@
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { REFERRAL_COOKIE, REFERRAL_COOKIE_MAX_AGE_SECONDS } from '@/lib/referral';
 
 export async function GET(
   request: Request,
   { params }: { params: { code: string } },
 ) {
-  const { origin } = new URL(request.url)
-  const code = params.code
+  const { origin } = new URL(request.url);
+  const code = params.code?.trim();
 
-  // Look up the referral code owner
+  const home = NextResponse.redirect(`${origin}/`);
+
+  if (!code || code.length > 64) return home;
+
   const { data: referrer } = await supabaseAdmin
     .from('users')
     .select('id')
     .eq('referral_code', code)
-    .single()
+    .maybeSingle();
 
-  if (referrer) {
-    // Log the click (visitor_id unknown at this point — filled in after auth)
-    await supabaseAdmin.from('referrals').insert({
-      referrer_id: referrer.id,
-      referral_code: code,
-    })
-  }
+  if (!referrer) return home;
 
-  return NextResponse.redirect(`${origin}/?ref=${code}`)
+  home.cookies.set({
+    name: REFERRAL_COOKIE,
+    value: code,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: REFERRAL_COOKIE_MAX_AGE_SECONDS,
+  });
+
+  return home;
 }

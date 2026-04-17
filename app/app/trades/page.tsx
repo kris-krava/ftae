@@ -1,50 +1,23 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import styles from './page.module.css'
+import { Shuffle01 } from '@/components/icons';
+import { getDaysUntilLaunch } from '@/app/_lib/launch-countdown';
+
+export const dynamic = 'force-dynamic';
 
 export default async function TradesPage() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
-
-  const { data: trades } = await supabase
-    .from('trades')
-    .select('id, status, created_at')
-    .or(`initiator_id.eq.${user.id},recipient_id.eq.${user.id}`)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
-  const hasTrades = (trades?.length ?? 0) > 0
+  const days = await getDaysUntilLaunch();
+  const headline = days === null ? 'Trading starts soon!' : `Trading starts in ${days} day${days === 1 ? '' : 's'}!`;
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.heading}>Trades</h1>
-
-      {hasTrades ? (
-        <div className={styles.list}>
-          {trades!.map(trade => (
-            <div key={trade.id} className={styles.tradeRow}>
-              <span className={styles.tradeId}>#{trade.id.slice(0, 8)}</span>
-              <span className={styles.tradeStatus}>{trade.status}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="m25.5 1.5 6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M4.5 16.5v-3A6 6 0 0 1 10.5 7.5H31.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="m10.5 34.5-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M31.5 19.5v3A6 6 0 0 1 25.5 28.5H4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <h2 className={styles.emptyHeading}>No trades yet</h2>
-          <p className={styles.emptyText}>
-            Your active and completed trades will all live here.
-          </p>
-        </div>
-      )}
-    </div>
-  )
+    <main className="bg-canvas min-h-screen w-full flex flex-col items-center justify-center px-[32px]">
+      <div className="bg-accent/10 rounded-full w-[96px] h-[96px] flex items-center justify-center">
+        <Shuffle01 className="w-[48px] h-[48px] text-accent" />
+      </div>
+      <h1 className="font-serif font-bold text-ink text-[24px] text-center mt-[40px] max-w-[326px] tab:max-w-[480px] desk:max-w-[640px]">
+        {headline}
+      </h1>
+      <p className="font-sans text-muted text-[15px] text-center mt-[12px] max-w-[326px] tab:max-w-[480px] desk:max-w-[640px]">
+        Active and completed trades live here.
+      </p>
+    </main>
+  );
 }

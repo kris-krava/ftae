@@ -1,23 +1,33 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import OnboardingStep2Form from './OnboardingStep2Form'
+import { OnboardingShell } from '@/components/OnboardingShell';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { requireOnboardingUser, getMediums, getUserMediumIds } from '@/app/_lib/onboarding';
+import { Step2Form } from './Step2Form';
 
-export default async function OnboardingStep2Page() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export const dynamic = 'force-dynamic';
 
-  if (!user) redirect('/')
-
-  // Load canonical mediums from DB (public read, no auth needed)
-  const { data: mediums } = await supabase
-    .from('mediums')
-    .select('id, name')
-    .order('sort_order')
+export default async function Step2Page() {
+  const { userId, profile } = await requireOnboardingUser();
+  const [mediums, selectedIds] = await Promise.all([getMediums(), getUserMediumIds(userId)]);
 
   return (
-    <OnboardingStep2Form
-      userId={user.id}
-      mediums={mediums ?? []}
-    />
-  )
+    <OnboardingShell step={2}>
+      <h1
+        className={
+          'font-serif font-bold text-ink text-center w-full ' +
+          'text-[28px] leading-[36px] ' +
+          'desk:text-[40px] desk:leading-[50px]'
+        }
+      >
+        What&rsquo;s your medium?
+      </h1>
+      <span aria-hidden className="h-[60px] w-px shrink-0" />
+      <ErrorBoundary label="onboarding-step-2">
+        <Step2Form
+          mediums={mediums}
+          initialSelectedIds={selectedIds}
+          initialBio={profile.bio ?? ''}
+        />
+      </ErrorBoundary>
+    </OnboardingShell>
+  );
 }

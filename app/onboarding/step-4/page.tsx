@@ -1,22 +1,28 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import OnboardingStep4Form from './OnboardingStep4Form'
+import { OnboardingShell } from '@/components/OnboardingShell';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { requireOnboardingUser } from '@/app/_lib/onboarding';
+import { Step4Form } from './Step4Form';
 
-export default async function OnboardingStep4Page() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export const dynamic = 'force-dynamic';
 
-  if (!user) redirect('/')
-
-  const { data: mediums } = await supabase
-    .from('mediums')
-    .select('id, name')
-    .order('sort_order')
+export default async function Step4Page() {
+  await requireOnboardingUser();
 
   return (
-    <OnboardingStep4Form
-      userId={user.id}
-      mediums={mediums ?? []}
-    />
-  )
+    <OnboardingShell step={4}>
+      <h1
+        className={
+          'font-serif font-bold text-ink text-center w-full ' +
+          'text-[28px] leading-[36px] ' +
+          'desk:text-[40px] desk:leading-[50px]'
+        }
+      >
+        Add your art, something you made and would be happy to trade.
+      </h1>
+      <span aria-hidden className="h-[60px] w-px shrink-0" />
+      <ErrorBoundary label="onboarding-step-4">
+        <Step4Form />
+      </ErrorBoundary>
+    </OnboardingShell>
+  );
 }

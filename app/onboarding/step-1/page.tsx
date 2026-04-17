@@ -1,14 +1,32 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import OnboardingStep1Form from './OnboardingStep1Form'
+import { OnboardingShell } from '@/components/OnboardingShell';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { requireOnboardingUser } from '@/app/_lib/onboarding';
+import { Step1Form } from './Step1Form';
 
-export default async function OnboardingStep1Page() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export const dynamic = 'force-dynamic';
 
-  if (!user) {
-    redirect('/')
-  }
+export default async function Step1Page() {
+  const { profile } = await requireOnboardingUser();
 
-  return <OnboardingStep1Form userId={user.id} userEmail={user.email ?? ''} />
+  return (
+    <OnboardingShell step={1}>
+      <h1
+        className={
+          'font-serif font-bold text-ink text-center w-full ' +
+          'text-[28px] leading-[36px] ' +
+          'desk:text-[40px] desk:leading-[50px]'
+        }
+      >
+        Quick artist profile.
+      </h1>
+      <span aria-hidden className="h-[36px] w-px shrink-0" />
+      <ErrorBoundary label="onboarding-step-1">
+        <Step1Form
+          initialName={profile.name ?? ''}
+          initialLocation={profile.location_city ?? ''}
+          initialAvatarUrl={profile.avatar_url ?? null}
+        />
+      </ErrorBoundary>
+    </OnboardingShell>
+  );
 }

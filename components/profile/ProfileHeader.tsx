@@ -1,0 +1,91 @@
+import { Star06, UserCheck01 } from '@/components/icons';
+import { Avatar } from '@/components/profile/Avatar';
+import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
+import { deriveInitials } from '@/lib/initials';
+
+interface ProfileHeaderProps {
+  user: ProfileUser;
+  mediums: ProfileMedium[];
+}
+
+export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
+  const displayName = user.name?.trim() || user.username;
+  const initials = deriveInitials(user.name, user.email);
+  const websiteHref = user.website_url
+    ? user.website_url.startsWith('http')
+      ? user.website_url
+      : `https://${user.website_url}`
+    : null;
+  const websiteLabel = user.website_url?.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const handleLabel = user.social_handle ? `@${user.social_handle.replace(/^@+/, '')}` : null;
+
+  return (
+    <div className="flex flex-col items-center w-full">
+      <Avatar
+        initials={initials}
+        avatarUrl={user.avatar_url}
+        size={193}
+        textSize="text-[48px]"
+        priority
+      />
+      <div className="flex items-center gap-[8px] mt-[10px]">
+        <h1 className="font-serif font-bold text-ink text-[24px] tab:text-[28px] desk:text-[32px]">
+          {displayName}
+        </h1>
+        {user.is_founding_member && (
+          <Star06
+            className="w-[20px] h-[20px] text-accent"
+            fill="currentColor"
+            aria-label="Founding member"
+          />
+        )}
+        {user.studio_verified && (
+          <UserCheck01
+            className="w-[20px] h-[20px] text-accent"
+            aria-label="Studio verified"
+          />
+        )}
+      </div>
+      {user.location_city && (
+        <p className="font-sans text-[13px] text-muted text-center mt-[2px]">
+          {user.location_city}
+        </p>
+      )}
+
+      {mediums.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-[8px] mt-[22px]">
+          {mediums.map((m) => (
+            <span
+              key={m.id}
+              className="bg-accent/10 border border-surface rounded-[20px] px-[12px] py-[6px] font-sans font-medium text-[12px] text-accent"
+            >
+              {m.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {user.bio && (
+        <p className="font-sans text-[14px] text-muted text-center mt-[18px] max-w-[326px]">
+          &ldquo;{user.bio}&rdquo;
+        </p>
+      )}
+
+      {websiteHref && (
+        <a
+          href={websiteHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-sans text-[13px] text-accent text-center mt-[16px]"
+        >
+          {websiteLabel}
+        </a>
+      )}
+      {handleLabel && (
+        <span className="font-sans text-[13px] text-accent text-center mt-[4px]">
+          {handleLabel}
+        </span>
+      )}
+    </div>
+  );
+}
