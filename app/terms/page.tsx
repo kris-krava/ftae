@@ -1,11 +1,10 @@
-import Link from 'next/link';
-import { Wordmark } from '@/app/_components/Wordmark';
+import { LegalShell, type LegalSection } from '@/app/_components/LegalShell';
 
 export const metadata = {
   title: 'Terms of Service — Free Trade Art Exchange',
 };
 
-const SECTIONS: { heading: string; body: string }[] = [
+const SECTIONS: LegalSection[] = [
   {
     heading: '1. ACCEPTANCE OF TERMS',
     body:
@@ -58,101 +57,5 @@ const SECTIONS: { heading: string; body: string }[] = [
 ];
 
 export default function TermsPage() {
-  return (
-    <LegalShell title="Terms of Service" updated="April 17, 2026" sections={SECTIONS} />
-  );
-}
-
-interface LegalShellProps {
-  title: string;
-  updated: string;
-  sections: { heading: string; body: string }[];
-}
-
-export function LegalShell({ title, updated, sections }: LegalShellProps) {
-  return (
-    <main
-      className={
-        'flex flex-col items-center w-full min-h-full bg-canvas ' +
-        'px-[32px] pt-[88px] pb-[64px] ' +
-        'tab:px-[124px] tab:pt-[100px] tab:pb-[80px] ' +
-        'desk:px-[350px] desk:pt-[120px] desk:pb-[96px]'
-      }
-    >
-      <Wordmark variant="short" size="compact" />
-      <h1
-        className={
-          'font-serif font-bold text-ink text-center ' +
-          'mt-[24px] text-[28px] leading-[36px] ' +
-          'tab:mt-[28px] tab:text-[34px] tab:leading-[44px] ' +
-          'desk:mt-[32px] desk:text-[38px] desk:leading-[50px]'
-        }
-      >
-        {title}
-      </h1>
-      <p
-        className={
-          'font-sans text-muted text-center ' +
-          'mt-[8px] text-[13px] leading-[20px] ' +
-          'tab:mt-[10px] tab:text-[14px] tab:leading-[22px] ' +
-          'desk:mt-[12px] desk:text-[15px] desk:leading-[24px]'
-        }
-      >
-        Last updated: {updated}
-      </p>
-
-      <div
-        className={
-          'mt-[40px] flex flex-col w-full ' +
-          'gap-[28px] ' +
-          'tab:mt-[48px] tab:gap-[32px] ' +
-          'desk:mt-[56px] desk:gap-[36px]'
-        }
-      >
-        {sections.map((s) => (
-          <section key={s.heading} className="flex flex-col gap-[8px] tab:gap-[10px] desk:gap-[12px]">
-            <h2
-              className={
-                'font-sans font-semibold text-ink tracking-[1.5px] ' +
-                'text-[13px] leading-[18px] ' +
-                'tab:text-[14px] tab:leading-[20px] ' +
-                'desk:text-[15px] desk:leading-[22px]'
-              }
-            >
-              {s.heading}
-            </h2>
-            <p
-              className={
-                'font-sans text-ink whitespace-pre-line ' +
-                'text-[15px] leading-[24px] ' +
-                'tab:text-[16px] tab:leading-[26px] ' +
-                'desk:text-[17px] desk:leading-[28px]'
-              }
-            >
-              {s.body}
-            </p>
-          </section>
-        ))}
-      </div>
-
-      <LegalFooter />
-    </main>
-  );
-}
-
-function LegalFooter() {
-  return (
-    <footer className="flex flex-col items-center w-full mt-[40px] tab:mt-[48px] desk:mt-[56px] gap-[10px]">
-      <span aria-hidden className="block w-[80px] h-px bg-divider" />
-      <p className="font-sans font-medium text-muted text-center text-[13px] leading-[20px] tab:text-[14px] tab:leading-[22px]">
-        Questions? Email us at
-      </p>
-      <Link
-        href="mailto:help@freetradeartexchange.com"
-        className="font-sans text-accent text-center text-[13px] leading-[20px] tab:text-[14px] tab:leading-[22px]"
-      >
-        help@freetradeartexchange.com
-      </Link>
-    </footer>
-  );
+  return <LegalShell title="Terms of Service" updated="April 17, 2026" sections={SECTIONS} />;
 }

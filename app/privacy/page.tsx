@@ -1,10 +1,10 @@
-import { LegalShell } from '@/app/terms/page';
+import { LegalShell, type LegalSection } from '@/app/_components/LegalShell';
 
 export const metadata = {
   title: 'Privacy Policy — Free Trade Art Exchange',
 };
 
-const SECTIONS: { heading: string; body: string }[] = [
+const SECTIONS: LegalSection[] = [
   {
     heading: '1. INFORMATION WE COLLECT',
     body:
