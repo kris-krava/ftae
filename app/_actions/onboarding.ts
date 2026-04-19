@@ -96,6 +96,42 @@ export async function saveStep1Profile(formData: FormData): Promise<SaveResult> 
   return { ok: true };
 }
 
+export async function finalizeStep1(): Promise<SaveResult> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: 'Not signed in.' };
+  }
+
+  const limit = rateLimit(`step1-finalize:${userId}`, 20, 60_000);
+  if (!limit.ok) return { ok: false, error: 'Too many attempts. Please wait a moment.' };
+
+  const { data: row, error: readErr } = await supabaseAdmin
+    .from('users')
+    .select('name, location_city, avatar_url, terms_accepted_at')
+    .eq('id', userId)
+    .single();
+
+  if (readErr || !row) return { ok: false, error: 'Could not load profile.' };
+
+  if (!row.name?.trim()) return { ok: false, error: 'Please add your display name.' };
+  if (!row.location_city?.trim()) return { ok: false, error: 'Please add your location.' };
+  if (!row.avatar_url) return { ok: false, error: 'Please add a profile photo.' };
+
+  if (!row.terms_accepted_at) {
+    const { error: stampErr } = await supabaseAdmin
+      .from('users')
+      .update({ terms_accepted_at: new Date().toISOString() })
+      .eq('id', userId)
+      .is('terms_accepted_at', null);
+    if (stampErr) return { ok: false, error: 'Could not record terms agreement.' };
+  }
+
+  revalidatePath('/onboarding/step-1');
+  return { ok: true };
+}
+
 export async function uploadAvatar(formData: FormData): Promise<SaveResult & { avatarUrl?: string }> {
   let userId: string;
   try {
