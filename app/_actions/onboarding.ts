@@ -311,10 +311,13 @@ export async function saveStep3Links(formData: FormData): Promise<SaveResult> {
 }
 
 const Step4MetaSchema = z.object({
-  title: z.string().trim().min(1).max(160),
-  year: z.coerce.number().int().min(1000).max(new Date().getFullYear() + 1).optional().nullable(),
-  medium: z.string().trim().max(160).optional().nullable(),
-  dimensions: z.string().trim().max(60).optional().nullable(),
+  title: z.string().trim().min(1, 'Title is required.').max(160),
+  year: z.coerce.number({ invalid_type_error: 'Year is required.' })
+    .int()
+    .min(1000)
+    .max(new Date().getFullYear() + 1),
+  medium: z.string().trim().min(1, 'Medium is required.').max(160),
+  dimensions: z.string().trim().min(1, 'Dimensions are required.').max(60),
 });
 
 export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> {

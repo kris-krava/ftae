@@ -57,7 +57,7 @@ export async function getMediums(): Promise<{ id: string; name: string }[]> {
   const { data } = await supabaseAdmin
     .from('mediums')
     .select('id, name')
-    .order('sort_order', { ascending: true });
+    .order('name', { ascending: true });
   return (data ?? []) as { id: string; name: string }[];
 }
 

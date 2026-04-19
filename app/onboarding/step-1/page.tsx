@@ -17,7 +17,7 @@ export default async function Step1Page() {
           'desk:text-[40px] desk:leading-[50px]'
         }
       >
-        Quick artist profile.
+        Your profile
       </h1>
       <span aria-hidden className="h-[36px] w-px shrink-0" />
       <ErrorBoundary label="onboarding-step-1">

@@ -17,7 +17,7 @@ export default async function Step3Page() {
           'desk:text-[40px] desk:leading-[50px]'
         }
       >
-        Add your links?
+        Your links
       </h1>
       <span aria-hidden className="h-[42px] w-px shrink-0" />
       <ErrorBoundary label="onboarding-step-3">

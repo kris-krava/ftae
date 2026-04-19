@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { saveStep2Mediums, saveStep2Bio } from '@/app/_actions/onboarding';
 
@@ -14,10 +14,12 @@ const SAVE_DEBOUNCE_MS = 500;
 const MAX_BIO = 160;
 
 export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2FormProps) {
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelectedIds));
   const [bio, setBio] = useState(initialBio);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const [continuePending, startContinue] = useTransition();
 
   const mediumDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bioDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,6 +69,34 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
     });
   }
 
+  function onContinue() {
+    setError(null);
+    if (selected.size === 0) {
+      setError('Please select at least one medium.');
+      return;
+    }
+    if (!bio.trim()) {
+      setError('Please add a one-line bio.');
+      return;
+    }
+    startContinue(async () => {
+      // Flush any pending debounced saves to ensure the latest values are persisted.
+      const [mediumsResult, bioResult] = await Promise.all([
+        saveStep2Mediums(Array.from(selected)),
+        saveStep2Bio(bio),
+      ]);
+      if (!mediumsResult.ok) {
+        setError(mediumsResult.error);
+        return;
+      }
+      if (!bioResult.ok) {
+        setError(bioResult.error);
+        return;
+      }
+      router.push('/onboarding/step-3');
+    });
+  }
+
   return (
     <>
       <div className="flex flex-wrap items-start gap-[8px] w-full">
@@ -113,12 +143,18 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
         {bio.length} / {MAX_BIO}
       </p>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
-      <Link
-        href="/onboarding/step-3"
-        className="flex items-center justify-center w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] leading-[24px]"
+      <button
+        type="button"
+        onClick={onContinue}
+        disabled={continuePending}
+        className={
+          'flex items-center justify-center w-full h-[48px] rounded-[8px] bg-accent text-surface ' +
+          'font-semibold text-[16px] leading-[24px] transition-opacity ' +
+          'disabled:opacity-40 disabled:cursor-not-allowed'
+        }
       >
-        Continue
-      </Link>
+        {continuePending ? 'Saving…' : 'Continue'}
+      </button>
       {error && (
         <p role="alert" className="mt-[8px] text-accent text-[13px] text-center">
           {error}

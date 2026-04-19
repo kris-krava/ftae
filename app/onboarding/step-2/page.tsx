@@ -18,7 +18,7 @@ export default async function Step2Page() {
           'desk:text-[40px] desk:leading-[50px]'
         }
       >
-        What&rsquo;s your medium?
+        Your practice
       </h1>
       <span aria-hidden className="h-[60px] w-px shrink-0" />
       <ErrorBoundary label="onboarding-step-2">

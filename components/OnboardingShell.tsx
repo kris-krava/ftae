@@ -12,8 +12,8 @@ export function OnboardingShell({ step, children }: OnboardingShellProps) {
       className={
         'flex flex-col items-center w-full min-h-screen bg-canvas ' +
         'p-[32px] ' +
-        'tab:px-[120px] tab:py-[40px] ' +
-        'desk:px-[320px] desk:py-[50px]'
+        'tab:px-[124px] tab:py-[40px] ' +
+        'desk:px-[350px] desk:py-[50px]'
       }
     >
       <Wordmark variant="short" size="compact" />

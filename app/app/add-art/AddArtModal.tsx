@@ -66,6 +66,14 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
       return;
     }
     const fd = new FormData(event.currentTarget);
+    const title = String(fd.get('title') ?? '').trim();
+    const year = String(fd.get('year') ?? '').trim();
+    const medium = String(fd.get('medium') ?? '').trim();
+    const dimensions = String(fd.get('dimensions') ?? '').trim();
+    if (!title) { setError('Please add a title.'); return; }
+    if (!year) { setError('Please add a year.'); return; }
+    if (!medium) { setError('Please add a medium.'); return; }
+    if (!dimensions) { setError('Please add dimensions.'); return; }
     photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
     start(async () => {
       const result = await saveStep4Artwork(fd);
@@ -103,8 +111,8 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
             onClick={() => fileInputRef.current?.click()}
             aria-label={photos.length > 0 ? 'Add more photos' : 'Add photos'}
             className={
-              'w-full rounded-[12px] bg-canvas/60 border-[1.5px] border-divider/70 ' +
-              'h-[180px] flex flex-col items-center justify-center'
+              'rounded-[12px] bg-canvas/60 border-[1.5px] border-divider/70 ' +
+              'w-[240px] h-[120px] self-center flex flex-col items-center justify-center'
             }
           >
             <PlusSquare className="w-[48px] h-[48px] text-accent" />
@@ -160,6 +168,7 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
               name="year"
               type="number"
               inputMode="numeric"
+              required
               min={1000}
               max={new Date().getFullYear() + 1}
               placeholder="e.g. 2023"
@@ -171,6 +180,7 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
               id="add-medium"
               name="medium"
               type="text"
+              required
               maxLength={160}
               placeholder="e.g. Oil on linen"
               className={inputClass}
@@ -181,6 +191,7 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
               id="add-dimensions"
               name="dimensions"
               type="text"
+              required
               maxLength={60}
               placeholder="e.g. 24 × 36 in"
               className={inputClass}

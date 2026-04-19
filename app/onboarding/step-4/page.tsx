@@ -17,7 +17,7 @@ export default async function Step4Page() {
           'desk:text-[40px] desk:leading-[50px]'
         }
       >
-        Add your art, something you made and would be happy to trade.
+        Original art to trade
       </h1>
       <span aria-hidden className="h-[60px] w-px shrink-0" />
       <ErrorBoundary label="onboarding-step-4">

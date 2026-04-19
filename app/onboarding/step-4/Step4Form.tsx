@@ -74,6 +74,14 @@ export function Step4Form() {
       return;
     }
     const fd = new FormData(event.currentTarget);
+    const title = String(fd.get('title') ?? '').trim();
+    const year = String(fd.get('year') ?? '').trim();
+    const medium = String(fd.get('medium') ?? '').trim();
+    const dimensions = String(fd.get('dimensions') ?? '').trim();
+    if (!title) { setError('Please add a title.'); return; }
+    if (!year) { setError('Please add a year.'); return; }
+    if (!medium) { setError('Please add a medium.'); return; }
+    if (!dimensions) { setError('Please add dimensions.'); return; }
     photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
     // ===== TEMP TIMING (remove after debug) =====
     const totalBytes = photos.reduce((sum, p) => sum + p.size, 0);
@@ -99,9 +107,9 @@ export function Step4Form() {
         onClick={() => fileInputRef.current?.click()}
         aria-label={photos.length > 0 ? 'Add more photos' : 'Add photos'}
         className={
-          'flex flex-col items-center justify-center w-full rounded-[12px] ' +
+          'flex flex-col items-center justify-center rounded-[12px] ' +
           'bg-surface/50 border-[1.5px] border-field ' +
-          'h-[200px] desk:h-[280px]'
+          'w-[240px] h-[120px] self-center'
         }
       >
         <CameraIcon className="text-ink" />
@@ -159,6 +167,7 @@ export function Step4Form() {
           name="year"
           type="number"
           inputMode="numeric"
+          required
           min={1000}
           max={new Date().getFullYear() + 1}
           placeholder="e.g. 2023"
@@ -171,6 +180,7 @@ export function Step4Form() {
           id="medium"
           name="medium"
           type="text"
+          required
           maxLength={160}
           placeholder="e.g. Oil on linen"
           className={inputClass}
@@ -182,6 +192,7 @@ export function Step4Form() {
           id="dimensions"
           name="dimensions"
           type="text"
+          required
           maxLength={60}
           placeholder="e.g. 24 × 36 in"
           className={inputClass}

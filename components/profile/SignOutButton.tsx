@@ -10,7 +10,7 @@ export function SignOutButton() {
       type="button"
       disabled={pending}
       onClick={() => start(() => signOutAction())}
-      className="text-accent text-left flex-1 disabled:opacity-50"
+      className="text-accent disabled:opacity-50"
     >
       {pending ? 'Signing out…' : 'Sign Out'}
     </button>
