@@ -1,8 +1,15 @@
 import 'server-only';
 
-// Module-load safety net: refuse to even define dev-only behavior if someone
-// ever sets the opt-in flag on a production NODE_ENV deployment.
-if (process.env.NODE_ENV === 'production' && process.env.FTAE_ENABLE_DEV_TOOLS === '1') {
+// Module-load safety net: refuse to initialize dev-only behavior if the opt-in
+// flag is set on a production server runtime. We specifically skip the build
+// phase (phase-production-build) so `next build` with the flag in .env.local
+// doesn't fail. Runtime gating still comes from middleware + assertDev +
+// assertNotProdHost + notFound() at the page.
+if (
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  process.env.NODE_ENV === 'production' &&
+  process.env.FTAE_ENABLE_DEV_TOOLS === '1'
+) {
   throw new Error('FTAE dev tools cannot run with NODE_ENV=production');
 }
 
