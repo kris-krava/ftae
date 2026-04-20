@@ -77,11 +77,13 @@ export function Step4Form() {
     const title = String(fd.get('title') ?? '').trim();
     const year = String(fd.get('year') ?? '').trim();
     const medium = String(fd.get('medium') ?? '').trim();
-    const dimensions = String(fd.get('dimensions') ?? '').trim();
+    const width = String(fd.get('width') ?? '').trim();
+    const height = String(fd.get('height') ?? '').trim();
     if (!title) { setError('Please add a title.'); return; }
     if (!year) { setError('Please add a year.'); return; }
     if (!medium) { setError('Please add a medium.'); return; }
-    if (!dimensions) { setError('Please add dimensions.'); return; }
+    if (!width) { setError('Please add a width.'); return; }
+    if (!height) { setError('Please add a height.'); return; }
     photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
     // ===== TEMP TIMING (remove after debug) =====
     const totalBytes = photos.reduce((sum, p) => sum + p.size, 0);
@@ -187,16 +189,41 @@ export function Step4Form() {
         />
       </FormField>
       <span aria-hidden className="h-[16px] w-px shrink-0" />
-      <FormField label="Dimensions" htmlFor="dimensions">
-        <input
-          id="dimensions"
-          name="dimensions"
-          type="text"
-          required
-          maxLength={60}
-          placeholder="e.g. 24 × 36 in"
-          className={inputClass}
-        />
+      <FormField label="Dimensions (inches)" htmlFor="width">
+        <div className="flex w-full gap-[8px]">
+          <input
+            id="width"
+            name="width"
+            type="number"
+            inputMode="decimal"
+            required
+            min={0}
+            step="any"
+            placeholder="W"
+            className={dimInputClass}
+          />
+          <input
+            id="height"
+            name="height"
+            type="number"
+            inputMode="decimal"
+            required
+            min={0}
+            step="any"
+            placeholder="H"
+            className={dimInputClass}
+          />
+          <input
+            id="depth"
+            name="depth"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="any"
+            placeholder="D"
+            className={dimInputClass}
+          />
+        </div>
       </FormField>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       <button
@@ -219,6 +246,13 @@ const inputClass =
   'w-full h-[44px] rounded-[8px] bg-surface border border-field px-[14px] ' +
   'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder ' +
   'focus:border-accent focus:outline-none focus:ring-0';
+
+const dimInputClass =
+  'flex-1 min-w-0 h-[44px] rounded-[8px] bg-surface border border-field px-[10px] ' +
+  'font-sans text-[15px] leading-[24px] text-ink text-center placeholder:text-placeholder ' +
+  'focus:border-accent focus:outline-none focus:ring-0 ' +
+  // Hide spinners
+  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 function FormField({
   label,

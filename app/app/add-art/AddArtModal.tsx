@@ -77,11 +77,13 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
     const title = String(fd.get('title') ?? '').trim();
     const year = String(fd.get('year') ?? '').trim();
     const medium = String(fd.get('medium') ?? '').trim();
-    const dimensions = String(fd.get('dimensions') ?? '').trim();
+    const width = String(fd.get('width') ?? '').trim();
+    const height = String(fd.get('height') ?? '').trim();
     if (!title) { setError('Please add a title.'); return; }
     if (!year) { setError('Please add a year.'); return; }
     if (!medium) { setError('Please add a medium.'); return; }
-    if (!dimensions) { setError('Please add dimensions.'); return; }
+    if (!width) { setError('Please add a width.'); return; }
+    if (!height) { setError('Please add a height.'); return; }
     photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
     start(async () => {
       const result = await saveStep4Artwork(fd);
@@ -213,16 +215,41 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
               className={inputClass}
             />
           </Field>
-          <Field label="Dimensions" htmlFor="add-dimensions">
-            <input
-              id="add-dimensions"
-              name="dimensions"
-              type="text"
-              required
-              maxLength={60}
-              placeholder="e.g. 24 × 36 in"
-              className={inputClass}
-            />
+          <Field label="Dimensions (inches)" htmlFor="add-width">
+            <div className="flex w-full gap-[8px]">
+              <input
+                id="add-width"
+                name="width"
+                type="number"
+                inputMode="decimal"
+                required
+                min={0}
+                step="any"
+                placeholder="W"
+                className={dimInputClass}
+              />
+              <input
+                id="add-height"
+                name="height"
+                type="number"
+                inputMode="decimal"
+                required
+                min={0}
+                step="any"
+                placeholder="H"
+                className={dimInputClass}
+              />
+              <input
+                id="add-depth"
+                name="depth"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                placeholder="D"
+                className={dimInputClass}
+              />
+            </div>
           </Field>
 
           <button
@@ -249,6 +276,12 @@ const inputClass =
   'w-full h-[44px] rounded-[8px] bg-surface border border-divider px-[14px] ' +
   'font-sans text-[15px] text-ink placeholder:text-placeholder ' +
   'focus:border-accent focus:outline-none focus:ring-0';
+
+const dimInputClass =
+  'flex-1 min-w-0 h-[44px] rounded-[8px] bg-surface border border-divider px-[10px] ' +
+  'font-sans text-[15px] text-ink text-center placeholder:text-placeholder ' +
+  'focus:border-accent focus:outline-none focus:ring-0 ' +
+  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (

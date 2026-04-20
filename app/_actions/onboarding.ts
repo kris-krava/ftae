@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { computeCompletion } from '@/lib/profile-completion';
 import { rateLimit } from '@/lib/rate-limit';
-import { parseDimensions } from '@/lib/dimensions';
 
 const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'x', 'tiktok', 'youtube', 'pinterest', 'linkedin'] as const;
 type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
@@ -317,7 +316,9 @@ const Step4MetaSchema = z.object({
     .min(1000)
     .max(new Date().getFullYear() + 1),
   medium: z.string().trim().min(1, 'Medium is required.').max(160),
-  dimensions: z.string().trim().min(1, 'Dimensions are required.').max(60),
+  width:  z.coerce.number({ invalid_type_error: 'Width is required.' }).positive('Width must be greater than 0.').max(10000),
+  height: z.coerce.number({ invalid_type_error: 'Height is required.' }).positive('Height must be greater than 0.').max(10000),
+  depth:  z.coerce.number().nonnegative().max(10000).optional().nullable(),
 });
 
 export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> {
@@ -357,17 +358,18 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
   }
   console.log('[step4-server] photo validation:', ms(tParse));
 
+  const depthRaw = formData.get('depth');
   const meta = Step4MetaSchema.safeParse({
     title: formData.get('title'),
     year: formData.get('year') || undefined,
     medium: formData.get('medium'),
-    dimensions: formData.get('dimensions'),
+    width: formData.get('width') || undefined,
+    height: formData.get('height') || undefined,
+    depth: depthRaw !== null && String(depthRaw).trim() !== '' ? depthRaw : undefined,
   });
   if (!meta.success) {
     return { ok: false, error: meta.error.issues[0]?.message ?? 'Invalid input.' };
   }
-
-  const dims = meta.data.dimensions ? parseDimensions(meta.data.dimensions) : null;
 
   const tArtInsert = Date.now();
   const { data: artwork, error: artErr } = await supabaseAdmin
@@ -377,10 +379,10 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       title: meta.data.title,
       year: meta.data.year ?? null,
       medium: meta.data.medium?.trim() || null,
-      height: dims?.height ?? null,
-      width: dims?.width ?? null,
-      depth: dims?.depth ?? null,
-      dimension_unit: dims?.unit ?? 'in',
+      height: meta.data.height,
+      width: meta.data.width,
+      depth: meta.data.depth ?? null,
+      dimension_unit: 'in',
       is_trade_available: true,
       is_active: true,
     })
