@@ -20,10 +20,11 @@ export async function fetchArtworksPage(cursor: string | null): Promise<{
   let query = supabaseAdmin
     .from('artworks')
     .select(
-      'id, title, user_id, created_at, users!inner(username, name, is_active), artwork_photos(url, sort_order, photo_type)',
+      'id, title, user_id, created_at, users!inner(username, name, is_active, is_test_user), artwork_photos(url, sort_order, photo_type)',
     )
     .eq('is_active', true)
     .eq('users.is_active', true)
+    .eq('users.is_test_user', false)
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
 

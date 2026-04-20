@@ -30,14 +30,16 @@ export async function searchArtists(
     .from('users')
     .select('id, username, name, location_city, is_founding_member, studio_verified, avatar_url, email, created_at')
     .eq('is_active', true)
+    .eq('is_test_user', false)
     .or(`name.ilike.%${safe}%,username.ilike.%${safe}%`)
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
 
   const { data: byMedium } = await supabaseAdmin
     .from('user_mediums')
-    .select('users!inner(id, username, name, location_city, is_founding_member, studio_verified, avatar_url, email, created_at, is_active), mediums!inner(name)')
+    .select('users!inner(id, username, name, location_city, is_founding_member, studio_verified, avatar_url, email, created_at, is_active, is_test_user), mediums!inner(name)')
     .ilike('mediums.name', `%${safe}%`)
+    .eq('users.is_test_user', false)
     .limit(PAGE_SIZE + 1);
 
   const matchedById = new Map<string, DiscoverArtist>();

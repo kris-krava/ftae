@@ -80,6 +80,16 @@ async function listAllTestUsers() {
 async function main() {
   const testUsers = await listAllTestUsers();
 
+  // Primary: rows flagged via users.is_test_user
+  const { data: flagged } = await admin
+    .from('users')
+    .select('id, email')
+    .eq('is_test_user', true);
+  for (const r of flagged ?? []) {
+    if (!testUsers.find((t) => t.id === r.id)) testUsers.push(r);
+  }
+
+  // Fallback: email-domain matches (picks up any row that missed the flag)
   const { data: orphans } = await admin
     .from('users')
     .select('id, email')

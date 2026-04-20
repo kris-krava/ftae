@@ -12,11 +12,13 @@ export async function getLandingStats(): Promise<LandingStats> {
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('is_founding_member', true)
-      .eq('is_active', true),
+      .eq('is_active', true)
+      .eq('is_test_user', false),
     supabaseAdmin
       .from('artworks')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_trade_available', true),
+      .select('id, users!inner(is_test_user)', { count: 'exact', head: true })
+      .eq('is_trade_available', true)
+      .eq('users.is_test_user', false),
     supabaseAdmin
       .from('platform_settings')
       .select('value')

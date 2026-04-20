@@ -8,7 +8,7 @@ import { UserRow } from './UserRow';
 export const dynamic = 'force-dynamic';
 
 interface AdminPageProps {
-  searchParams: { cursor?: string };
+  searchParams: { cursor?: string; test?: string };
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -28,15 +28,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (caller.role !== 'admin' && caller.role !== 'super_admin') redirect('/');
 
   const cursor = searchParams.cursor ?? null;
-  const { items, nextCursor } = await fetchAdminUsersPage(cursor);
+  const includeTestUsers = searchParams.test === '1';
+  const { items, nextCursor } = await fetchAdminUsersPage(cursor, { includeTestUsers });
 
   return (
     <main className="bg-canvas min-h-screen w-full p-[24px]">
-      <header className="mb-[16px]">
-        <h1 className="font-sans font-semibold text-[20px] text-ink">Admin · Users</h1>
-        <p className="font-sans text-[13px] text-muted mt-[4px]">
-          Signed in as {user.email} ({caller.role})
-        </p>
+      <header className="mb-[16px] flex items-end justify-between gap-[12px] flex-wrap">
+        <div>
+          <h1 className="font-sans font-semibold text-[20px] text-ink">Admin · Users</h1>
+          <p className="font-sans text-[13px] text-muted mt-[4px]">
+            Signed in as {user.email} ({caller.role})
+          </p>
+        </div>
+        <Link
+          href={includeTestUsers ? '/admin' : '/admin?test=1'}
+          className="font-sans text-[13px] text-accent underline"
+        >
+          {includeTestUsers ? 'Hide test users' : 'Show test users'}
+        </Link>
       </header>
 
       <div className="bg-surface rounded-[8px] overflow-x-auto border border-divider">

@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { generateUniqueUsername } from '@/lib/username';
 import { assertDev, assertNotProdHost, TEST_EMAIL_DOMAIN } from './_guard';
 import { getScenario, type Scenario, type ScenarioArtwork } from './scenarios';
-import { cleanupAllTestUsers, type CleanupReport } from './_cleanup';
+import { cleanupAllTestUsers, cleanupByEmails, type CleanupReport } from './_cleanup';
 
 interface RunResult {
   ok: boolean;
@@ -27,20 +27,17 @@ export async function runScenarioAction(scenarioId: string): Promise<RunResult> 
   const email = `scenario-${scenario.id}@${TEST_EMAIL_DOMAIN}`;
 
   try {
+    // Auto-cleanup on re-run: before seeding fresh state, fully delete any
+    // prior test users this scenario created (primary + aux). Keeps the DB
+    // free of stale test rows between sessions.
+    const emailsToWipe = scenarioTouchedEmails(scenario);
+    await cleanupByEmails(supabaseAdmin, emailsToWipe);
+
     const userId = await ensureAuthUser(email);
-    await resetUserData(userId);
-    if (!scenario.asFirstTimeLogin) {
-      await seedScenario(scenario, userId, email);
-    }
+    await seedScenario(scenario, userId, email);
 
     const origin = `${hostIsSecure(host) ? 'https' : 'http'}://${host ?? 'localhost:3000'}`;
-    // For first-time scenarios route through the real callback so the existing
-    // new-user side effects fire (username, referral code, profile_nudge).
-    // For all others use our finish handler which just completes the session
-    // and redirects — the scenario seeding has already written final state.
-    const redirectTo = scenario.asFirstTimeLogin
-      ? `${origin}/auth/callback`
-      : `${origin}/dev/test-login/finish?next=${encodeURIComponent(scenario.redirect)}`;
+    const redirectTo = `${origin}/dev/test-login/finish?next=${encodeURIComponent(scenario.redirect)}`;
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
@@ -88,26 +85,6 @@ async function ensureAuthUser(email: string): Promise<string> {
   return created.user.id;
 }
 
-async function resetUserData(userId: string): Promise<void> {
-  // Most tables FK to users(id) with on delete cascade, so deleting the
-  // public.users row would wipe everything — but we want to keep that row
-  // for non-new-user scenarios so the seeder can upsert fresh state.
-  // Clear individual tables explicitly.
-  await Promise.all([
-    supabaseAdmin.from('artwork_photos').delete().in(
-      'artwork_id',
-      (await supabaseAdmin.from('artworks').select('id').eq('user_id', userId)).data?.map((r) => r.id) ?? ['00000000-0000-0000-0000-000000000000'],
-    ),
-    supabaseAdmin.from('artworks').delete().eq('user_id', userId),
-    supabaseAdmin.from('user_mediums').delete().eq('user_id', userId),
-    supabaseAdmin.from('membership_credits').delete().eq('user_id', userId),
-    supabaseAdmin.from('notifications').delete().eq('user_id', userId),
-    supabaseAdmin.from('follows').delete().or(`follower_id.eq.${userId},following_id.eq.${userId}`),
-    supabaseAdmin.from('referrals').delete().or(`referrer_user_id.eq.${userId},referred_user_id.eq.${userId}`),
-    supabaseAdmin.from('user_ips').delete().eq('user_id', userId),
-  ]);
-}
-
 async function seedScenario(scenario: Scenario, userId: string, email: string): Promise<void> {
   const p = scenario.profile ?? {};
 
@@ -135,6 +112,7 @@ async function seedScenario(scenario: Scenario, userId: string, email: string): 
     avatar_url: p.avatar_url ?? null,
     is_founding_member: p.is_founding_member ?? false,
     is_active: true,
+    is_test_user: true,
     profile_completion_pct: p.profile_completion_pct ?? 0,
   };
 
@@ -279,8 +257,22 @@ async function ensureAuxUser(email: string): Promise<{ userId: string }> {
       username,
       referral_code: randomBytes(16).toString('hex'),
       is_active: true,
+      is_test_user: true,
       profile_completion_pct: 0,
     });
   }
   return { userId: authId };
+}
+
+function scenarioTouchedEmails(scenario: Scenario): string[] {
+  const emails = [`scenario-${scenario.id}@${TEST_EMAIL_DOMAIN}`];
+  if (scenario.referral?.asReferrer) {
+    emails.push(`aux-referred-${scenario.id}@${TEST_EMAIL_DOMAIN}`);
+  }
+  if (scenario.followersCount && scenario.followersCount > 0) {
+    for (let i = 0; i < scenario.followersCount; i += 1) {
+      emails.push(`aux-follower-${scenario.id}-${i}@${TEST_EMAIL_DOMAIN}`);
+    }
+  }
+  return emails;
 }

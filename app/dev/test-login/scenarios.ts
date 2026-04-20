@@ -54,9 +54,6 @@ export interface Scenario {
   description: string;
   /** Where the browser lands after login. */
   redirect: string;
-  /** If true: the scenario wants the app to run its first-login logic;
-   *  seeder will NOT pre-create public.users and will hit /auth/callback. */
-  asFirstTimeLogin?: boolean;
   profile?: ScenarioProfile;
   /** Medium names; resolved against the mediums table during seeding. */
   mediums?: string[];
@@ -83,9 +80,9 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'new-user',
     name: 'New user',
-    description: 'Authenticated, no profile row yet. Lands on Step 1.',
+    description: 'Authenticated, empty profile. Lands on Step 1.',
     redirect: STEP1,
-    asFirstTimeLogin: true,
+    profile: { profile_completion_pct: 0 },
   },
   {
     id: 'partial-profile',

@@ -3,11 +3,28 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const PROTECTED_PREFIXES = ['/app', '/onboarding', '/admin'];
 const ADMIN_PREFIX = '/admin';
+const DEV_PREFIX = '/dev';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const path = request.nextUrl.pathname;
+
+  // /dev/* is gated behind NODE_ENV=development + FTAE_ENABLE_DEV_TOOLS=1.
+  // Any other environment configuration causes a 404 here, before the rest
+  // of middleware even runs. This is the architectural gate; the other four
+  // layers (module-load throw, runtime assert, host check, notFound() in the
+  // page) still apply on top.
+  if (path === DEV_PREFIX || path.startsWith(`${DEV_PREFIX}/`)) {
+    if (
+      process.env.NODE_ENV !== 'development' ||
+      process.env.FTAE_ENABLE_DEV_TOOLS !== '1'
+    ) {
+      return new NextResponse(null, { status: 404 });
+    }
+    return supabaseResponse;
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
   const isAdminPath = path === ADMIN_PREFIX || path.startsWith(`${ADMIN_PREFIX}/`);
 
@@ -71,5 +88,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/onboarding/:path*', '/admin/:path*'],
+  matcher: ['/dev/:path*', '/app/:path*', '/onboarding/:path*', '/admin/:path*'],
 };

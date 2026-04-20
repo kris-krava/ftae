@@ -1,20 +1,26 @@
 # Dev test utility — `/dev/test-login`
 
-Local-only scenario runner for iterating on onboarding + authenticated UX without going through the magic-link email flow.
+Local-only scenario runner for iterating on the FTAE onboarding flow and the authenticated app experience without round-tripping through the magic-link email.
 
-## Enabling
+## Contents
 
-The route is behind multiple gates. All four must pass for it to load:
+- [Enabling the route](#enabling-the-route)
+- [Scenario catalog](#scenario-catalog)
+- [Running a scenario](#running-a-scenario)
+- [Test-user identification](#test-user-identification)
+- [Cleanup](#cleanup)
+- [Adding a new scenario](#adding-a-new-scenario)
+- [Protection layers](#protection-layers)
+- [File map](#file-map)
 
-1. `NODE_ENV !== 'production'` (Next.js sets this automatically on Vercel prod builds; always production there).
-2. `FTAE_ENABLE_DEV_TOOLS=1` in your environment.
-3. Host header must not match `freetradeartexchange.com` or `*.vercel.app`.
-4. Module-load safety net refuses to initialize if (1) and (2) are ever simultaneously true in production (double-check).
+---
 
-To turn it on locally:
+## Enabling the route
+
+The route is gated behind multiple layers. Every layer must pass for the route to load:
 
 ```bash
-# in .env.local (or export before running)
+# in .env.local (or exported before `npm run dev`)
 FTAE_ENABLE_DEV_TOOLS=1
 ```
 
@@ -25,46 +31,66 @@ npm run dev
 open http://localhost:3000/dev/test-login
 ```
 
-Without the flag set, the route returns 404.
+Without the flag set — or on any host that looks like production — the route returns 404.
+
+---
+
+## Scenario catalog
+
+Every scenario's primary user is created with `is_test_user = true` and an email of the form `scenario-<id>@test.ftae.local`.
+
+| Scenario | Redirects to | State created |
+|---|---|---|
+| **New user** | `/onboarding/step-1` | Empty profile: username + referral_code set, all profile fields null, `profile_completion_pct = 0`. |
+| **Partial profile** | `/onboarding/step-3` | Steps 1 + 2 complete: name, location, bio, avatar, 2 selected mediums, `profile_completion_pct = 50`. |
+| **Complete profile — no artwork** | `/onboarding/step-4` | All profile fields (name, location, bio, website, social, avatar) + 2 mediums; no artworks; `profile_completion_pct = 85`. |
+| **Complete profile — founding member** | `/app/following` | Full profile + 2 artworks + `is_founding_member = true` + 3 months `founding_member` credit; `profile_completion_pct = 100`. |
+| **Complete profile — with referral** | `/app/following` | Founding-member state plus an auxiliary test user (`aux-referred-…`) with a completed referral record and `referral_bonus` credit linked to that referral. |
+| **Returning user** | `/app/following` | Founding member with 2 artworks + 2 auxiliary followers (`aux-follower-…`) + 2 notifications (one unread referral_joined, one read profile_nudge). |
+
+Test artworks are always inserted with `is_trade_available = false` so they cannot leak into the landing "Pieces Ready to Trade" counter.
+
+---
 
 ## Running a scenario
 
-Open `/dev/test-login`, click a scenario tile. The server seeds the test user's state idempotently, generates a Supabase magic-link action URL, and the browser jumps to it. Supabase verifies, the session cookie is set, and you land on the scenario's target page (e.g. `/onboarding/step-3`, `/app/following`).
+Click any tile. The server:
 
-Re-clicking the same scenario resets the test user to the scenario's canonical state — safe to run repeatedly.
+1. **Auto-cleans the prior run.** Deletes the scenario's primary user + all aux users (auth row + public row + storage objects) so the DB never accumulates stale test data.
+2. **Creates a fresh auth user** (`auth.users`) with `email_confirm = true`.
+3. **Seeds the declared scenario state** into `public.users` and child tables (`user_mediums`, `artworks` + photos, `membership_credits`, `notifications`, `follows`, `referrals`), with `is_test_user = true` on every row.
+4. **Generates a Supabase magic-link URL** with `redirectTo = /dev/test-login/finish?next=<scenario.redirect>`.
+5. **Browser jumps to the magic link.** Supabase verifies, session cookie is set, control returns to `/dev/test-login/finish`, which exchanges the code for a session and redirects to the scenario's target page.
 
-## Test user identification
+Re-clicking the same tile produces identical state — idempotent.
 
-Every test user (primary and any auxiliary) has an email in the `@test.ftae.local` domain. Examples:
+---
 
-- `scenario-founding-member@test.ftae.local`
-- `aux-referred-with-referral@test.ftae.local`
-- `aux-follower-returning-user-0@test.ftae.local`
+## Test-user identification
 
-This domain is grep-able in SQL and safe — it can't collide with a real user.
+Every row created by the utility is marked **twice**:
+
+1. `public.users.is_test_user = true` (indexed column — preferred filter key)
+2. `users.email LIKE '%@test.ftae.local'` (fallback filter + discoverable via SQL)
+
+Aux users (referred artists, followers) follow the same convention.
+
+All production read queries exclude test users — landing stats, Discover search + grid, Following feed, admin dashboard (unless `?test=1` is passed).
+
+---
 
 ## Cleanup
 
-Two paths, same logic:
+Two independent paths, same underlying logic:
 
-1. **In the route**: click _Delete all test users_ on `/dev/test-login`.
-2. **CLI**: `node scripts/cleanup-test-users.mjs`
+1. **In the UI** — "Delete all test users" button appears both at the top (in the reminder banner) and at the bottom of `/dev/test-login`.
+2. **CLI** — `node scripts/cleanup-test-users.mjs`. Refuses to run against a Supabase URL containing `freetradeartexchange` unless `--force` is passed.
 
-Both delete every `auth.users` + `public.users` row with email ending `@test.ftae.local`, plus cascade to related rows and storage prefixes (`avatars/<id>/*`, `artwork-photos/<id>/*`).
+Both delete every user where `is_test_user = true` OR email matches `%@test.ftae.local`, including their auth row, public row (which cascades to mediums/artworks/photos/credits/notifications/follows/referrals/ips), and storage objects under `avatars/<id>/*` and `artwork-photos/<id>/*`.
 
-The CLI refuses to run against a Supabase URL containing `freetradeartexchange` unless `--force` is passed — a safety net in case dev + prod share one project.
+**The UI shows a visible reminder banner at the top of the page.** Test users share the live Supabase project; stale rows will inflate counts (the stats queries filter them out, but other dev work may not) until they're deleted.
 
-## Caveats on stats pollution
-
-Because dev + prod share the same Supabase project:
-
-- Test artworks are inserted with `is_trade_available = false`, so they **do not** inflate the landing "Pieces Ready to Trade" counter.
-- Test users that set `is_founding_member = true` (the `founding-member`, `with-referral`, and `returning-user` scenarios) **do** inflate the Founding Artists count in `/api/stats` while they exist. The landing page no longer displays this counter, but the API still returns it. Clean up after each session.
-
-Robust fixes would require either:
-- A separate Supabase project for dev (best),
-- Modifying `app/_lib/landing-stats.ts` to exclude `@test.ftae.local` (disallowed by the original task spec — no app-code modification),
-- Adding an `is_test_user` column + filter (schema change, also disallowed).
+---
 
 ## Adding a new scenario
 
@@ -72,11 +98,11 @@ Append an object to `app/dev/test-login/scenarios.ts`:
 
 ```ts
 {
-  id: 'new-scenario-id',                // kebab-case; used in email address
+  id: 'my-scenario',                    // kebab-case; becomes the email slug
   name: 'Human-readable tile title',
   description: 'One-line description shown under the title.',
-  redirect: '/app/following',           // where the browser lands after login
-  asFirstTimeLogin: false,              // true = no pre-seed, routes through /auth/callback
+  redirect: '/app/following',           // where the browser lands
+
   profile: {
     name: 'Test Whoever',
     location_city: 'Atlanta, GA',
@@ -88,42 +114,69 @@ Append an object to `app/dev/test-login/scenarios.ts`:
     is_founding_member: false,
     profile_completion_pct: 80,
   },
-  mediums: ['Oil', 'Watercolor'],       // names resolved against the mediums table
+
+  mediums: ['Oil', 'Watercolor'],       // names; resolved against mediums table
+
   artworks: [
-    { title: '...', year: 2024, medium: '...', dimensions: '...', photos: [{ url: '...', photo_type: 'front' }] },
+    {
+      title: 'Morning on the Altamaha',
+      year: 2024,
+      medium: 'Oil on linen',
+      dimensions: '24 × 36 in',
+      photos: [{ url: 'https://...', photo_type: 'front' }],
+    },
   ],
+
   credits: [{ credit_type: 'founding_member', months_credited: 3 }],
-  notifications: [{ type: 'profile_nudge', message: '...' }],
-  referral: { asReferrer: true, completed: true },  // optional
-  followersCount: 2,                                // optional — creates N aux users who follow
-}
+
+  notifications: [{ type: 'profile_nudge', message: '...', is_read: false }],
+
+  referral: { asReferrer: true, completed: true },   // optional
+  followersCount: 2,                                 // optional — N aux users will follow
+},
 ```
 
-The seeder in `app/dev/test-login/actions.ts` interprets every field. No new scenario-specific code is required for standard cases; add a dedicated hook only if you need behavior the schema above doesn't cover.
+The seeder in `app/dev/test-login/actions.ts` handles every field declaratively — no bespoke code per scenario unless you need behavior the schema above doesn't cover.
 
-## Verifying prod is unaffected
+`scenarioTouchedEmails(scenario)` in `actions.ts` derives the full email list used by auto-cleanup. Aux emails follow the patterns `aux-referred-<id>@test.ftae.local` and `aux-follower-<id>-<n>@test.ftae.local` — if you add new aux categories, extend `scenarioTouchedEmails` accordingly.
 
-After deploying any change to these files, always confirm production returns 404:
+---
+
+## Protection layers
+
+**Five independent gates.** Every one of them blocks the route in production; removing any four leaves the route inaccessible on a prod deploy.
+
+1. **Middleware (`middleware.ts`).** `/dev/:path*` is in the matcher; the handler returns a 404 `NextResponse` immediately unless both `NODE_ENV === 'development'` AND `FTAE_ENABLE_DEV_TOOLS === '1'`. This is the architectural gate — requests never reach the page code in prod.
+2. **Module-load throw (`_guard.ts`).** Refuses to initialize if `NODE_ENV === 'production'` and the flag is simultaneously `1`. Defends against Vercel env-var misconfiguration.
+3. **Runtime `assertDev()`.** Called at the top of the page, server actions, and the finish route handler. Throws if `NODE_ENV === 'production'` or the flag isn't `1`.
+4. **Host check (`assertNotProdHost`).** Rejects `freetradeartexchange.com` and `*.vercel.app`. Catches mis-scoped Vercel preview deployments or accidental flag-on-prod situations.
+5. **`notFound()` in `page.tsx` + `finish/route.ts`.** Final runtime check before rendering — even if middleware and guards are all somehow bypassed, Next.js responds 404.
+
+Verify prod is still blocked after any change:
 
 ```bash
-curl -I https://www.freetradeartexchange.com/dev/test-login
-# HTTP/2 404
+curl -I https://www.freetradeartexchange.com/dev/test-login            # HTTP/2 404
+curl -I "https://www.freetradeartexchange.com/dev/test-login/finish?code=x" # HTTP/2 404
 ```
 
-And the finish route:
-
-```bash
-curl -I "https://www.freetradeartexchange.com/dev/test-login/finish?code=x"
-# HTTP/2 404
-```
+---
 
 ## File map
 
 - `app/dev/test-login/_guard.ts` — env + host guards, test domain constants
 - `app/dev/test-login/scenarios.ts` — declarative scenario definitions
-- `app/dev/test-login/actions.ts` — server actions: `runScenarioAction`, `cleanupTestUsersAction`
-- `app/dev/test-login/_cleanup.ts` — shared cleanup implementation
+- `app/dev/test-login/actions.ts` — server actions (`runScenarioAction`, `cleanupTestUsersAction`) and the seeder
+- `app/dev/test-login/_cleanup.ts` — shared cleanup primitives (`deleteUsersById`, `cleanupByEmails`, `cleanupAllTestUsers`)
 - `app/dev/test-login/page.tsx` — server entry (404s unless enabled)
-- `app/dev/test-login/TestLoginClient.tsx` — menu UI
+- `app/dev/test-login/TestLoginClient.tsx` — menu UI + reminder banner
 - `app/dev/test-login/finish/route.ts` — code-exchange redirect target
+- `middleware.ts` — layer-1 `/dev/*` gate
+- `supabase/migrations/20260420000000_add_is_test_user.sql` — `users.is_test_user` column + index + email-based backfill
 - `scripts/cleanup-test-users.mjs` — standalone cleanup CLI
+
+Query files that filter out test users:
+
+- `app/_lib/landing-stats.ts` — founding artists + pieces ready to trade
+- `app/_lib/artists.ts` — Discover `searchArtists` (name/username + medium matches)
+- `app/_lib/artworks.ts` — Discover artwork grid + Following feed
+- `app/_lib/admin.ts` — admin dashboard (togglable via `?test=1`)

@@ -11,52 +11,16 @@ export interface CleanupReport {
 }
 
 /**
- * Deletes every user whose email matches @test.ftae.local (both the auth.users
- * row and — for defense in depth — any orphaned public.users row).
- *
- * Most downstream tables (user_mediums, artworks, artwork_photos, follows,
- * referrals, notifications, membership_credits, user_ips) FK to public.users
- * with `on delete cascade`, so deleting public.users clears their data.
- * We also best-effort remove avatar / artwork-photos storage objects owned
- * by the deleted users.
+ * Deletes the specified users fully: auth row + public row (cascades to child
+ * tables via FK on delete cascade) + owned storage objects.
+ * Safe to call with ids that don't exist — missing rows are ignored.
  */
-export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<CleanupReport> {
-  const report: CleanupReport = {
-    authUsersDeleted: 0,
-    publicRowsDeleted: 0,
-    storagePrefixesRemoved: 0,
-    errors: [],
-  };
-
-  const testUsers: { id: string; email: string }[] = [];
-
-  // Paginate through auth.users; collect anything in the test domain.
-  let page = 1;
-  const perPage = 100;
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) { report.errors.push(`auth.admin.listUsers: ${error.message}`); break; }
-    const users = data?.users ?? [];
-    for (const u of users) {
-      if (u.email && TEST_DOMAIN_MATCH.test(u.email)) testUsers.push({ id: u.id, email: u.email });
-    }
-    if (users.length < perPage) break;
-    page += 1;
-  }
-
-  // Also catch public.users rows with a matching email (in case auth row was
-  // deleted manually and left an orphan).
-  const { data: orphanRows } = await admin
-    .from('users')
-    .select('id, email')
-    .like('email', '%@test.ftae.local');
-  for (const r of orphanRows ?? []) {
-    if (!testUsers.find((t) => t.id === r.id)) testUsers.push({ id: r.id, email: r.email });
-  }
-
-  for (const u of testUsers) {
-    // Clean storage before the cascade kills the public.users row. Bucket
-    // layouts: avatars/{userId}/... and artwork-photos/{userId}/...
+export async function deleteUsersById(
+  admin: SupabaseClient,
+  users: { id: string; email?: string }[],
+  report: CleanupReport,
+): Promise<void> {
+  for (const u of users) {
     for (const bucket of ['avatars', 'artwork-photos']) {
       try {
         const { data: objects } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
@@ -71,16 +35,120 @@ export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<Cleanu
       }
     }
 
-    // Delete the public.users row (cascades to the rest).
     const { error: pubErr } = await admin.from('users').delete().eq('id', u.id);
-    if (pubErr) report.errors.push(`users delete ${u.id}: ${pubErr.message}`);
-    else report.publicRowsDeleted += 1;
+    if (pubErr && !/no rows/i.test(pubErr.message)) {
+      report.errors.push(`users delete ${u.id}: ${pubErr.message}`);
+    } else {
+      report.publicRowsDeleted += 1;
+    }
 
-    // Delete the auth.users row.
     const { error: authErr } = await admin.auth.admin.deleteUser(u.id);
-    if (authErr) report.errors.push(`auth.admin.deleteUser ${u.id}: ${authErr.message}`);
-    else report.authUsersDeleted += 1;
+    if (authErr && !/not found/i.test(authErr.message)) {
+      report.errors.push(`auth.admin.deleteUser ${u.id}: ${authErr.message}`);
+    } else {
+      report.authUsersDeleted += 1;
+    }
+  }
+}
+
+/**
+ * Discovers every test user (auth + orphaned public rows) and deletes them.
+ * Identifies primarily via users.is_test_user = true, with email-domain
+ * fallback for pre-migration rows or auth-only leftovers.
+ */
+export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<CleanupReport> {
+  const report: CleanupReport = {
+    authUsersDeleted: 0,
+    publicRowsDeleted: 0,
+    storagePrefixesRemoved: 0,
+    errors: [],
+  };
+
+  const collected = new Map<string, { id: string; email?: string }>();
+
+  // Primary: public.users rows marked as test users.
+  const { data: flaggedRows, error: flaggedErr } = await admin
+    .from('users')
+    .select('id, email')
+    .eq('is_test_user', true);
+  if (flaggedErr) report.errors.push(`users flagged lookup: ${flaggedErr.message}`);
+  for (const r of flaggedRows ?? []) {
+    collected.set(r.id, { id: r.id, email: r.email });
   }
 
+  // Fallback 1: public.users rows with the test email domain (in case the
+  // flag was missed for any reason).
+  const { data: orphanRows } = await admin
+    .from('users')
+    .select('id, email')
+    .like('email', '%@test.ftae.local');
+  for (const r of orphanRows ?? []) {
+    collected.set(r.id, { id: r.id, email: r.email });
+  }
+
+  // Fallback 2: auth.users entries with a test email (catches rows where the
+  // public row was already deleted but the auth row survived).
+  let page = 1;
+  const perPage = 200;
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) { report.errors.push(`auth.admin.listUsers: ${error.message}`); break; }
+    const users = data?.users ?? [];
+    for (const u of users) {
+      if (u.email && TEST_DOMAIN_MATCH.test(u.email)) {
+        if (!collected.has(u.id)) collected.set(u.id, { id: u.id, email: u.email });
+      }
+    }
+    if (users.length < perPage) break;
+    page += 1;
+  }
+
+  await deleteUsersById(admin, Array.from(collected.values()), report);
+  return report;
+}
+
+/**
+ * Deletes any test user(s) whose email matches one of the supplied addresses.
+ * Used by runScenarioAction to wipe the prior state before re-seeding.
+ */
+export async function cleanupByEmails(
+  admin: SupabaseClient,
+  emails: string[],
+): Promise<CleanupReport> {
+  const report: CleanupReport = {
+    authUsersDeleted: 0,
+    publicRowsDeleted: 0,
+    storagePrefixesRemoved: 0,
+    errors: [],
+  };
+  if (emails.length === 0) return report;
+
+  const lower = emails.map((e) => e.toLowerCase());
+  const collected = new Map<string, { id: string; email?: string }>();
+
+  // Look up public rows by email.
+  const { data: rows } = await admin
+    .from('users')
+    .select('id, email')
+    .in('email', lower);
+  for (const r of rows ?? []) collected.set(r.id, { id: r.id, email: r.email });
+
+  // Look up auth rows by email.
+  let page = 1;
+  const perPage = 200;
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) { report.errors.push(`auth.admin.listUsers: ${error.message}`); break; }
+    const users = data?.users ?? [];
+    for (const u of users) {
+      if (u.email && lower.includes(u.email.toLowerCase())) {
+        if (!collected.has(u.id)) collected.set(u.id, { id: u.id, email: u.email });
+      }
+    }
+    if (users.length < perPage) break;
+    page += 1;
+  }
+
+  await deleteUsersById(admin, Array.from(collected.values()), report);
   return report;
 }

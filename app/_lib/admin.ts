@@ -11,24 +11,29 @@ export interface AdminUserRow {
   is_founding_member: boolean;
   is_active: boolean;
   role: string;
+  is_test_user: boolean;
   referral_count: number;
   recent_ips: string[];
 }
 
 const PAGE_SIZE = 50;
 
-export async function fetchAdminUsersPage(cursor: string | null): Promise<{
+export async function fetchAdminUsersPage(
+  cursor: string | null,
+  options: { includeTestUsers?: boolean } = {},
+): Promise<{
   items: AdminUserRow[];
   nextCursor: string | null;
 }> {
   let query = supabaseAdmin
     .from('users')
     .select(
-      'id, name, email, username, created_at, profile_completion_pct, is_founding_member, is_active, role',
+      'id, name, email, username, created_at, profile_completion_pct, is_founding_member, is_active, role, is_test_user',
     )
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
 
+  if (!options.includeTestUsers) query = query.eq('is_test_user', false);
   if (cursor) query = query.lt('created_at', cursor);
 
   const { data: users } = await query;
@@ -72,6 +77,7 @@ export async function fetchAdminUsersPage(cursor: string | null): Promise<{
     is_founding_member: u.is_founding_member as boolean,
     is_active: u.is_active as boolean,
     role: u.role as string,
+    is_test_user: (u as { is_test_user?: boolean }).is_test_user ?? false,
     referral_count: referralCount.get(u.id as string) ?? 0,
     recent_ips: ipsByUser.get(u.id as string) ?? [],
   }));

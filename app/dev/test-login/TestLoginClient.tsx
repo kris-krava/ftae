@@ -54,7 +54,7 @@ export function TestLoginClient({ scenarios }: Props) {
 
   return (
     <main className="min-h-screen bg-canvas px-[24px] py-[48px] flex flex-col items-center">
-      <div className="w-full max-w-[640px] flex flex-col gap-[24px]">
+      <div className="w-full max-w-[640px] flex flex-col gap-[20px]">
         <header className="flex flex-col gap-[4px]">
           <h1 className="font-serif font-bold text-ink text-[28px] leading-[36px]">
             FTAE — Dev Test Login
@@ -63,6 +63,30 @@ export function TestLoginClient({ scenarios }: Props) {
             Local-only. Pick a scenario to seed state and land in-app.
           </p>
         </header>
+
+        <aside
+          role="alert"
+          className="rounded-[12px] border border-accent bg-accent/10 px-[16px] py-[12px] flex flex-col gap-[10px]"
+        >
+          <p className="font-sans font-semibold text-accent text-[14px] leading-[22px]">
+            Remember to delete test users before sharing screens or checking stats.
+          </p>
+          <p className="font-sans text-ink/80 text-[13px] leading-[20px]">
+            Test users share the live database. Auto-cleanup runs when you re-pick a
+            scenario, but nothing removes stale rows between sessions — do it manually.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onCleanup}
+            className={
+              'rounded-[8px] bg-accent text-surface font-semibold text-[14px] px-[16px] py-[10px] ' +
+              'self-start disabled:opacity-60'
+            }
+          >
+            {busy && activeId === 'cleanup' ? 'Cleaning up…' : 'Delete all test users'}
+          </button>
+        </aside>
 
         <ul className="flex flex-col gap-[12px]">
           {scenarios.map((s) => {
@@ -99,6 +123,12 @@ export function TestLoginClient({ scenarios }: Props) {
         </ul>
 
         <div className="flex flex-col gap-[8px] border-t border-field pt-[20px]">
+          <p className="font-sans text-muted text-[12px]">
+            Re-running a scenario auto-deletes the previous test user (primary + aux)
+            before seeding. Identified by <code>@test.ftae.local</code> + the
+            <code> is_test_user </code> flag. Cleanup cascades to mediums, artworks,
+            credits, notifications, follows, referrals, and storage.
+          </p>
           <button
             type="button"
             disabled={busy}
@@ -110,10 +140,6 @@ export function TestLoginClient({ scenarios }: Props) {
           >
             {busy && activeId === 'cleanup' ? 'Cleaning up…' : 'Delete all test users'}
           </button>
-          <p className="font-sans text-muted text-[12px]">
-            Deletes every user whose email ends with <code>@test.ftae.local</code>. Cascades
-            to mediums, artworks, credits, notifications, follows, referrals, and storage.
-          </p>
         </div>
 
         {message && (
