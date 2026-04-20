@@ -1,0 +1,129 @@
+#!/usr/bin/env node
+/**
+ * Standalone cleanup for FTAE dev test users.
+ *
+ * Independent of the Next.js app so it still works if /dev/test-login is
+ * disabled, removed, or broken. Reads env from .env.local.
+ *
+ * Usage:
+ *   node scripts/cleanup-test-users.mjs
+ *
+ * Refuses to run against a Supabase URL that looks like production. If your
+ * dev and prod share one Supabase project, pass --force to override.
+ */
+
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createClient } from '@supabase/supabase-js';
+
+const TEST_DOMAIN = '@test.ftae.local';
+
+function loadDotEnv() {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const envPath = resolve(__dirname, '..', '.env.local');
+  try {
+    const text = readFileSync(envPath, 'utf8');
+    for (const line of text.split('\n')) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (!m) continue;
+      if (process.env[m[1]]) continue;
+      let v = m[2];
+      if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+      process.env[m[1]] = v;
+    }
+  } catch {
+    // silently ignore; env may already be set in CI etc.
+  }
+}
+
+loadDotEnv();
+
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const force = process.argv.includes('--force');
+
+if (!url || !serviceKey) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+  process.exit(1);
+}
+
+if (!force && /freetradeartexchange/i.test(url)) {
+  console.error('Refusing to run against', url, '— looks like production.');
+  console.error('If dev + prod truly share this project, re-run with --force.');
+  process.exit(1);
+}
+
+const admin = createClient(url, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+async function listAllTestUsers() {
+  const out = [];
+  let page = 1;
+  const perPage = 200;
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`listUsers: ${error.message}`);
+    const users = data?.users ?? [];
+    for (const u of users) {
+      if (u.email && u.email.toLowerCase().endsWith(TEST_DOMAIN)) {
+        out.push({ id: u.id, email: u.email });
+      }
+    }
+    if (users.length < perPage) break;
+    page += 1;
+  }
+  return out;
+}
+
+async function main() {
+  const testUsers = await listAllTestUsers();
+
+  const { data: orphans } = await admin
+    .from('users')
+    .select('id, email')
+    .like('email', `%${TEST_DOMAIN}`);
+  for (const o of orphans ?? []) {
+    if (!testUsers.find((t) => t.id === o.id)) testUsers.push(o);
+  }
+
+  console.log(`Found ${testUsers.length} test user(s):`);
+  for (const u of testUsers) console.log(`  ${u.id}  ${u.email}`);
+  if (testUsers.length === 0) return;
+
+  let authDeleted = 0;
+  let pubDeleted = 0;
+  const errors = [];
+
+  for (const u of testUsers) {
+    for (const bucket of ['avatars', 'artwork-photos']) {
+      const { data: objects } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
+      if (objects && objects.length > 0) {
+        const paths = objects.map((o) => `${u.id}/${o.name}`);
+        const { error } = await admin.storage.from(bucket).remove(paths);
+        if (error) errors.push(`${bucket} remove ${u.id}: ${error.message}`);
+      }
+    }
+
+    const { error: pubErr } = await admin.from('users').delete().eq('id', u.id);
+    if (pubErr) errors.push(`users delete ${u.id}: ${pubErr.message}`);
+    else pubDeleted += 1;
+
+    const { error: authErr } = await admin.auth.admin.deleteUser(u.id);
+    if (authErr) errors.push(`auth.admin.deleteUser ${u.id}: ${authErr.message}`);
+    else authDeleted += 1;
+  }
+
+  console.log(`\nDeleted ${authDeleted} auth user(s), ${pubDeleted} profile row(s).`);
+  if (errors.length) {
+    console.log(`\n${errors.length} error(s):`);
+    for (const e of errors) console.log(`  ${e}`);
+    process.exit(2);
+  }
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
