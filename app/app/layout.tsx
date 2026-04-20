@@ -8,7 +8,13 @@ import { Sidebar } from '@/components/Sidebar';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -45,6 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
       <MobileBellGate userId={user.id} initialUnread={unread} />
       <div className="min-h-screen pb-[80px] tab:pb-0 tab:pl-[60px]">{children}</div>
+      {modal}
       <MobileNav username={username} initials={initials} avatarUrl={profile.avatar_url ?? null} />
     </>
   );

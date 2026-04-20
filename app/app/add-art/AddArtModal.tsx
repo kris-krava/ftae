@@ -3,27 +3,35 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
-import { XClose, PlusSquare } from '@/components/icons';
+import { XClose, PlusSquare, CheckCircle } from '@/components/icons';
 import { saveStep4Artwork } from '@/app/_actions/onboarding';
 
 const MAX_PHOTOS = 8;
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
+const SUCCESS_DISPLAY_MS = 1200;
 
 interface AddArtModalProps {
+  /** Fallback URL used when the modal was opened via direct navigation
+   *  (e.g. refresh on /app/add-art) — router history isn't meaningful there. */
   backHref: string;
+  /** "overlay" dismisses via router.back() so the underlying page stays put.
+   *  "standalone" falls through to a router.push(backHref). */
+  mode?: 'overlay' | 'standalone';
 }
 
-export function AddArtModal({ backHref }: AddArtModalProps) {
+export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [pending, start] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const previews = useMemo(() => photos.map((p) => URL.createObjectURL(p)), [photos]);
 
   function close() {
-    router.push(backHref);
+    if (mode === 'overlay') router.back();
+    else router.push(backHref);
   }
 
   async function onFilesPicked(event: React.ChangeEvent<HTMLInputElement>) {
@@ -77,17 +85,36 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
     photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
     start(async () => {
       const result = await saveStep4Artwork(fd);
-      if (!result.ok) setError(result.error);
-      else {
-        router.push(backHref);
-        router.refresh();
+      if (!result.ok) {
+        setError(result.error);
+        return;
       }
+      setSuccess(true);
+      setTimeout(() => {
+        router.refresh();
+        if (mode === 'overlay') router.back();
+        else router.push(backHref);
+      }, SUCCESS_DISPLAY_MS);
     });
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 flex items-start justify-center overflow-y-auto py-[29px] tab:py-[60px] desk:py-[67px] px-[16px]">
       <div className="bg-surface rounded-[16px] shadow-modal w-full max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] relative">
+        {success ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center text-center py-[64px] px-[32px]"
+          >
+            <CheckCircle
+              className="w-[64px] h-[64px] text-accent animate-[ftae-pop_360ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
+              aria-hidden
+            />
+            <p className="mt-[16px] font-sans font-semibold text-[18px] text-ink">Artwork added</p>
+          </div>
+        ) : (
+          <>
         <button
           type="button"
           onClick={close}
@@ -211,6 +238,8 @@ export function AddArtModal({ backHref }: AddArtModalProps) {
             </p>
           )}
         </form>
+          </>
+        )}
       </div>
     </div>
   );
