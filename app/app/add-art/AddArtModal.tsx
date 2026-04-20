@@ -153,8 +153,10 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
               Add Your Art
             </h2>
             <p className="font-sans text-[15px] text-ink/70 leading-[1.4] px-[32px] mt-[8px]">
-              This must be an original, singular work of art that you created and would be
-              happy to trade with another artist.
+              Something you made, and would love to see on another artist&apos;s wall.
+            </p>
+            <p className="font-sans text-[12px] text-ink/70 leading-[16px] px-[32px] mt-[4px]">
+              Up to 6 photos · JPG or PNG · 5 MB each
             </p>
 
             <form onSubmit={onSubmit} className="p-[32px] pt-[24px] flex flex-col gap-[16px]">
