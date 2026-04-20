@@ -2,7 +2,7 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { ProgressBar } from '@/components/ProgressBar';
 
 interface OnboardingShellProps {
-  step: 1 | 2 | 3 | 4;
+  step: 1 | 2 | 3;
   children: React.ReactNode;
 }
 
@@ -18,7 +18,7 @@ export function OnboardingShell({ step, children }: OnboardingShellProps) {
     >
       <Wordmark variant="short" size="compact" />
       <span aria-hidden className="h-[24px] w-px shrink-0" />
-      <ProgressBar step={step} total={4} />
+      <ProgressBar step={step} total={3} />
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       {children}
     </main>

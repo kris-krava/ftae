@@ -1,6 +1,6 @@
 interface ProgressBarProps {
-  step: 1 | 2 | 3 | 4;
-  total: 4;
+  step: 1 | 2 | 3;
+  total: 3;
 }
 
 export function ProgressBar({ step, total }: ProgressBarProps) {

@@ -35,7 +35,7 @@ export function Step3Form({ initialWebsite, initialPlatform, initialHandle }: St
     startTransition(async () => {
       const result = await saveStep3Links(fd);
       if (!result.ok) setError(result.error);
-      else router.push('/onboarding/step-4');
+      else router.push('/onboarding/success');
     });
   }
 
