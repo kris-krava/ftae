@@ -14,7 +14,7 @@ type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_AVATAR_BYTES = 1_500_000;
 const MAX_ARTWORK_BYTES = 5_000_000;
-const MAX_ARTWORK_PHOTOS = 8;
+const MAX_ARTWORK_PHOTOS = 6;
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -319,6 +319,7 @@ const Step4MetaSchema = z.object({
   width:  z.coerce.number({ invalid_type_error: 'Width is required.' }).positive('Width must be greater than 0.').max(10000),
   height: z.coerce.number({ invalid_type_error: 'Height is required.' }).positive('Height must be greater than 0.').max(10000),
   depth:  z.coerce.number().nonnegative().max(10000).optional().nullable(),
+  description: z.string().trim().max(160).optional().nullable(),
 });
 
 export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> {
@@ -359,6 +360,7 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
   console.log('[step4-server] photo validation:', ms(tParse));
 
   const depthRaw = formData.get('depth');
+  const descriptionRaw = formData.get('description');
   const meta = Step4MetaSchema.safeParse({
     title: formData.get('title'),
     year: formData.get('year') || undefined,
@@ -366,6 +368,7 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     width: formData.get('width') || undefined,
     height: formData.get('height') || undefined,
     depth: depthRaw !== null && String(depthRaw).trim() !== '' ? depthRaw : undefined,
+    description: typeof descriptionRaw === 'string' ? descriptionRaw : null,
   });
   if (!meta.success) {
     return { ok: false, error: meta.error.issues[0]?.message ?? 'Invalid input.' };
@@ -383,6 +386,7 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       width: meta.data.width,
       depth: meta.data.depth ?? null,
       dimension_unit: 'in',
+      artist_statement: meta.data.description?.trim() || null,
       is_trade_available: true,
       is_active: true,
     })

@@ -21,3 +21,4 @@ export { default as Share01 } from '@untitled-ui/icons-react/build/esm/Share01';
 export { default as SearchSm } from '@untitled-ui/icons-react/build/esm/SearchSm';
 export { default as Copy01 } from '@untitled-ui/icons-react/build/esm/Copy01';
 export { default as XCircle } from '@untitled-ui/icons-react/build/esm/XCircle';
+export { default as Upload01 } from '@untitled-ui/icons-react/build/esm/Upload01';
