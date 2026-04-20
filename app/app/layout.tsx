@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deriveInitials } from '@/lib/initials';
 import { MobileNav } from '@/components/MobileNav';
-import { MobileBell } from '@/components/MobileBell';
+import { MobileBellGate } from '@/components/MobileBellGate';
 import { Sidebar } from '@/components/Sidebar';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         avatarUrl={profile.avatar_url ?? null}
         unreadCount={unread}
       />
-      <MobileBell userId={user.id} initialUnread={unread} />
+      <MobileBellGate userId={user.id} initialUnread={unread} />
       <div className="min-h-screen pb-[80px] tab:pb-0 tab:pl-[60px]">{children}</div>
       <MobileNav username={username} initials={initials} avatarUrl={profile.avatar_url ?? null} />
     </>

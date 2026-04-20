@@ -97,16 +97,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
 
   return (
     <>
-      <header
-        className={
-          'bg-canvas h-[56px] flex items-center pt-[30px] ' +
-          'px-[32px] tab:px-[120px] desk:px-[320px]'
-        }
-      >
-        <h1 className="font-sans font-semibold text-[18px] text-ink">Discover</h1>
-      </header>
-
-      <div className="pt-[12px] pb-[14px] px-[32px] tab:px-[120px] desk:px-[320px]">
+      <div className="pt-[16px] pb-[16px] tab:pt-[26px] tab:pb-[26px] px-[32px] tab:px-[120px] desk:px-[320px]">
         <div
           className={
             'bg-surface rounded-[10px] h-[44px] flex items-center gap-[8px] px-[14px] ' +

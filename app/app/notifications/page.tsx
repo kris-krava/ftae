@@ -19,11 +19,7 @@ export default async function NotificationsPage() {
   void markAllNotificationsRead();
 
   return (
-    <main className="bg-canvas min-h-screen w-full">
-      <header className="px-[32px] tab:px-[120px] desk:px-[320px] pt-[30px] pb-[16px]">
-        <h1 className="font-sans font-semibold text-[18px] leading-none text-ink">Notifications</h1>
-      </header>
-
+    <main className="bg-canvas min-h-screen w-full pt-[32px]">
       {items.length === 0 ? (
         <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
           <p className="font-sans text-[15px] text-muted">No notifications yet.</p>
