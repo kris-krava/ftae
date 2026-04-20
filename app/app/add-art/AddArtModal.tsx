@@ -99,22 +99,22 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 flex items-start justify-center overflow-y-auto py-[29px] tab:py-[60px] desk:py-[67px] px-[16px]">
-      <div className="bg-surface rounded-[16px] shadow-modal w-full max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] relative">
+    <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]">
         {success ? (
           <div
             role="status"
             aria-live="polite"
-            className="flex flex-col items-center justify-center text-center py-[64px] px-[32px]"
+            className="bg-surface rounded-[16px] shadow-modal flex flex-col items-center text-center px-[32px] py-[32px] gap-[16px]"
           >
             <CheckCircle
               className="w-[64px] h-[64px] text-accent animate-[ftae-pop_360ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
               aria-hidden
             />
-            <p className="mt-[16px] font-sans font-semibold text-[18px] text-ink">Artwork added</p>
+            <p className="font-sans font-semibold text-[18px] leading-[24px] text-ink">Artwork added</p>
           </div>
         ) : (
-          <>
+          <div className="bg-surface rounded-[16px] shadow-modal w-full max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] relative">
         <button
           type="button"
           onClick={close}
@@ -238,7 +238,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
             </p>
           )}
         </form>
-          </>
+          </div>
         )}
       </div>
     </div>
