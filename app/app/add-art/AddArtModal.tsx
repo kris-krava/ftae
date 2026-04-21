@@ -28,7 +28,7 @@ const MAX_PHOTOS = 6;
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
 const SUCCESS_DISPLAY_MS = 1200;
 const MAX_DESCRIPTION = 160;
-const TILE_BASIS = 'basis-[calc((100%-16px)/3)]';
+const TILE_BASIS = 'basis-[calc((100%-8px)/2)] tab:basis-[calc((100%-16px)/3)]';
 
 interface PhotoEntry {
   id: string;
@@ -182,7 +182,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
             </button>
 
             <h2 className="font-sans font-semibold text-[18px] text-ink pt-[32px] px-[32px]">
-              Add Your Art
+              Add Art
             </h2>
             <p className="font-sans text-[15px] text-ink/70 leading-[1.4] px-[32px] mt-[16px]">
               One piece you made, and would love another artist to have.
