@@ -50,25 +50,28 @@ export function EditModal({ backHref, initial, mediums }: EditModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 flex items-start justify-center overflow-y-auto py-[114px] tab:py-[80px] desk:py-[67px] px-[16px]">
+    <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]">
       <div
         className={
-          'bg-surface rounded-[16px] shadow-modal flex flex-col items-center relative w-full ' +
-          'max-w-[358px] p-[32px] ' +
-          'tab:max-w-[640px] tab:px-[160px] tab:py-[64px] ' +
-          'desk:max-w-[960px] desk:px-[320px] desk:py-[96px]'
+          'bg-surface rounded-[16px] shadow-modal flex flex-col relative w-full ' +
+          'max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] p-[32px]'
         }
       >
         <button
           type="button"
           onClick={close}
           aria-label="Close"
-          className="absolute top-[32px] right-[32px] flex items-center justify-center w-[24px] h-[24px]"
+          className="absolute top-[32px] right-[32px] flex items-center justify-center w-[24px] h-[24px] z-10"
         >
           <XClose className="w-[24px] h-[24px] text-ink" />
         </button>
 
-        <div className="flex flex-col gap-[8px] items-center w-full mt-[24px]">
+        <h2 className="font-sans font-semibold text-[18px] text-ink">
+          Edit Profile
+        </h2>
+
+        <div className="flex flex-col gap-[8px] items-center w-full mt-[32px]">
           <p className="font-sans font-medium text-[11px] tracking-[1.5px] text-muted text-center">
             STEP {step} OF 3
           </p>
@@ -117,6 +120,7 @@ export function EditModal({ backHref, initial, mediums }: EditModalProps) {
             {error}
           </p>
         )}
+      </div>
       </div>
     </div>
   );
