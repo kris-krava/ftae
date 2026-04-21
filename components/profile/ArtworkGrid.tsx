@@ -9,6 +9,7 @@ function objectPositionStyle(focalX: number, focalY: number): { objectPosition: 
 
 interface ArtworkGridProps {
   artworks: ProfileArtwork[];
+  artistUsername: string;
   showAddTile: boolean;
   addHref?: string;
 }
@@ -16,7 +17,12 @@ interface ArtworkGridProps {
 const TILE_BASIS =
   'basis-[calc((100%-4px)/2)] tab:basis-[calc((100%-8px)/3)] desk:basis-[calc((100%-16px)/5)]';
 
-export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }: ArtworkGridProps) {
+export function ArtworkGrid({
+  artworks,
+  artistUsername,
+  showAddTile,
+  addHref = '/app/add-art',
+}: ArtworkGridProps) {
   return (
     <div className="flex flex-wrap justify-center gap-[4px] w-full">
       {showAddTile && (
@@ -29,15 +35,25 @@ export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }:
         </Link>
       )}
       {artworks.map((art) => (
-        <ArtworkTile key={art.id} artwork={art} />
+        <ArtworkTile key={art.id} artwork={art} artistUsername={artistUsername} />
       ))}
     </div>
   );
 }
 
-function ArtworkTile({ artwork }: { artwork: ProfileArtwork }) {
+function ArtworkTile({
+  artwork,
+  artistUsername,
+}: {
+  artwork: ProfileArtwork;
+  artistUsername: string;
+}) {
   return (
-    <div className={`${TILE_BASIS} shrink-0 relative aspect-square bg-divider rounded-[2px] overflow-hidden`}>
+    <Link
+      href={`/${artistUsername}/artwork/${artwork.id}`}
+      aria-label={artwork.title ?? 'View artwork'}
+      className={`${TILE_BASIS} shrink-0 relative aspect-square bg-divider rounded-[2px] overflow-hidden`}
+    >
       {artwork.primary_photo_url && (
         <Image
           src={artwork.primary_photo_url}
@@ -65,6 +81,6 @@ function ArtworkTile({ artwork }: { artwork: ProfileArtwork }) {
           </span>
         </span>
       )}
-    </div>
+    </Link>
   );
 }

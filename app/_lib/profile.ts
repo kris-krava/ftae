@@ -100,3 +100,100 @@ export async function isFollowing(followerId: string, followingId: string): Prom
     .maybeSingle();
   return Boolean(data);
 }
+
+export interface ArtworkPhoto {
+  url: string;
+  sort_order: number;
+  photo_type: string;
+  focal_x: number;
+  focal_y: number;
+}
+
+export interface ArtworkArtist {
+  id: string;
+  username: string;
+  name: string | null;
+  avatar_url: string | null;
+  is_founding_member: boolean;
+}
+
+export interface ArtworkDetail {
+  id: string;
+  user_id: string;
+  title: string | null;
+  year: number | null;
+  medium: string | null;
+  width: number | null;
+  height: number | null;
+  depth: number | null;
+  description: string | null;
+  created_at: string;
+  photos: ArtworkPhoto[];
+  artist: ArtworkArtist;
+}
+
+export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail | null> {
+  const { data } = await supabaseAdmin
+    .from('artworks')
+    .select(
+      `id, user_id, title, year, medium, width, height, depth, description, created_at,
+       artwork_photos(url, sort_order, photo_type, focal_x, focal_y),
+       users:user_id ( id, username, name, avatar_url, is_founding_member )`,
+    )
+    .eq('id', artworkId)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (!data) return null;
+
+  const rawPhotos =
+    ((data as unknown as { artwork_photos: ArtworkPhoto[] | null }).artwork_photos ?? []);
+  const photos = [...rawPhotos].sort((a, b) => {
+    if (a.photo_type === 'front' && b.photo_type !== 'front') return -1;
+    if (b.photo_type === 'front' && a.photo_type !== 'front') return 1;
+    return a.sort_order - b.sort_order;
+  });
+
+  const artist = (data as unknown as { users: ArtworkArtist | null }).users;
+  if (!artist) return null;
+
+  return {
+    id: data.id as string,
+    user_id: data.user_id as string,
+    title: data.title as string | null,
+    year: data.year as number | null,
+    medium: data.medium as string | null,
+    width: data.width as number | null,
+    height: data.height as number | null,
+    depth: data.depth as number | null,
+    description: data.description as string | null,
+    created_at: data.created_at as string,
+    photos,
+    artist: {
+      id: artist.id,
+      username: artist.username,
+      name: artist.name,
+      avatar_url: artist.avatar_url,
+      is_founding_member: artist.is_founding_member,
+    },
+  };
+}
+
+export async function getArtworkNeighbors(
+  userId: string,
+  artworkId: string,
+): Promise<{ prev: string | null; next: string | null }> {
+  const { data } = await supabaseAdmin
+    .from('artworks')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(PROFILE_ARTWORK_LIMIT);
+  if (!data) return { prev: null, next: null };
+  const idx = data.findIndex((row) => row.id === artworkId);
+  if (idx === -1) return { prev: null, next: null };
+  return {
+    prev: idx > 0 ? (data[idx - 1].id as string) : null,
+    next: idx < data.length - 1 ? (data[idx + 1].id as string) : null,
+  };
+}
