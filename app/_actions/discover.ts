@@ -15,16 +15,16 @@ export async function loadMoreArtworks(cursor: string | null): Promise<ArtworksP
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  let includeTestUsers = false;
+  let viewerIsTest = false;
   if (user) {
     const { data } = await supabaseAdmin
       .from('users')
       .select('is_test_user')
       .eq('id', user.id)
       .single();
-    includeTestUsers = Boolean(data?.is_test_user);
+    viewerIsTest = Boolean(data?.is_test_user);
   }
-  return fetchArtworksPage(cursor, { includeTestUsers });
+  return fetchArtworksPage(cursor, { scope: viewerIsTest ? 'test' : 'real' });
 }
 
 export interface ArtistsSearchResult {

@@ -73,6 +73,8 @@ export interface Scenario {
   followersCount?: number;
   /** Auxiliary artist users seeded so their work appears on Discover. */
   discoverPeers?: ScenarioDiscoverPeer[];
+  /** Wipe ALL test users (not just this scenario's) before seeding. */
+  cleanupAllBefore?: boolean;
 }
 
 const HOME: string = '/app/following';
@@ -214,8 +216,9 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'discover-grid',
     name: 'Discover grid — 7 artists',
-    description: 'Primary artist plus 6 peer artists, one artwork each. Lands on /app/discover with 7 tiles.',
+    description: 'Wipes all test users, then seeds a primary artist plus 6 peer artists, one artwork each. Lands on /app/discover with 7 tiles.',
     redirect: DISCOVER,
+    cleanupAllBefore: true,
     profile: {
       name: 'Test Discover',
       location_city: 'Savannah, GA',

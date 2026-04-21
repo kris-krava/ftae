@@ -15,11 +15,12 @@ const PAGE_SIZE = 24;
 
 export async function fetchArtworksPage(
   cursor: string | null,
-  options: { includeTestUsers?: boolean } = {},
+  options: { scope?: 'real' | 'test' } = {},
 ): Promise<{
   items: DiscoverArtwork[];
   nextCursor: string | null;
 }> {
+  const scope = options.scope ?? 'real';
   let query = supabaseAdmin
     .from('artworks')
     .select(
@@ -27,12 +28,9 @@ export async function fetchArtworksPage(
     )
     .eq('is_active', true)
     .eq('users.is_active', true)
+    .eq('users.is_test_user', scope === 'test')
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
-
-  if (!options.includeTestUsers) {
-    query = query.eq('users.is_test_user', false);
-  }
 
   if (cursor) {
     query = query.lt('created_at', cursor);

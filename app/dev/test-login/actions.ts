@@ -30,8 +30,12 @@ export async function runScenarioAction(scenarioId: string): Promise<RunResult> 
     // Auto-cleanup on re-run: before seeding fresh state, fully delete any
     // prior test users this scenario created (primary + aux). Keeps the DB
     // free of stale test rows between sessions.
-    const emailsToWipe = scenarioTouchedEmails(scenario);
-    await cleanupByEmails(supabaseAdmin, emailsToWipe);
+    if (scenario.cleanupAllBefore) {
+      await cleanupAllTestUsers(supabaseAdmin);
+    } else {
+      const emailsToWipe = scenarioTouchedEmails(scenario);
+      await cleanupByEmails(supabaseAdmin, emailsToWipe);
+    }
 
     const userId = await ensureAuthUser(email);
     await seedScenario(scenario, userId, email);

@@ -21,7 +21,7 @@ export default async function DiscoverPage() {
     .single();
   const viewerIsTest = Boolean(viewer?.is_test_user);
 
-  const initial = await fetchArtworksPage(null, { includeTestUsers: viewerIsTest });
+  const initial = await fetchArtworksPage(null, { scope: viewerIsTest ? 'test' : 'real' });
 
   return (
     <main className="bg-canvas min-h-screen w-full">
