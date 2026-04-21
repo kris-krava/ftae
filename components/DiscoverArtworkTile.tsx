@@ -21,7 +21,7 @@ export function DiscoverArtworkTile({ artwork, index }: DiscoverArtworkTileProps
     <Link
       href={`/${artwork.artist_username}`}
       aria-label={`${artistName}'s profile`}
-      className="relative aspect-square overflow-hidden block"
+      className="relative aspect-square overflow-hidden rounded-[2px] block"
       style={{ backgroundColor: bg }}
     >
       {artwork.primary_photo_url && (
