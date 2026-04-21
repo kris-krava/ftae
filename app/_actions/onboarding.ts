@@ -439,7 +439,13 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     console.log('[step4-server] tryIssueReferralBonus:', ms(tBonus));
   }
 
-  revalidatePath('/onboarding/step-4');
+  const { data: userRow } = await supabaseAdmin
+    .from('users')
+    .select('username')
+    .eq('id', userId)
+    .single();
+  if (userRow?.username) revalidatePath(`/${userRow.username as string}`);
+  revalidatePath('/app/following');
   console.log(`[step4-server] === END (total ${ms(tStart)}) ===`);
   return { ok: true };
 }

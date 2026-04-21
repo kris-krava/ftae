@@ -68,7 +68,6 @@ export interface Scenario {
 const HOME: string = '/app/following';
 const STEP1 = '/onboarding/step-1';
 const STEP3 = '/onboarding/step-3';
-const STEP4 = '/onboarding/step-4';
 
 const SAMPLE_PHOTO = (seed: string) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/1024/768`;
@@ -97,23 +96,6 @@ export const SCENARIOS: Scenario[] = [
       profile_completion_pct: 50,
     },
     mediums: ['Drawing', 'Oil'],
-  },
-  {
-    id: 'complete-no-artwork',
-    name: 'Complete profile — no artwork',
-    description: 'All profile fields complete, no artwork uploaded. Lands on Step 4.',
-    redirect: STEP4,
-    profile: {
-      name: 'Test Complete',
-      location_city: 'Savannah, GA',
-      bio: 'Figurative oils and printmaking.',
-      website_url: 'https://example.com/test',
-      social_platform: 'instagram',
-      social_handle: 'testcomplete',
-      avatar_url: SAMPLE_AVATAR('complete-no-artwork'),
-      profile_completion_pct: 85,
-    },
-    mediums: ['Oil', 'Printmaking'],
   },
   {
     id: 'founding-member',
@@ -149,48 +131,6 @@ export const SCENARIOS: Scenario[] = [
       },
     ],
     credits: [{ credit_type: 'founding_member', months_credited: 3, note: 'Test — founding grant' }],
-  },
-  {
-    id: 'with-referral',
-    name: 'Complete profile — with referral',
-    description: 'Founding member plus a completed referral + referral bonus credit.',
-    redirect: HOME,
-    profile: {
-      name: 'Test Referrer',
-      location_city: 'Macon, GA',
-      bio: 'Watercolor + mixed media. Teaching too.',
-      website_url: 'https://example.com/referrer',
-      social_platform: 'instagram',
-      social_handle: 'testreferrer',
-      avatar_url: SAMPLE_AVATAR('with-referral'),
-      is_founding_member: true,
-      profile_completion_pct: 100,
-    },
-    mediums: ['Watercolor', 'Mixed Media'],
-    artworks: [
-      {
-        title: 'Red Door, Tybee',
-        year: 2024,
-        medium: 'Watercolor on paper',
-        dimensions: '11 × 14 in',
-        photos: [{ url: SAMPLE_PHOTO('ref-1'), photo_type: 'front' }],
-      },
-      {
-        title: 'Crosswalk Series #3',
-        year: 2024,
-        medium: 'Mixed media',
-        dimensions: '12 × 12 in',
-        photos: [{ url: SAMPLE_PHOTO('ref-2'), photo_type: 'front' }],
-      },
-    ],
-    credits: [
-      { credit_type: 'founding_member', months_credited: 3, note: 'Test — founding grant' },
-      { credit_type: 'referral_bonus', months_credited: 1, note: 'Test — referral bonus' },
-    ],
-    referral: { asReferrer: true, completed: true },
-    notifications: [
-      { type: 'referral_completed', message: 'A referred artist completed their profile — you earned a bonus month!', is_read: false },
-    ],
   },
   {
     id: 'returning-user',

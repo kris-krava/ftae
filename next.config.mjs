@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Dynamic routes (e.g. /[username]) change frequently — a user adds art,
+    // follows someone, the scenario runner re-seeds with a new user id. The
+    // default 30s client-side router cache masks those changes until it ages
+    // out. Zero it so navigation always reflects current server state.
+    staleTimes: { dynamic: 0 },
+  },
   images: {
     remotePatterns: [
       {
