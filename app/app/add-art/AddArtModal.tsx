@@ -3,6 +3,24 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { XClose, CheckCircle, Upload01 } from '@/components/icons';
 import { saveStep4Artwork } from '@/app/_actions/onboarding';
 
@@ -10,6 +28,17 @@ const MAX_PHOTOS = 6;
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
 const SUCCESS_DISPLAY_MS = 1200;
 const MAX_DESCRIPTION = 160;
+const TILE_BASIS = 'basis-[calc((100%-16px)/3)]';
+
+interface PhotoEntry {
+  id: string;
+  file: File;
+}
+
+function makePhotoId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return `p-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 interface AddArtModalProps {
   /** Fallback URL used when the modal was opened via direct navigation
@@ -22,14 +51,23 @@ interface AddArtModalProps {
 
 export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps) {
   const router = useRouter();
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [pending, start] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const previews = useMemo(() => photos.map((p) => URL.createObjectURL(p)), [photos]);
+  const previews = useMemo(
+    () => photos.map((p) => ({ id: p.id, url: URL.createObjectURL(p.file) })),
+    [photos],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function close() {
     if (mode === 'overlay') router.back();
@@ -59,7 +97,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
           }),
         ),
       );
-      setPhotos((prev) => [...prev, ...compressed]);
+      setPhotos((prev) => [...prev, ...compressed.map((file) => ({ id: makePhotoId(), file }))]);
     } catch (err) {
       console.error(err);
       setError('Could not process one or more photos.');
@@ -68,8 +106,19 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
     }
   }
 
-  function removePhoto(idx: number) {
-    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+  function removePhoto(id: string) {
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setPhotos((items) => {
+      const oldIndex = items.findIndex((p) => p.id === active.id);
+      const newIndex = items.findIndex((p) => p.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
   }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -90,7 +139,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
     if (!medium) { setError('Please add a medium.'); return; }
     if (!width) { setError('Please add a width.'); return; }
     if (!height) { setError('Please add a height.'); return; }
-    photos.forEach((p) => fd.append('photos', p, p.name || 'photo.jpg'));
+    photos.forEach((p) => fd.append('photos', p.file, p.file.name || 'photo.jpg'));
     start(async () => {
       const result = await saveStep4Artwork(fd);
       if (!result.ok) {
@@ -105,23 +154,6 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
       }, SUCCESS_DISPLAY_MS);
     });
   }
-
-  // Build the photo grid rows. Each filled slot shows the image thumbnail with
-  // an X remove button. The slot immediately after the last photo is the
-  // Upload Images CTA (unless we're already at MAX). Rows of fewer than three
-  // tiles are centered by the parent's justify-center.
-  const slotCount = photos.length + (photos.length < MAX_PHOTOS ? 1 : 0);
-  const rows: { kind: 'photo' | 'cta'; index: number }[][] = [];
-  for (let i = 0; i < slotCount; i += 3) {
-    const row: { kind: 'photo' | 'cta'; index: number }[] = [];
-    for (let k = 0; k < 3 && i + k < slotCount; k += 1) {
-      const idx = i + k;
-      row.push({ kind: idx < photos.length ? 'photo' : 'cta', index: idx });
-    }
-    rows.push(row);
-  }
-
-  const TILE_BASIS = 'basis-[calc((100%-16px)/3)]';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
@@ -157,51 +189,38 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
             </p>
 
             <form onSubmit={onSubmit} className="p-[32px] flex flex-col">
-              <div className="flex flex-col gap-[8px]">
-                {rows.map((row, rowIdx) => (
-                  <div key={rowIdx} className="flex justify-center gap-[8px]">
-                    {row.map((slot) => {
-                      if (slot.kind === 'photo') {
-                        return (
-                          <div
-                            key={`photo-${slot.index}`}
-                            className={`${TILE_BASIS} relative aspect-square rounded-[8px] overflow-hidden bg-divider`}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={previews[slot.index]}
-                              alt=""
-                              className="absolute inset-0 w-full h-full object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removePhoto(slot.index)}
-                              aria-label={`Remove photo ${slot.index + 1}`}
-                              className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center"
-                            >
-                              <XClose className="w-[14px] h-[14px] text-surface" strokeWidth={1.25} />
-                            </button>
-                          </div>
-                        );
-                      }
-                      return (
-                        <button
-                          key={`cta-${slot.index}`}
-                          type="button"
-                          onClick={openPicker}
-                          aria-label={photos.length === 0 ? 'Upload images' : 'Add more photos'}
-                          className={`${TILE_BASIS} aspect-square rounded-[8px] bg-canvas/40 border-[1.5px] border-divider flex flex-col items-center justify-center gap-[6px]`}
-                        >
-                          <Upload01 className="w-[24px] h-[24px] text-accent" strokeWidth={1.25} />
-                          <span className="font-sans font-medium text-[12px] leading-[16px] text-muted text-center whitespace-pre-line">
-                            {'Upload\nImages'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="flex flex-wrap justify-center gap-[8px]">
+                  <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+                    {photos.map((p, i) => (
+                      <SortablePhoto
+                        key={p.id}
+                        id={p.id}
+                        src={previews[i]?.url ?? ''}
+                        index={i}
+                        onRemove={() => removePhoto(p.id)}
+                      />
+                    ))}
+                  </SortableContext>
+                  {photos.length < MAX_PHOTOS && (
+                    <button
+                      type="button"
+                      onClick={openPicker}
+                      aria-label={photos.length === 0 ? 'Upload images' : 'Add more photos'}
+                      className={`${TILE_BASIS} shrink-0 aspect-square rounded-[8px] bg-canvas/40 border-[1.5px] border-divider flex flex-col items-center justify-center gap-[6px]`}
+                    >
+                      <Upload01 className="w-[24px] h-[24px] text-accent" strokeWidth={1.25} />
+                      <span className="font-sans font-medium text-[12px] leading-[16px] text-muted text-center whitespace-pre-line">
+                        {'Upload\nImages'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </DndContext>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -364,6 +383,51 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+interface SortablePhotoProps {
+  id: string;
+  src: string;
+  index: number;
+  onRemove: () => void;
+}
+
+function SortablePhoto({ id, src, index, onRemove }: SortablePhotoProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`${TILE_BASIS} shrink-0 relative aspect-square rounded-[8px] overflow-hidden bg-divider touch-none ${isDragging ? 'opacity-80 shadow-modal' : ''}`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+      />
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-label={`Remove photo ${index + 1}`}
+        className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center"
+      >
+        <XClose className="w-[14px] h-[14px] text-surface" strokeWidth={1.25} />
+      </button>
     </div>
   );
 }
