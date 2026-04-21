@@ -13,7 +13,10 @@ export interface DiscoverArtwork {
 
 const PAGE_SIZE = 24;
 
-export async function fetchArtworksPage(cursor: string | null): Promise<{
+export async function fetchArtworksPage(
+  cursor: string | null,
+  options: { includeTestUsers?: boolean } = {},
+): Promise<{
   items: DiscoverArtwork[];
   nextCursor: string | null;
 }> {
@@ -24,9 +27,12 @@ export async function fetchArtworksPage(cursor: string | null): Promise<{
     )
     .eq('is_active', true)
     .eq('users.is_active', true)
-    .eq('users.is_test_user', false)
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
+
+  if (!options.includeTestUsers) {
+    query = query.eq('users.is_test_user', false);
+  }
 
   if (cursor) {
     query = query.lt('created_at', cursor);

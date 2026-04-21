@@ -7,7 +7,7 @@ import { randomBytes } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { generateUniqueUsername } from '@/lib/username';
 import { assertDev, assertNotProdHost, TEST_EMAIL_DOMAIN } from './_guard';
-import { getScenario, type Scenario, type ScenarioArtwork } from './scenarios';
+import { getScenario, type Scenario, type ScenarioArtwork, type ScenarioDiscoverPeer } from './scenarios';
 import { cleanupAllTestUsers, cleanupByEmails, type CleanupReport } from './_cleanup';
 
 interface RunResult {
@@ -212,6 +212,61 @@ async function seedScenario(scenario: Scenario, userId: string, email: string): 
         .insert({ follower_id: aux.userId, following_id: userId });
     }
   }
+
+  // Discover peers (aux artist users each seeded with one artwork)
+  if (scenario.discoverPeers && scenario.discoverPeers.length) {
+    for (let i = 0; i < scenario.discoverPeers.length; i += 1) {
+      await seedDiscoverPeer(scenario.id, i, scenario.discoverPeers[i]);
+    }
+  }
+}
+
+async function seedDiscoverPeer(
+  scenarioId: string,
+  index: number,
+  peer: ScenarioDiscoverPeer,
+): Promise<void> {
+  const email = `aux-peer-${scenarioId}-${index}@${TEST_EMAIL_DOMAIN}`;
+  const peerUserId = await ensureAuthUser(email);
+
+  const { data: existing } = await supabaseAdmin
+    .from('users')
+    .select('id, username, referral_code')
+    .eq('id', peerUserId)
+    .maybeSingle();
+  const username = existing?.username ?? (await generateUniqueUsername(email.split('@')[0]));
+  const referralCode = existing?.referral_code ?? randomBytes(16).toString('hex');
+
+  const row = {
+    id: peerUserId,
+    email,
+    username,
+    referral_code: referralCode,
+    name: peer.name,
+    location_city: peer.location_city,
+    avatar_url: peer.avatar_url,
+    is_active: true,
+    is_test_user: true,
+    profile_completion_pct: 100,
+  };
+  if (existing) {
+    await supabaseAdmin.from('users').update(row).eq('id', peerUserId);
+  } else {
+    await supabaseAdmin.from('users').insert(row);
+  }
+
+  const { data: mediumRow } = await supabaseAdmin
+    .from('mediums')
+    .select('id')
+    .eq('name', peer.medium)
+    .maybeSingle();
+  if (mediumRow) {
+    await supabaseAdmin
+      .from('user_mediums')
+      .upsert({ user_id: peerUserId, medium_id: mediumRow.id as string });
+  }
+
+  await insertArtwork(peerUserId, peer.artwork);
 }
 
 async function insertArtwork(userId: string, art: ScenarioArtwork): Promise<void> {
@@ -272,6 +327,11 @@ function scenarioTouchedEmails(scenario: Scenario): string[] {
   if (scenario.followersCount && scenario.followersCount > 0) {
     for (let i = 0; i < scenario.followersCount; i += 1) {
       emails.push(`aux-follower-${scenario.id}-${i}@${TEST_EMAIL_DOMAIN}`);
+    }
+  }
+  if (scenario.discoverPeers && scenario.discoverPeers.length > 0) {
+    for (let i = 0; i < scenario.discoverPeers.length; i += 1) {
+      emails.push(`aux-peer-${scenario.id}-${i}@${TEST_EMAIL_DOMAIN}`);
     }
   }
   return emails;

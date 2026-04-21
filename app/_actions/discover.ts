@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage, type DiscoverArtwork } from '@/app/_lib/artworks';
 import { searchArtists, followingSet, type DiscoverArtist } from '@/app/_lib/artists';
 
@@ -10,7 +11,20 @@ export interface ArtworksPageResult {
 }
 
 export async function loadMoreArtworks(cursor: string | null): Promise<ArtworksPageResult> {
-  return fetchArtworksPage(cursor);
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let includeTestUsers = false;
+  if (user) {
+    const { data } = await supabaseAdmin
+      .from('users')
+      .select('is_test_user')
+      .eq('id', user.id)
+      .single();
+    includeTestUsers = Boolean(data?.is_test_user);
+  }
+  return fetchArtworksPage(cursor, { includeTestUsers });
 }
 
 export interface ArtistsSearchResult {

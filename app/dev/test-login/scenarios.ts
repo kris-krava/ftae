@@ -48,6 +48,14 @@ export interface ScenarioReferral {
   completed: boolean;
 }
 
+export interface ScenarioDiscoverPeer {
+  name: string;
+  location_city: string;
+  medium: string;
+  avatar_url: string;
+  artwork: ScenarioArtwork;
+}
+
 export interface Scenario {
   id: string;
   name: string;
@@ -63,11 +71,14 @@ export interface Scenario {
   referral?: ScenarioReferral;
   /** Number of auxiliary test users who follow the primary user. */
   followersCount?: number;
+  /** Auxiliary artist users seeded so their work appears on Discover. */
+  discoverPeers?: ScenarioDiscoverPeer[];
 }
 
 const HOME: string = '/app/following';
 const STEP1 = '/onboarding/step-1';
 const STEP3 = '/onboarding/step-3';
+const DISCOVER = '/app/discover';
 
 const SAMPLE_PHOTO = (seed: string) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/1024/768`;
@@ -198,6 +209,109 @@ export const SCENARIOS: Scenario[] = [
     notifications: [
       { type: 'referral_joined', message: 'Someone just signed up with your link.', is_read: false },
       { type: 'profile_nudge', message: 'Your profile is looking good\nAdd more work you\u2019d love to trade.', is_read: true },
+    ],
+  },
+  {
+    id: 'discover-grid',
+    name: 'Discover grid — 7 artists',
+    description: 'Primary artist plus 6 peer artists, one artwork each. Lands on /app/discover with 7 tiles.',
+    redirect: DISCOVER,
+    profile: {
+      name: 'Test Discover',
+      location_city: 'Savannah, GA',
+      bio: 'Seeded to demonstrate the Discover grid partial-row centering.',
+      avatar_url: SAMPLE_AVATAR('discover-grid'),
+      profile_completion_pct: 100,
+    },
+    mediums: ['Oil'],
+    artworks: [
+      {
+        title: 'Forsyth Fountain',
+        year: 2024,
+        medium: 'Oil on panel',
+        dimensions: '11 × 14 in',
+        photos: [{ url: SAMPLE_PHOTO('discover-primary'), photo_type: 'front' }],
+      },
+    ],
+    discoverPeers: [
+      {
+        name: 'Juniper Hale',
+        location_city: 'Asheville, NC',
+        medium: 'Watercolor',
+        avatar_url: SAMPLE_AVATAR('peer-juniper'),
+        artwork: {
+          title: 'Blue Ridge Morning',
+          year: 2024,
+          medium: 'Watercolor on paper',
+          dimensions: '8 × 10 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-juniper'), photo_type: 'front' }],
+        },
+      },
+      {
+        name: 'Marco Reyes',
+        location_city: 'Portland, OR',
+        medium: 'Acrylic',
+        avatar_url: SAMPLE_AVATAR('peer-marco'),
+        artwork: {
+          title: 'Willamette Reflection',
+          year: 2023,
+          medium: 'Acrylic on canvas',
+          dimensions: '12 × 16 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-marco'), photo_type: 'front' }],
+        },
+      },
+      {
+        name: 'Eleanor Park',
+        location_city: 'Brooklyn, NY',
+        medium: 'Printmaking',
+        avatar_url: SAMPLE_AVATAR('peer-eleanor'),
+        artwork: {
+          title: 'Tidal Pool',
+          year: 2024,
+          medium: 'Linocut',
+          dimensions: '10 × 12 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-eleanor'), photo_type: 'front' }],
+        },
+      },
+      {
+        name: 'Theo Okafor',
+        location_city: 'Oakland, CA',
+        medium: 'Drawing',
+        avatar_url: SAMPLE_AVATAR('peer-theo'),
+        artwork: {
+          title: 'Shipyard Crane',
+          year: 2022,
+          medium: 'Charcoal on paper',
+          dimensions: '14 × 17 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-theo'), photo_type: 'front' }],
+        },
+      },
+      {
+        name: 'Amal Nasser',
+        location_city: 'Austin, TX',
+        medium: 'Mixed Media',
+        avatar_url: SAMPLE_AVATAR('peer-amal'),
+        artwork: {
+          title: 'Desert Bloom',
+          year: 2024,
+          medium: 'Mixed media on board',
+          dimensions: '9 × 12 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-amal'), photo_type: 'front' }],
+        },
+      },
+      {
+        name: 'Rosa Lindström',
+        location_city: 'Minneapolis, MN',
+        medium: 'Oil',
+        avatar_url: SAMPLE_AVATAR('peer-rosa'),
+        artwork: {
+          title: 'Lake Harriet Winter',
+          year: 2023,
+          medium: 'Oil on linen',
+          dimensions: '16 × 20 in',
+          photos: [{ url: SAMPLE_PHOTO('peer-rosa'), photo_type: 'front' }],
+        },
+      },
     ],
   },
 ];
