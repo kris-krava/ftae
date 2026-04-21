@@ -24,7 +24,7 @@ export default async function DiscoverPage() {
   const initial = await fetchArtworksPage(null, { scope: viewerIsTest ? 'test' : 'real' });
 
   return (
-    <main className="bg-canvas min-h-screen w-full">
+    <main className="bg-canvas flex-1 w-full">
       <ErrorBoundary label="discover">
         <DiscoverClient
           initialArtworks={initial.items}

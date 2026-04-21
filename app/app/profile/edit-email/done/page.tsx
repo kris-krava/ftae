@@ -26,7 +26,7 @@ export default async function EmailUpdatedPage() {
   if (!profile) redirect('/');
 
   return (
-    <main className="bg-canvas min-h-screen w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] text-center">
+    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] text-center">
       <Wordmark variant="short" />
       <span aria-hidden className="h-[24px] tab:h-[28px] desk:h-[32px] w-px shrink-0" />
       <CheckCircle className="w-[64px] h-[64px] tab:w-[72px] tab:h-[72px] desk:w-[80px] desk:h-[80px] text-ink" />

@@ -8,7 +8,7 @@ export default async function TradesPage() {
   const headline = days === null ? 'Trading starts soon!' : `Trading starts in ${days} day${days === 1 ? '' : 's'}!`;
 
   return (
-    <main className="bg-canvas min-h-screen w-full flex flex-col items-center justify-center px-[32px]">
+    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px]">
       <div className="bg-accent/10 rounded-full w-[96px] h-[96px] flex items-center justify-center">
         <Shuffle01 className="w-[48px] h-[48px] text-accent" />
       </div>

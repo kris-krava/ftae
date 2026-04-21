@@ -15,7 +15,7 @@ export default async function EditEmailPage() {
   const currentEmail = user.email ?? '';
 
   return (
-    <main className="bg-canvas min-h-screen w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] py-[64px]">
+    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px]">
       <Wordmark variant="short" />
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       <EditEmailForm currentEmail={currentEmail} />

@@ -50,7 +50,7 @@ export default async function AppLayout({
         unreadCount={unread}
       />
       <MobileBellGate userId={user.id} initialUnread={unread} />
-      <div className="min-h-screen pb-[80px] tab:pb-0 tab:pl-[60px]">{children}</div>
+      <div className="min-h-screen flex flex-col pb-[80px] tab:pb-0 tab:pl-[60px]">{children}</div>
       {modal}
       <MobileNav username={username} initials={initials} avatarUrl={profile.avatar_url ?? null} />
     </>

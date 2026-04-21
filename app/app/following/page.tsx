@@ -13,7 +13,7 @@ export default async function FollowingPage() {
   if (!user) redirect('/');
 
   return (
-    <main className="bg-canvas min-h-screen w-full flex flex-col items-center justify-center px-[32px] pb-[80px] tab:pb-0">
+    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px]">
       <div className="flex items-center justify-center w-[96px] h-[96px] rounded-full bg-accent/10">
         <Heart className="w-[48px] h-[48px] text-accent" />
       </div>

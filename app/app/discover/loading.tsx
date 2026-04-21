@@ -2,7 +2,7 @@ import { ArtworkGridSkeleton } from '@/components/Skeleton';
 
 export default function Loading() {
   return (
-    <main className="bg-canvas min-h-screen w-full">
+    <main className="bg-canvas flex-1 w-full">
       <header className="bg-canvas h-[56px] flex items-center pt-[30px] px-[32px] tab:px-[120px] desk:px-[320px]">
         <h1 className="font-sans font-semibold text-[18px] text-ink">Discover</h1>
       </header>

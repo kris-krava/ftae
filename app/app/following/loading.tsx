@@ -2,7 +2,7 @@ import { ArtworkGridSkeleton, StatsModuleSkeleton } from '@/components/Skeleton'
 
 export default function Loading() {
   return (
-    <main className="bg-canvas min-h-screen w-full relative">
+    <main className="bg-canvas flex-1 w-full relative">
       <header className="bg-canvas h-[56px] flex items-center pt-[30px] px-[32px] tab:px-[120px] desk:px-[320px]">
         <h1 className="font-sans font-semibold text-[18px] text-ink">Following</h1>
       </header>
