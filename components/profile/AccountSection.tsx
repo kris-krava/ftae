@@ -7,7 +7,7 @@ interface AccountSectionProps {
 
 export function AccountSection({ email }: AccountSectionProps) {
   return (
-    <section className="w-full max-w-[326px] mx-auto mt-[16px] flex flex-col items-center gap-[12px]">
+    <section className="w-full mt-[16px] flex flex-col items-center gap-[12px]">
       <span aria-hidden className="block w-full h-px bg-muted/20" />
       <h2 className="font-sans font-medium text-[11px] tracking-[1px] text-muted">ACCOUNT</h2>
       <div className="flex items-center justify-center gap-[10px] font-sans text-[13px]">
