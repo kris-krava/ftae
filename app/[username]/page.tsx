@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { unstable_noStore as noStore } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { isReservedUsername } from '@/lib/username-rules';
@@ -27,6 +28,7 @@ interface ProfilePageProps {
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
+  noStore();
   const username = params.username.toLowerCase();
   if (isReservedUsername(username)) notFound();
 
