@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star06, UserCheck01 } from '@/components/icons';
+import { Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
 import { deriveInitials } from '@/lib/initials';
 import { toggleFollow } from '@/app/_actions/follow';
@@ -56,7 +56,7 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
           <div className="flex items-center gap-[6px]">
             <p className="font-sans font-semibold text-ink text-[15px] truncate">{displayName}</p>
             {artist.is_founding_member && (
-              <Star06
+              <Star01
                 className="w-[16px] h-[16px] text-accent shrink-0"
                 fill="currentColor"
                 aria-label="Founding member"

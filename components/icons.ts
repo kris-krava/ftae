@@ -8,7 +8,7 @@ export { default as PlusSquare } from '@untitled-ui/icons-react/build/esm/PlusSq
 export { default as Shuffle01 } from '@untitled-ui/icons-react/build/esm/Shuffle01';
 export { default as User01 } from '@untitled-ui/icons-react/build/esm/User01';
 export { default as Bell01 } from '@untitled-ui/icons-react/build/esm/Bell01';
-export { default as Star06 } from '@untitled-ui/icons-react/build/esm/Star06';
+export { default as Star01 } from '@untitled-ui/icons-react/build/esm/Star01';
 export { default as ChevronRight } from '@untitled-ui/icons-react/build/esm/ChevronRight';
 export { default as ChevronLeft } from '@untitled-ui/icons-react/build/esm/ChevronLeft';
 export { default as MessageSquare01 } from '@untitled-ui/icons-react/build/esm/MessageSquare01';

@@ -1,4 +1,4 @@
-import { Star06, UserCheck01 } from '@/components/icons';
+import { Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
 import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
 import { deriveInitials } from '@/lib/initials';
@@ -35,7 +35,7 @@ export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
           {displayName}
         </h1>
         {user.is_founding_member && (
-          <Star06
+          <Star01
             className="w-[20px] h-[20px] text-accent"
             fill="currentColor"
             aria-label="Founding member"
