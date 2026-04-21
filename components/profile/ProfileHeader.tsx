@@ -17,7 +17,9 @@ export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
       : `https://${user.website_url}`
     : null;
   const websiteLabel = user.website_url?.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const handleLabel = user.social_handle ? `@${user.social_handle.replace(/^@+/, '')}` : null;
+  const handle = user.social_handle?.trim().replace(/^@+/, '') ?? null;
+  const handleLabel = handle ? `@${handle}` : null;
+  const handleHref = handle ? socialHandleUrl(user.social_platform, handle) : null;
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -81,11 +83,36 @@ export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
           {websiteLabel}
         </a>
       )}
-      {handleLabel && (
+      {handleLabel && handleHref && (
+        <a
+          href={handleHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-sans text-[13px] text-accent text-center mt-[4px]"
+        >
+          {handleLabel}
+        </a>
+      )}
+      {handleLabel && !handleHref && (
         <span className="font-sans text-[13px] text-accent text-center mt-[4px]">
           {handleLabel}
         </span>
       )}
     </div>
   );
+}
+
+function socialHandleUrl(platform: string | null, handle: string): string | null {
+  if (!platform) return null;
+  const h = encodeURIComponent(handle);
+  switch (platform) {
+    case 'instagram': return `https://instagram.com/${h}`;
+    case 'facebook':  return `https://facebook.com/${h}`;
+    case 'x':         return `https://x.com/${h}`;
+    case 'tiktok':    return `https://tiktok.com/@${h}`;
+    case 'youtube':   return `https://youtube.com/@${h}`;
+    case 'pinterest': return `https://pinterest.com/${h}`;
+    case 'linkedin':  return `https://linkedin.com/in/${h}`;
+    default:          return null;
+  }
 }
