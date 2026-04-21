@@ -9,14 +9,17 @@ interface ArtworkGridProps {
   addHref?: string;
 }
 
+const TILE_BASIS =
+  'basis-[calc((100%-4px)/2)] tab:basis-[calc((100%-8px)/3)] desk:basis-[calc((100%-16px)/5)]';
+
 export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }: ArtworkGridProps) {
   return (
-    <div className="grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 gap-[4px] auto-rows-fr w-full">
+    <div className="flex flex-wrap justify-center gap-[4px] w-full">
       {showAddTile && (
         <Link
           href={addHref}
           aria-label="Add artwork"
-          className="aspect-square bg-accent/[0.08] border-[1.5px] border-dashed border-accent/40 rounded-[2px] flex items-center justify-center"
+          className={`${TILE_BASIS} shrink-0 aspect-square bg-accent/[0.08] border-[1.5px] border-dashed border-accent/40 rounded-[2px] flex items-center justify-center`}
         >
           <PlusSquare className="w-[35px] h-[35px] text-accent" />
         </Link>
@@ -30,7 +33,7 @@ export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }:
 
 function ArtworkTile({ artwork }: { artwork: ProfileArtwork }) {
   return (
-    <div className="relative aspect-square bg-divider rounded-[2px] overflow-hidden">
+    <div className={`${TILE_BASIS} shrink-0 relative aspect-square bg-divider rounded-[2px] overflow-hidden`}>
       {artwork.primary_photo_url && (
         <Image
           src={artwork.primary_photo_url}
