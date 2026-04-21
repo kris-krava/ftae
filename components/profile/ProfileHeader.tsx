@@ -37,7 +37,7 @@ export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
           <Link
             href={editHref}
             aria-label="Edit profile"
-            className="absolute top-[-12px] right-[-12px] w-[40px] h-[40px] flex items-center justify-center"
+            className="absolute top-[-10px] right-[-12px] w-[40px] h-[40px] flex items-center justify-center"
           >
             <Edit05 className="w-[20px] h-[20px] text-muted" />
           </Link>

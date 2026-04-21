@@ -87,47 +87,50 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       <main
         className={
           'bg-canvas min-h-screen w-full flex flex-col items-center ' +
-          'pt-[68px] px-[32px] tab:px-[40px] desk:px-[80px] ' +
-          (renderNav ? 'pb-[80px] tab:pb-[24px] tab:pl-[60px] tab:pr-[40px] desk:pl-[60px] desk:pr-[80px]' : 'pb-[24px]')
+          'pt-[32px] ' +
+          (renderNav ? 'pb-[80px] tab:pb-[24px] tab:pl-[60px] desk:pl-[60px]' : 'pb-[24px]')
         }
       >
-        <div className="w-full max-w-[326px] tab:max-w-[480px] desk:max-w-[580px] flex flex-col items-center relative">
-          {!isOwner && !renderNav && (
-            <div className="absolute top-[-44px] left-0">
-              <BackButton />
-            </div>
-          )}
-          {!isOwner && renderNav && (
-            <div className="absolute top-[-44px] left-0">
-              <BackButton />
-            </div>
-          )}
+        <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
+          <div className="w-full max-w-[326px] tab:max-w-[480px] desk:max-w-[580px] flex flex-col items-center relative">
+            {!isOwner && (
+              <div className="absolute top-[-8px] left-0">
+                <BackButton />
+              </div>
+            )}
 
-          <ProfileHeader
-            user={profileUser}
-            mediums={mediums}
-            editHref={isOwner ? '/app/profile/edit' : undefined}
-          />
+            <ProfileHeader
+              user={profileUser}
+              mediums={mediums}
+              editHref={isOwner ? '/app/profile/edit' : undefined}
+            />
 
-          {!isOwner && (
-            <div className="mt-[24px]">
-              <FollowButton
-                targetUserId={profileUser.id}
-                targetUsername={profileUser.username}
-                initialFollowing={alreadyFollowing}
-                isAuthenticated={Boolean(authUser)}
-              />
-            </div>
-          )}
+            {!isOwner && (
+              <div className="mt-[24px]">
+                <FollowButton
+                  targetUserId={profileUser.id}
+                  targetUsername={profileUser.username}
+                  initialFollowing={alreadyFollowing}
+                  isAuthenticated={Boolean(authUser)}
+                />
+              </div>
+            )}
 
-          <span aria-hidden className="block w-full h-px bg-divider/60 mt-[18px]" />
-
-          <div className="w-full mt-[14px]">
-            <ArtworkGrid artworks={artworks} showAddTile={isOwner} />
+            <span aria-hidden className="block w-full h-px bg-divider/60 mt-[18px]" />
           </div>
+        </section>
 
-          {isOwner && <AccountSection email={profileUser.email} />}
-        </div>
+        <section className="w-full mt-[14px]">
+          <ArtworkGrid artworks={artworks} showAddTile={isOwner} />
+        </section>
+
+        {isOwner && (
+          <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
+            <div className="w-full max-w-[326px] tab:max-w-[480px] desk:max-w-[580px]">
+              <AccountSection email={profileUser.email} />
+            </div>
+          </section>
+        )}
       </main>
     </>
   );

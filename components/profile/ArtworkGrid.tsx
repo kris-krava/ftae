@@ -11,14 +11,7 @@ interface ArtworkGridProps {
 
 export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }: ArtworkGridProps) {
   return (
-    <div
-      className={
-        'grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 ' +
-        'auto-rows-fr ' +
-        '-mx-[32px] tab:-mx-[40px] desk:-mx-[80px] ' +
-        'w-[calc(100%+64px)] tab:w-[calc(100%+80px)] desk:w-[calc(100%+160px)]'
-      }
-    >
+    <div className="grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 gap-[4px] auto-rows-fr w-full">
       {showAddTile && (
         <Link
           href={addHref}
@@ -49,7 +42,7 @@ function ArtworkTile({ artwork }: { artwork: ProfileArtwork }) {
       )}
       <span
         aria-hidden
-        className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/70 via-transparent"
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent via-[55%] to-black/70"
       />
       {artwork.title && (
         <p className="absolute left-[8px] right-[8px] bottom-[8px] font-sans font-semibold text-[13px] text-surface truncate">
