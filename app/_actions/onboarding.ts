@@ -359,6 +359,30 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
   }
   console.log('[step4-server] photo validation:', ms(tParse));
 
+  // Per-photo focal points arrive as a JSON array aligned to photos order.
+  // Each entry is [x, y] with values in [0, 1]. Fall back to centered if the
+  // field is absent, malformed, or out of bounds.
+  const focalsRaw = formData.get('photo_focals');
+  const focals: { x: number; y: number }[] = photos.map(() => ({ x: 0.5, y: 0.5 }));
+  if (typeof focalsRaw === 'string') {
+    try {
+      const parsed = JSON.parse(focalsRaw);
+      if (Array.isArray(parsed)) {
+        for (let i = 0; i < focals.length && i < parsed.length; i += 1) {
+          const entry = parsed[i];
+          if (Array.isArray(entry) && entry.length === 2) {
+            const [x, y] = entry;
+            if (typeof x === 'number' && typeof y === 'number' && x >= 0 && x <= 1 && y >= 0 && y <= 1) {
+              focals[i] = { x, y };
+            }
+          }
+        }
+      }
+    } catch {
+      // Keep defaults on parse failure.
+    }
+  }
+
   const depthRaw = formData.get('depth');
   const descriptionRaw = formData.get('description');
   const meta = Step4MetaSchema.safeParse({
@@ -425,6 +449,8 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       url: pub.publicUrl,
       photo_type: photoType,
       sort_order: i,
+      focal_x: focals[i].x,
+      focal_y: focals[i].y,
     });
     console.log(`[step4-server] artwork_photos INSERT photo[${i}]: ${ms(tPhotoRow)}`);
   }

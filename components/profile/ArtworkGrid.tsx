@@ -3,6 +3,10 @@ import Link from 'next/link';
 import { PlusSquare, Shuffle01 } from '@/components/icons';
 import type { ProfileArtwork } from '@/app/_lib/profile';
 
+function objectPositionStyle(focalX: number, focalY: number): { objectPosition: string } {
+  return { objectPosition: `${focalX * 100}% ${focalY * 100}%` };
+}
+
 interface ArtworkGridProps {
   artworks: ProfileArtwork[];
   showAddTile: boolean;
@@ -41,6 +45,7 @@ function ArtworkTile({ artwork }: { artwork: ProfileArtwork }) {
           fill
           sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
           className="object-cover"
+          style={objectPositionStyle(artwork.primary_photo_focal_x, artwork.primary_photo_focal_y)}
         />
       )}
       <span

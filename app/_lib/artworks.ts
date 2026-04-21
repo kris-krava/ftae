@@ -8,6 +8,8 @@ export interface DiscoverArtwork {
   artist_username: string;
   artist_name: string | null;
   primary_photo_url: string | null;
+  primary_photo_focal_x: number;
+  primary_photo_focal_y: number;
   created_at: string;
 }
 
@@ -24,7 +26,7 @@ export async function fetchArtworksPage(
   let query = supabaseAdmin
     .from('artworks')
     .select(
-      'id, title, user_id, created_at, users!inner(username, name, is_active, is_test_user), artwork_photos(url, sort_order, photo_type)',
+      'id, title, user_id, created_at, users!inner(username, name, is_active, is_test_user), artwork_photos(url, sort_order, photo_type, focal_x, focal_y)',
     )
     .eq('is_active', true)
     .eq('users.is_active', true)
@@ -45,7 +47,9 @@ export async function fetchArtworksPage(
     user_id: string;
     created_at: string;
     users: { username: string; name: string | null };
-    artwork_photos: { url: string; sort_order: number; photo_type: string }[] | null;
+    artwork_photos:
+      | { url: string; sort_order: number; photo_type: string; focal_x: number; focal_y: number }[]
+      | null;
   }>;
 
   const items: DiscoverArtwork[] = rows.slice(0, PAGE_SIZE).map((row) => {
@@ -60,6 +64,8 @@ export async function fetchArtworksPage(
       artist_username: row.users.username,
       artist_name: row.users.name,
       primary_photo_url: primary?.url ?? null,
+      primary_photo_focal_x: primary?.focal_x ?? 0.5,
+      primary_photo_focal_y: primary?.focal_y ?? 0.5,
       created_at: row.created_at,
     };
   });

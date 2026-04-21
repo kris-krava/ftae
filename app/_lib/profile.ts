@@ -27,6 +27,8 @@ export interface ProfileArtwork {
   id: string;
   title: string | null;
   primary_photo_url: string | null;
+  primary_photo_focal_x: number;
+  primary_photo_focal_y: number;
   proposal_count: number;
 }
 
@@ -63,7 +65,7 @@ const PROFILE_ARTWORK_LIMIT = 60;
 export async function getUserArtworks(userId: string): Promise<ProfileArtwork[]> {
   const { data } = await supabaseAdmin
     .from('artworks')
-    .select('id, title, artwork_photos(url, sort_order, photo_type)')
+    .select('id, title, artwork_photos(url, sort_order, photo_type, focal_x, focal_y)')
     .eq('user_id', userId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -71,7 +73,9 @@ export async function getUserArtworks(userId: string): Promise<ProfileArtwork[]>
   if (!data) return [];
   return data.map((row) => {
     const photos = (row as unknown as {
-      artwork_photos: { url: string; sort_order: number; photo_type: string }[] | null;
+      artwork_photos:
+        | { url: string; sort_order: number; photo_type: string; focal_x: number; focal_y: number }[]
+        | null;
     }).artwork_photos ?? [];
     const front = photos.find((p) => p.photo_type === 'front');
     const sorted = [...photos].sort((a, b) => a.sort_order - b.sort_order);
@@ -80,6 +84,8 @@ export async function getUserArtworks(userId: string): Promise<ProfileArtwork[]>
       id: row.id as string,
       title: row.title as string | null,
       primary_photo_url: primary?.url ?? null,
+      primary_photo_focal_x: primary?.focal_x ?? 0.5,
+      primary_photo_focal_y: primary?.focal_y ?? 0.5,
       proposal_count: 0,
     };
   });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import {
   DndContext,
@@ -23,6 +23,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { XClose, CheckCircle, Upload01 } from '@/components/icons';
 import { saveStep4Artwork } from '@/app/_actions/onboarding';
+import { focalToObjectPosition, tapToFocal, type FocalPoint } from '@/lib/focal-point';
+
+const FOCAL_SETTLE_MS = 250;
+const FOCAL_TRANSITION_MS = 300;
 
 const MAX_PHOTOS = 6;
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
@@ -33,6 +37,7 @@ const TILE_BASIS = 'basis-[calc((100%-8px)/2)] tab:basis-[calc((100%-16px)/3)]';
 interface PhotoEntry {
   id: string;
   file: File;
+  focal: FocalPoint;
 }
 
 function makePhotoId(): string {
@@ -97,7 +102,10 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
           }),
         ),
       );
-      setPhotos((prev) => [...prev, ...compressed.map((file) => ({ id: makePhotoId(), file }))]);
+      setPhotos((prev) => [
+        ...prev,
+        ...compressed.map((file) => ({ id: makePhotoId(), file, focal: { x: 0.5, y: 0.5 } })),
+      ]);
     } catch (err) {
       console.error(err);
       setError('Could not process one or more photos.');
@@ -108,6 +116,10 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
 
   function removePhoto(id: string) {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function setFocal(id: string, focal: FocalPoint) {
+    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, focal } : p)));
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -140,6 +152,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
     if (!width) { setError('Please add a width.'); return; }
     if (!height) { setError('Please add a height.'); return; }
     photos.forEach((p) => fd.append('photos', p.file, p.file.name || 'photo.jpg'));
+    fd.append('photo_focals', JSON.stringify(photos.map((p) => [p.focal.x, p.focal.y])));
     start(async () => {
       const result = await saveStep4Artwork(fd);
       if (!result.ok) {
@@ -202,7 +215,9 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
                         id={p.id}
                         src={previews[i]?.url ?? ''}
                         index={i}
+                        focal={p.focal}
                         onRemove={() => removePhoto(p.id)}
+                        onSetFocal={(f) => setFocal(p.id, f)}
                       />
                     ))}
                   </SortableContext>
@@ -391,31 +406,96 @@ interface SortablePhotoProps {
   id: string;
   src: string;
   index: number;
+  focal: FocalPoint;
   onRemove: () => void;
+  onSetFocal: (f: FocalPoint) => void;
 }
 
-function SortablePhoto({ id, src, index, onRemove }: SortablePhotoProps) {
+function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal }: SortablePhotoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const style: React.CSSProperties = {
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [dot, setDot] = useState<{ x: number; y: number } | null>(null);
+  const [dotReturning, setDotReturning] = useState(false);
+  const settleTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!src) return;
+    const img = new window.Image();
+    img.onload = () => setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = src;
+    return () => {
+      img.onload = null;
+    };
+  }, [src]);
+
+  useEffect(
+    () => () => {
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    },
+    [],
+  );
+
+  const objectPos = natural
+    ? focalToObjectPosition(natural.w / natural.h, focal)
+    : { x: 50, y: 50 };
+
+  const panAvailable = natural ? natural.w !== natural.h : false;
+
+  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!natural || !panAvailable) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tx = e.clientX - rect.left;
+    const ty = e.clientY - rect.top;
+    setDotReturning(false);
+    setDot({ x: (tx / rect.width) * 100, y: (ty / rect.height) * 100 });
+    if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = window.setTimeout(() => {
+      const next = tapToFocal(tx, ty, rect.width, natural.w, natural.h, focal);
+      onSetFocal(next);
+      setDotReturning(true);
+      setDot(null);
+    }, FOCAL_SETTLE_MS);
+  }
+
+  const dotStyle: React.CSSProperties = {
+    left: dot ? `${dot.x}%` : '50%',
+    top: dot ? `${dot.y}%` : '50%',
+    transition: dotReturning ? `left ${FOCAL_TRANSITION_MS}ms, top ${FOCAL_TRANSITION_MS}ms` : 'none',
+  };
+
+  const tileStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 50 : undefined,
   };
+
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={tileStyle}
       {...attributes}
       {...listeners}
-      className={`${TILE_BASIS} shrink-0 relative aspect-square rounded-[8px] overflow-hidden bg-divider touch-none ${isDragging ? 'opacity-80 shadow-modal' : ''}`}
+      onClick={handleClick}
+      className={`${TILE_BASIS} shrink-0 relative aspect-square rounded-[8px] overflow-hidden bg-divider touch-none ${panAvailable ? 'cursor-pointer' : ''} ${isDragging ? 'opacity-80 shadow-modal' : ''}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt=""
         draggable={false}
+        style={{
+          objectPosition: `${objectPos.x}% ${objectPos.y}%`,
+          transition: `object-position ${FOCAL_TRANSITION_MS}ms`,
+        }}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
       />
+      {panAvailable && (
+        <span
+          aria-hidden
+          style={dotStyle}
+          className="absolute w-[10px] h-[10px] rounded-full bg-surface border border-ink/50 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+        />
+      )}
       <button
         type="button"
         onClick={(e) => {
