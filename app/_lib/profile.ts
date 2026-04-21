@@ -136,7 +136,7 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
   const { data } = await supabaseAdmin
     .from('artworks')
     .select(
-      `id, user_id, title, year, medium, width, height, depth, description, created_at,
+      `id, user_id, title, year, medium, width, height, depth, description:artist_statement, created_at,
        artwork_photos(url, sort_order, photo_type, focal_x, focal_y),
        users:user_id ( id, username, name, avatar_url, is_founding_member )`,
     )
