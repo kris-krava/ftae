@@ -152,14 +152,11 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
             <h2 className="font-sans font-semibold text-[18px] text-ink pt-[32px] px-[32px]">
               Add Your Art
             </h2>
-            <p className="font-sans text-[15px] text-ink/70 leading-[1.4] px-[32px] mt-[8px]">
-              Something you made, and would love to see on another artist&apos;s wall.
-            </p>
-            <p className="font-sans text-[12px] text-ink/70 leading-[16px] px-[32px] mt-[4px]">
-              Up to 6 photos · JPG or PNG · 5 MB each
+            <p className="font-sans text-[15px] text-ink/70 leading-[1.4] px-[32px] mt-[16px]">
+              One piece you made, and would love another artist to have.
             </p>
 
-            <form onSubmit={onSubmit} className="p-[32px] pt-[24px] flex flex-col gap-[16px]">
+            <form onSubmit={onSubmit} className="p-[32px] flex flex-col">
               <div className="flex flex-col gap-[8px]">
                 {rows.map((row, rowIdx) => (
                   <div key={rowIdx} className="flex justify-center gap-[8px]">
@@ -214,6 +211,11 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
                 onChange={onFilesPicked}
               />
 
+              <p className="font-sans text-[12px] text-ink/70 leading-[16px] mt-[12px] text-center">
+                Up to 6 photos · JPG or PNG · 5 MB each
+              </p>
+
+              <div className="mt-[32px] flex flex-col gap-[16px]">
               <Field label="Title" htmlFor="add-title">
                 <input
                   id="add-title"
@@ -326,7 +328,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
               <button
                 type="submit"
                 disabled={pending}
-                className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] mt-[8px] disabled:opacity-60"
+                className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-60"
               >
                 {pending ? 'Uploading…' : 'Add Artwork'}
               </button>
@@ -335,6 +337,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
                   {error}
                 </p>
               )}
+              </div>
             </form>
           </div>
         )}
