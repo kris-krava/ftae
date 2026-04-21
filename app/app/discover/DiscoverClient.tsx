@@ -9,6 +9,8 @@ import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const TILE_BASIS =
+  'basis-[calc((100%-4px)/2)] tab:basis-[calc((100%-8px)/3)] desk:basis-[calc((100%-16px)/5)]';
 
 interface DiscoverClientProps {
   initialArtworks: DiscoverArtwork[];
@@ -175,9 +177,11 @@ function ArtworkGridSection({
   }
   return (
     <>
-      <div className="grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 gap-[4px]">
+      <div className="flex flex-wrap justify-center gap-[4px]">
         {artworks.map((art, i) => (
-          <DiscoverArtworkTile key={art.id} artwork={art} index={i} />
+          <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
+            <DiscoverArtworkTile artwork={art} index={i} />
+          </div>
         ))}
       </div>
       <div ref={sentinelRef} aria-hidden className="h-[1px]" />
