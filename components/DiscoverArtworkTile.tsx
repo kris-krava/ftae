@@ -16,9 +16,11 @@ const FALLBACK_COLORS = [
 
 export function DiscoverArtworkTile({ artwork, index }: DiscoverArtworkTileProps) {
   const bg = FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+  const artistName = artwork.artist_name?.trim() || artwork.artist_username;
   return (
     <Link
       href={`/${artwork.artist_username}`}
+      aria-label={`${artistName}'s profile`}
       className="relative aspect-square overflow-hidden block"
       style={{ backgroundColor: bg }}
     >

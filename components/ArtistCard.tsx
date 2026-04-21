@@ -42,6 +42,7 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
   return (
     <Link
       href={`/${artist.username}`}
+      aria-label={`${displayName}'s profile`}
       className="block bg-surface border border-field/35 rounded-[12px] p-[16px]"
     >
       <div className="flex gap-[12px] items-start">
@@ -59,7 +60,7 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
               <Star01
                 className="w-[16px] h-[16px] text-accent shrink-0"
                 fill="currentColor"
-                aria-label="Founding member"
+                aria-label="Founding Member"
               />
             )}
             {artist.studio_verified && (

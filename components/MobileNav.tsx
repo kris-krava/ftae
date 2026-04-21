@@ -47,7 +47,7 @@ export function MobileNav({ username, initials, avatarUrl }: MobileNavProps) {
         <li className="contents">
           <Link
             href={`/${username}`}
-            aria-label="Profile"
+            aria-label="Your profile"
             aria-current={isProfile ? 'page' : undefined}
             className={ITEM_BASE}
           >

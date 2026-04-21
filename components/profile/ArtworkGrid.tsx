@@ -18,7 +18,7 @@ export function ArtworkGrid({ artworks, showAddTile, addHref = '/app/add-art' }:
       {showAddTile && (
         <Link
           href={addHref}
-          aria-label="Add artwork"
+          aria-label="Add Your Art"
           className={`${TILE_BASIS} shrink-0 aspect-square bg-accent/[0.08] border-[1.5px] border-dashed border-accent/40 rounded-[2px] flex items-center justify-center`}
         >
           <PlusSquare className="w-[35px] h-[35px] text-accent" />

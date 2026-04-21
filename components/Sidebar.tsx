@@ -101,7 +101,7 @@ export function Sidebar({ username, displayName, initials, avatarUrl, unreadCoun
 
       <Link
         href={`/${username}`}
-        aria-label={isProfile ? 'Profile (current page)' : 'Profile'}
+        aria-label="Your profile"
         aria-current={isProfile ? 'page' : undefined}
         className="absolute bottom-[24px] left-0 right-0 flex items-center h-[32px]"
       >
