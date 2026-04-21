@@ -13,6 +13,7 @@ export { default as ChevronRight } from '@untitled-ui/icons-react/build/esm/Chev
 export { default as ChevronLeft } from '@untitled-ui/icons-react/build/esm/ChevronLeft';
 export { default as MessageSquare01 } from '@untitled-ui/icons-react/build/esm/MessageSquare01';
 export { default as Edit02 } from '@untitled-ui/icons-react/build/esm/Edit02';
+export { default as Edit05 } from '@untitled-ui/icons-react/build/esm/Edit05';
 export { default as XClose } from '@untitled-ui/icons-react/build/esm/XClose';
 export { default as CheckCircle } from '@untitled-ui/icons-react/build/esm/CheckCircle';
 export { default as LogOut01 } from '@untitled-ui/icons-react/build/esm/LogOut01';

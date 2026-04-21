@@ -1,4 +1,5 @@
-import { Star01, UserCheck01 } from '@/components/icons';
+import Link from 'next/link';
+import { Edit05, Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
 import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
 import { deriveInitials } from '@/lib/initials';
@@ -6,9 +7,10 @@ import { deriveInitials } from '@/lib/initials';
 interface ProfileHeaderProps {
   user: ProfileUser;
   mediums: ProfileMedium[];
+  editHref?: string;
 }
 
-export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
+export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
   const displayName = user.name?.trim() || user.username;
   const initials = deriveInitials(user.name, user.email);
   const websiteHref = user.website_url
@@ -23,13 +25,24 @@ export function ProfileHeader({ user, mediums }: ProfileHeaderProps) {
 
   return (
     <div className="flex flex-col items-center w-full">
-      <Avatar
-        initials={initials}
-        avatarUrl={user.avatar_url}
-        size={193}
-        textSize="text-[48px]"
-        priority
-      />
+      <div className="relative">
+        <Avatar
+          initials={initials}
+          avatarUrl={user.avatar_url}
+          size={193}
+          textSize="text-[48px]"
+          priority
+        />
+        {editHref && (
+          <Link
+            href={editHref}
+            aria-label="Edit profile"
+            className="absolute top-[-12px] right-[-12px] w-[40px] h-[40px] flex items-center justify-center"
+          >
+            <Edit05 className="w-[20px] h-[20px] text-muted" />
+          </Link>
+        )}
+      </div>
       <div className="flex items-center gap-[8px] mt-[10px]">
         <h1 className="font-serif font-bold text-ink text-[24px] tab:text-[28px] desk:text-[32px]">
           {displayName}

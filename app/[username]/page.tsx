@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
@@ -16,7 +15,6 @@ import { ArtworkGrid } from '@/components/profile/ArtworkGrid';
 import { AccountSection } from '@/components/profile/AccountSection';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { BackButton } from '@/components/profile/BackButton';
-import { Edit02 } from '@/components/icons';
 import { MobileNav } from '@/components/MobileNav';
 import { MobileBell } from '@/components/MobileBell';
 import { Sidebar } from '@/components/Sidebar';
@@ -104,17 +102,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <BackButton />
             </div>
           )}
-          {isOwner && (
-            <Link
-              href="/app/profile/edit"
-              aria-label="Edit profile"
-              className="absolute top-[-44px] right-0 flex items-center justify-center w-[40px] h-[40px]"
-            >
-              <Edit02 className="w-[20px] h-[20px] text-ink" />
-            </Link>
-          )}
 
-          <ProfileHeader user={profileUser} mediums={mediums} />
+          <ProfileHeader
+            user={profileUser}
+            mediums={mediums}
+            editHref={isOwner ? '/app/profile/edit' : undefined}
+          />
 
           {!isOwner && (
             <div className="mt-[24px]">
