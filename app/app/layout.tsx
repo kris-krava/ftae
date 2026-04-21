@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deriveInitials } from '@/lib/initials';
 import { MobileNav } from '@/components/MobileNav';
-import { MobileBellGate } from '@/components/MobileBellGate';
 import { Sidebar } from '@/components/Sidebar';
 
 export const dynamic = 'force-dynamic';
@@ -49,10 +48,15 @@ export default async function AppLayout({
         avatarUrl={profile.avatar_url ?? null}
         unreadCount={unread}
       />
-      <MobileBellGate userId={user.id} initialUnread={unread} />
       <div className="min-h-dvh flex flex-col pb-[96px] tab:pb-0 tab:pl-[60px]">{children}</div>
       {modal}
-      <MobileNav username={username} initials={initials} avatarUrl={profile.avatar_url ?? null} />
+      <MobileNav
+        username={username}
+        initials={initials}
+        avatarUrl={profile.avatar_url ?? null}
+        userId={user.id}
+        initialUnread={unread}
+      />
     </>
   );
 }

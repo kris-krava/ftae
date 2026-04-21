@@ -16,7 +16,6 @@ import { AccountSection } from '@/components/profile/AccountSection';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { BackButton } from '@/components/profile/BackButton';
 import { MobileNav } from '@/components/MobileNav';
-import { MobileBell } from '@/components/MobileBell';
 import { Sidebar } from '@/components/Sidebar';
 
 export const dynamic = 'force-dynamic';
@@ -75,11 +74,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             avatarUrl={(viewerProfile.avatar_url as string | null) ?? null}
             unreadCount={viewerUnread}
           />
-          <MobileBell userId={authUser.id} initialUnread={viewerUnread} />
           <MobileNav
             username={viewerProfile.username as string}
             initials={deriveInitials(viewerProfile.name as string | null, authUser.email ?? null)}
             avatarUrl={(viewerProfile.avatar_url as string | null) ?? null}
+            userId={authUser.id}
+            initialUnread={viewerUnread}
           />
         </>
       )}

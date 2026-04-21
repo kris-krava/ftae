@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Heart, Compass03, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { Heart, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 
 interface SidebarProps {
   username: string;
@@ -72,7 +72,7 @@ export function Sidebar({ username, displayName, initials, avatarUrl, unreadCoun
           href="/app/discover"
           label="Discover"
           active={isDiscover}
-          icon={<Compass03 className={`${ICON_BASE} ${isDiscover ? 'text-accent' : 'text-ink'}`} />}
+          icon={<Eye className={`${ICON_BASE} ${isDiscover ? 'text-accent' : 'text-ink'}`} />}
         />
         <SidebarItem
           href="/app/add-art"
@@ -92,7 +92,10 @@ export function Sidebar({ username, displayName, initials, avatarUrl, unreadCoun
           active={isNotifications}
           icon={
             <span className="relative">
-              <Bell01 className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-ink'}`} />
+              <Bell01
+                className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-ink'}`}
+                fill={isNotifications ? 'currentColor' : 'none'}
+              />
               {unreadCount > 0 && <BadgeBubble count={unreadCount} />}
             </span>
           }
@@ -105,11 +108,19 @@ export function Sidebar({ username, displayName, initials, avatarUrl, unreadCoun
         aria-current={isProfile ? 'page' : undefined}
         className="absolute bottom-[24px] left-0 right-0 flex items-center h-[32px]"
       >
-        <span className={ICON_FRAME}>
-          <Avatar initials={initials} avatarUrl={avatarUrl} size={32} />
+        {isProfile && (
+          <span
+            aria-hidden
+            className="absolute inset-x-[6px] inset-y-[-8px] rounded-[8px] bg-accent/10"
+          />
+        )}
+        <span className={`relative ${ICON_FRAME}`}>
+          <Avatar initials={initials} avatarUrl={avatarUrl} size={32} active={isProfile} />
         </span>
         <span
-          className={`absolute left-[60px] whitespace-nowrap font-sans font-medium text-[14px] text-ink opacity-0 ${LABEL_TRANSITION} group-hover/sidebar:opacity-100`}
+          className={`absolute left-[60px] whitespace-nowrap font-sans text-[14px] opacity-0 ${LABEL_TRANSITION} group-hover/sidebar:opacity-100 ${
+            isProfile ? 'font-semibold text-accent' : 'font-medium text-ink'
+          }`}
         >
           {displayName}
         </span>
@@ -162,11 +173,14 @@ function Avatar({
   initials,
   avatarUrl,
   size,
+  active,
 }: {
   initials: string;
   avatarUrl: string | null;
   size: number;
+  active?: boolean;
 }) {
+  const ring = active ? 'ring-2 ring-accent' : '';
   if (avatarUrl) {
     return (
       <Image
@@ -174,14 +188,14 @@ function Avatar({
         alt=""
         width={size}
         height={size}
-        className="rounded-full object-cover"
+        className={`rounded-full object-cover ${ring}`}
       />
     );
   }
   return (
     <span
       style={{ width: size, height: size }}
-      className="rounded-full bg-divider text-ink font-semibold text-[12px] flex items-center justify-center"
+      className={`rounded-full bg-divider font-semibold text-[12px] flex items-center justify-center ${ring} ${active ? 'text-accent' : 'text-ink'}`}
     >
       {initials}
     </span>

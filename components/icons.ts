@@ -3,7 +3,7 @@
 
 export { default as Mail01 } from '@untitled-ui/icons-react/build/esm/Mail01';
 export { default as Heart } from '@untitled-ui/icons-react/build/esm/Heart';
-export { default as Compass03 } from '@untitled-ui/icons-react/build/esm/Compass03';
+export { default as Eye } from '@untitled-ui/icons-react/build/esm/Eye';
 export { default as PlusSquare } from '@untitled-ui/icons-react/build/esm/PlusSquare';
 export { default as Shuffle01 } from '@untitled-ui/icons-react/build/esm/Shuffle01';
 export { default as User01 } from '@untitled-ui/icons-react/build/esm/User01';
