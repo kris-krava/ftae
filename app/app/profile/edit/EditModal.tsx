@@ -225,7 +225,7 @@ function Step1({
         onChange={onAvatarChange}
       />
       <span className="h-[10px] w-px shrink-0" />
-      <p className="font-sans text-[12px] text-muted text-center w-full">Tap to add photo</p>
+      <p className="font-sans text-[12px] text-muted text-center w-full">Tap to replace photo</p>
       <span className="h-[16px] w-px shrink-0" />
       <Field label="Display name" htmlFor="edit-name">
         <input
