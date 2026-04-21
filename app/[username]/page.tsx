@@ -88,7 +88,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         className={
           'bg-canvas min-h-screen w-full flex flex-col items-center ' +
           'pt-[32px] ' +
-          (renderNav ? 'pb-[80px] tab:pb-[24px] tab:pl-[60px] desk:pl-[60px]' : 'pb-[24px]')
+          (renderNav ? 'pb-[96px] tab:pb-[24px] tab:pl-[60px] desk:pl-[60px]' : 'pb-[24px]')
         }
       >
         <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
