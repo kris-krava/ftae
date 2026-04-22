@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   // Supabase appends `type=email_change` (or `email`) when the magic link is from
   // auth.updateUser({ email }). Route those confirmations to the dedicated success
-  // page instead of dropping the user on /app/following.
+  // page instead of dropping the user on /app/home.
   const callbackType = searchParams.get('type');
   const isEmailChange = callbackType === 'email_change' || callbackType === 'email';
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     if (isEmailChange) {
       return NextResponse.redirect(`${origin}/app/profile/edit-email/done`);
     }
-    return NextResponse.redirect(`${origin}/app/following`);
+    return NextResponse.redirect(`${origin}/app/home`);
   }
 
   const seed = userEmail.split('@')[0] ?? 'artist';

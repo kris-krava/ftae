@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Heart, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { Home01, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 
 interface MobileNavProps {
   username: string;
@@ -20,7 +20,7 @@ const ICON_BASE = 'w-[24px] h-[24px]';
 
 export function MobileNav({ username, initials, avatarUrl, userId, initialUnread }: MobileNavProps) {
   const pathname = usePathname() ?? '';
-  const isFollowing = pathname.startsWith('/app/following');
+  const isHome = pathname.startsWith('/app/home');
   const isDiscover = pathname.startsWith('/app/discover');
   const isTrades = pathname.startsWith('/app/trades');
   const isNotifications = pathname.startsWith('/app/notifications');
@@ -57,10 +57,10 @@ export function MobileNav({ username, initials, avatarUrl, userId, initialUnread
     >
       <span aria-hidden className="absolute top-0 inset-x-0 h-px bg-divider/50" />
       <ul className="grid grid-cols-6 h-full justify-items-center">
-        <NavItem href="/app/following" label="Following" active={isFollowing}>
-          <Heart
-            className={`${ICON_BASE} ${isFollowing ? 'text-accent' : 'text-ink'}`}
-            fill={isFollowing ? 'currentColor' : 'none'}
+        <NavItem href="/app/home" label="Home" active={isHome}>
+          <Home01
+            className={`${ICON_BASE} ${isHome ? 'text-accent' : 'text-muted'}`}
+            fill="none"
           />
         </NavItem>
         <NavItem href="/app/discover" label="Discover" active={isDiscover}>
@@ -75,7 +75,7 @@ export function MobileNav({ username, initials, avatarUrl, userId, initialUnread
         <li className="contents">
           <Link
             href={`/${username}`}
-            aria-label="Your profile"
+            aria-label="My profile"
             aria-current={isProfile ? 'page' : undefined}
             className={ITEM_BASE}
           >
@@ -95,8 +95,8 @@ export function MobileNav({ username, initials, avatarUrl, userId, initialUnread
         >
           <span className="relative">
             <Bell01
-              className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-ink'}`}
-              fill={isNotifications ? 'currentColor' : 'none'}
+              className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-muted'}`}
+              fill="none"
             />
             {unread > 0 && <Badge count={unread} />}
           </span>

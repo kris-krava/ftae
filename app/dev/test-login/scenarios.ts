@@ -77,7 +77,7 @@ export interface Scenario {
   cleanupAllBefore?: boolean;
 }
 
-const HOME: string = '/app/following';
+const HOME: string = '/app/home';
 const STEP1 = '/onboarding/step-1';
 const STEP3 = '/onboarding/step-3';
 const DISCOVER = '/app/discover';
@@ -113,7 +113,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'founding-member',
     name: 'Complete profile — founding member',
-    description: 'Full profile + 2 artworks + 3 months founding credit. Lands on /app/following.',
+    description: 'Full profile + 2 artworks + 3 months founding credit. Lands on /app/home.',
     redirect: HOME,
     profile: {
       name: 'Test Founder',

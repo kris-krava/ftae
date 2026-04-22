@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 // Intercepting route: when the user clicks an in-app link that points at
 // /app/add-art, Next.js renders this component into the @modal parallel
-// slot instead of navigating away. The underlying page (Following, Discover,
+// slot instead of navigating away. The underlying page (Home, Discover,
 // profile, etc.) stays mounted behind it.
 export default async function AddArtModalIntercept() {
   const supabase = createClient();

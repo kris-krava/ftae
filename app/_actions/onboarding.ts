@@ -467,7 +467,7 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     .eq('id', userId)
     .single();
   if (userRow?.username) revalidatePath(`/${userRow.username as string}`);
-  revalidatePath('/app/following');
+  revalidatePath('/app/home');
   console.log(`[step4-server] === END (total ${ms(tStart)}) ===`);
   return { ok: true };
 }

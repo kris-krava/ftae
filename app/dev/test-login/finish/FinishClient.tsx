@@ -12,8 +12,8 @@ export function FinishClient() {
     async function finish() {
       // Read intended destination from query string.
       const search = new URLSearchParams(window.location.search);
-      const nextRaw = search.get('next') ?? '/app/following';
-      const next = SAFE_NEXT.test(nextRaw) ? nextRaw : '/app/following';
+      const nextRaw = search.get('next') ?? '/app/home';
+      const next = SAFE_NEXT.test(nextRaw) ? nextRaw : '/app/home';
 
       const supabase = createClient();
 

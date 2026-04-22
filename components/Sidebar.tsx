@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Heart, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { Home01, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 
 interface SidebarProps {
   username: string;
@@ -26,7 +26,7 @@ const LABEL_BASE =
 
 export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarProps) {
   const pathname = usePathname() ?? '';
-  const isFollowing = pathname.startsWith('/app/following');
+  const isHome = pathname.startsWith('/app/home');
   const isDiscover = pathname.startsWith('/app/discover');
   const isTrades = pathname.startsWith('/app/trades');
   const isNotifications = pathname.startsWith('/app/notifications');
@@ -56,13 +56,13 @@ export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarP
 
       <ul className="mt-[30px] flex flex-col gap-[6px]">
         <SidebarItem
-          href="/app/following"
-          label="Following"
-          active={isFollowing}
+          href="/app/home"
+          label="Home"
+          active={isHome}
           icon={
-            <Heart
-              className={`${ICON_BASE} ${isFollowing ? 'text-accent' : 'text-ink'}`}
-              fill={isFollowing ? 'currentColor' : 'none'}
+            <Home01
+              className={`${ICON_BASE} ${isHome ? 'text-accent' : 'text-muted'}`}
+              fill="none"
             />
           }
         />
@@ -91,8 +91,8 @@ export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarP
           icon={
             <span className="relative shrink-0">
               <Bell01
-                className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-ink'}`}
-                fill={isNotifications ? 'currentColor' : 'none'}
+                className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-muted'}`}
+                fill="none"
               />
               {unreadCount > 0 && <BadgeBubble count={unreadCount} />}
             </span>
@@ -102,7 +102,7 @@ export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarP
 
       <Link
         href={`/${username}`}
-        aria-label="Profile"
+        aria-label="My profile"
         aria-current={isProfile ? 'page' : undefined}
         className="absolute bottom-[24px] left-0 right-0 h-[32px] flex items-center"
       >
@@ -120,7 +120,7 @@ export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarP
             isProfile ? 'font-semibold text-accent' : 'font-medium text-ink'
           }`}
         >
-          Profile
+          My Profile
         </span>
       </Link>
     </aside>

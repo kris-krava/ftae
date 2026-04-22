@@ -43,7 +43,7 @@ export default async function SuccessPage() {
       >
         You&rsquo;re a founding member!
       </h1>
-      <SuccessTransition delayMs={REDIRECT_DELAY_MS} target="/app/following" />
+      <SuccessTransition delayMs={REDIRECT_DELAY_MS} target="/app/home" />
     </main>
   );
 }

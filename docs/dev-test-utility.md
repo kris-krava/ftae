@@ -44,9 +44,9 @@ Every scenario's primary user is created with `is_test_user = true` and an email
 | **New user** | `/onboarding/step-1` | Empty profile: username + referral_code set, all profile fields null, `profile_completion_pct = 0`. |
 | **Partial profile** | `/onboarding/step-3` | Steps 1 + 2 complete: name, location, bio, avatar, 2 selected mediums, `profile_completion_pct = 50`. |
 | **Complete profile — no artwork** | `/onboarding/step-4` | All profile fields (name, location, bio, website, social, avatar) + 2 mediums; no artworks; `profile_completion_pct = 85`. |
-| **Complete profile — founding member** | `/app/following` | Full profile + 2 artworks + `is_founding_member = true` + 3 months `founding_member` credit; `profile_completion_pct = 100`. |
-| **Complete profile — with referral** | `/app/following` | Founding-member state plus an auxiliary test user (`aux-referred-…`) with a completed referral record and `referral_bonus` credit linked to that referral. |
-| **Returning user** | `/app/following` | Founding member with 2 artworks + 2 auxiliary followers (`aux-follower-…`) + 2 notifications (one unread referral_joined, one read profile_nudge). |
+| **Complete profile — founding member** | `/app/home` | Full profile + 2 artworks + `is_founding_member = true` + 3 months `founding_member` credit; `profile_completion_pct = 100`. |
+| **Complete profile — with referral** | `/app/home` | Founding-member state plus an auxiliary test user (`aux-referred-…`) with a completed referral record and `referral_bonus` credit linked to that referral. |
+| **Returning user** | `/app/home` | Founding member with 2 artworks + 2 auxiliary followers (`aux-follower-…`) + 2 notifications (one unread referral_joined, one read profile_nudge). |
 
 Test artworks are always inserted with `is_trade_available = false` so they cannot leak into the landing "Pieces Ready to Trade" counter.
 
@@ -75,7 +75,7 @@ Every row created by the utility is marked **twice**:
 
 Aux users (referred artists, followers) follow the same convention.
 
-All production read queries exclude test users — landing stats, Discover search + grid, Following feed, admin dashboard (unless `?test=1` is passed).
+All production read queries exclude test users — landing stats, Discover search + grid, Home feed, admin dashboard (unless `?test=1` is passed).
 
 ---
 
@@ -101,7 +101,7 @@ Append an object to `app/dev/test-login/scenarios.ts`:
   id: 'my-scenario',                    // kebab-case; becomes the email slug
   name: 'Human-readable tile title',
   description: 'One-line description shown under the title.',
-  redirect: '/app/following',           // where the browser lands
+  redirect: '/app/home',                // where the browser lands
 
   profile: {
     name: 'Test Whoever',
@@ -178,5 +178,5 @@ Query files that filter out test users:
 
 - `app/_lib/landing-stats.ts` — founding artists + pieces ready to trade
 - `app/_lib/artists.ts` — Discover `searchArtists` (name/username + medium matches)
-- `app/_lib/artworks.ts` — Discover artwork grid + Following feed
+- `app/_lib/artworks.ts` — Discover artwork grid + Home feed
 - `app/_lib/admin.ts` — admin dashboard (togglable via `?test=1`)

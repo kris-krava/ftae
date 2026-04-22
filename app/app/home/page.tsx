@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Heart } from '@/components/icons';
+import { Home01 } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FollowingPage() {
+export default async function HomePage() {
   const supabase = createClient();
   const {
     data: { user },
@@ -15,10 +15,10 @@ export default async function FollowingPage() {
   return (
     <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px]">
       <div className="flex items-center justify-center w-[96px] h-[96px] rounded-full bg-accent/10">
-        <Heart className="w-[48px] h-[48px] text-accent" />
+        <Home01 className="w-[48px] h-[48px] text-accent" />
       </div>
       <h1 className="font-serif font-bold text-ink text-center text-[24px] mt-[24px]">
-        Your Following Feed
+        Your Home Feed
       </h1>
       <p className="font-sans text-muted text-center text-[15px] leading-[24px] mt-[12px]">
         See new work from artists you follow

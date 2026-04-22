@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase/admin';
 
 const RESERVED = new Set([
-  'admin', 'api', 'app', 'auth', 'onboarding', 'r', 'discover', 'following',
+  'admin', 'api', 'app', 'auth', 'onboarding', 'r', 'discover', 'home', 'following',
   'trades', 'profile', 'notifications', 'check-email', 'dev-login',
   'settings', 'signin', 'signup', 'login', 'logout', 'help', 'support',
   'terms', 'privacy', 'about', 'contact', 'www', 'mail', 'static',

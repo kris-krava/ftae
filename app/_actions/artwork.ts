@@ -226,7 +226,7 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
     revalidatePath(`/${username}`);
     revalidatePath(`/${username}/artwork/${artworkId}`);
   }
-  revalidatePath('/app/following');
+  revalidatePath('/app/home');
 
   return { ok: true };
 }
@@ -265,7 +265,7 @@ export async function softDeleteArtwork(artworkId: string): Promise<ArtworkActio
     .single();
   const username = (userRow?.username as string | undefined) ?? '';
   if (username) revalidatePath(`/${username}`);
-  revalidatePath('/app/following');
+  revalidatePath('/app/home');
 
   return { ok: true };
 }
