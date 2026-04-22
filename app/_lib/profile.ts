@@ -102,6 +102,7 @@ export async function isFollowing(followerId: string, followingId: string): Prom
 }
 
 export interface ArtworkPhoto {
+  id: string;
   url: string;
   sort_order: number;
   photo_type: string;
@@ -137,7 +138,7 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
     .from('artworks')
     .select(
       `id, user_id, title, year, medium, width, height, depth, description:artist_statement, created_at,
-       artwork_photos(url, sort_order, photo_type, focal_x, focal_y),
+       artwork_photos(id, url, sort_order, photo_type, focal_x, focal_y),
        users:user_id ( id, username, name, avatar_url, is_founding_member )`,
     )
     .eq('id', artworkId)

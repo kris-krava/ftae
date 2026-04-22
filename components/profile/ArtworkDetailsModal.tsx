@@ -211,7 +211,14 @@ export function ArtworkDetailsModal({
                   </span>
                 </div>
               </Link>
-              {!isOwner && (
+              {isOwner ? (
+                <Link
+                  href={`/app/edit-art/${artwork.id}`}
+                  className="shrink-0 rounded-[8px] px-[24px] h-[44px] flex items-center justify-center bg-surface border border-accent text-accent font-sans font-semibold text-[14px]"
+                >
+                  Edit
+                </Link>
+              ) : (
                 <div className="shrink-0">
                   <FollowButton
                     targetUserId={artwork.artist.id}
