@@ -69,7 +69,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <>
           <Sidebar
             username={viewerProfile.username as string}
-            displayName={(viewerProfile.name as string)?.trim() || (viewerProfile.username as string)}
             initials={deriveInitials(viewerProfile.name as string | null, authUser.email ?? null)}
             avatarUrl={(viewerProfile.avatar_url as string | null) ?? null}
             unreadCount={viewerUnread}

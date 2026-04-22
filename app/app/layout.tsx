@@ -35,7 +35,6 @@ export default async function AppLayout({
     .eq('is_read', false);
 
   const username = profile.username;
-  const displayName = profile.name?.trim() || username;
   const initials = deriveInitials(profile.name, user.email ?? null);
   const unread = unreadCount ?? 0;
 
@@ -43,7 +42,6 @@ export default async function AppLayout({
     <>
       <Sidebar
         username={username}
-        displayName={displayName}
         initials={initials}
         avatarUrl={profile.avatar_url ?? null}
         unreadCount={unread}
