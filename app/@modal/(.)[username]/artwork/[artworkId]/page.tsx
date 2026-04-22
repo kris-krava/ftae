@@ -10,9 +10,9 @@ interface Props {
   params: { username: string; artworkId: string };
 }
 
-// Intercepting route: when a user clicks an artwork tile that links to
-// /[username]/artwork/[artworkId], Next.js renders this into the @modal
-// slot so the profile page stays mounted behind it.
+// Root-level intercept: fires from anywhere in the app (Discover, Profile,
+// direct deep link, etc.) and renders the Art Details modal over the current
+// page without a full navigation.
 export default async function ArtworkDetailsIntercept({ params }: Props) {
   noStore();
   const artwork = await getArtworkDetail(params.artworkId);

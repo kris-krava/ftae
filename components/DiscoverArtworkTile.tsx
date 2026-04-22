@@ -5,6 +5,7 @@ import type { DiscoverArtwork } from '@/app/_lib/artworks';
 interface DiscoverArtworkTileProps {
   artwork: DiscoverArtwork;
   index: number;
+  isOwn: boolean;
 }
 
 const FALLBACK_COLORS = [
@@ -13,13 +14,12 @@ const FALLBACK_COLORS = [
   '#999c7c', '#c78b6e', '#8a9eb5', '#a68b73',
 ];
 
-export function DiscoverArtworkTile({ artwork, index }: DiscoverArtworkTileProps) {
+export function DiscoverArtworkTile({ artwork, index, isOwn }: DiscoverArtworkTileProps) {
   const bg = FALLBACK_COLORS[index % FALLBACK_COLORS.length];
-  const artistName = artwork.artist_name?.trim() || artwork.artist_username;
   return (
     <Link
-      href={`/${artwork.artist_username}`}
-      aria-label={`${artistName}'s profile`}
+      href={`/${artwork.artist_username}/artwork/${artwork.id}`}
+      aria-label={artwork.title ?? 'View artwork'}
       className="relative aspect-square overflow-hidden rounded-[2px] block"
       style={{ backgroundColor: bg }}
     >
@@ -29,7 +29,7 @@ export function DiscoverArtworkTile({ artwork, index }: DiscoverArtworkTileProps
           alt={artwork.title ?? ''}
           fill
           sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
-          className="object-cover"
+          className={`object-cover ${isOwn ? '' : 'blur-2xl scale-110'}`}
           style={{ objectPosition: `${artwork.primary_photo_focal_x * 100}% ${artwork.primary_photo_focal_y * 100}%` }}
           priority={index < 4}
         />

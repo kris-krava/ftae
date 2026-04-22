@@ -30,6 +30,7 @@ export default async function DiscoverPage() {
           initialArtworks={initial.items}
           initialCursor={initial.nextCursor}
           isAuthenticated
+          currentUserId={user.id}
         />
       </ErrorBoundary>
     </main>
