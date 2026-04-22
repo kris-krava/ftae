@@ -1,11 +1,11 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
 interface DiscoverArtworkTileProps {
   artwork: DiscoverArtwork;
   index: number;
   isOwn: boolean;
+  onOpen: (artworkId: string) => void;
 }
 
 const FALLBACK_COLORS = [
@@ -14,13 +14,14 @@ const FALLBACK_COLORS = [
   '#999c7c', '#c78b6e', '#8a9eb5', '#a68b73',
 ];
 
-export function DiscoverArtworkTile({ artwork, index, isOwn }: DiscoverArtworkTileProps) {
+export function DiscoverArtworkTile({ artwork, index, isOwn, onOpen }: DiscoverArtworkTileProps) {
   const bg = FALLBACK_COLORS[index % FALLBACK_COLORS.length];
   return (
-    <Link
-      href={`/${artwork.artist_username}/artwork/${artwork.id}`}
+    <button
+      type="button"
+      onClick={() => onOpen(artwork.id)}
       aria-label={artwork.title ?? 'View artwork'}
-      className="relative aspect-square overflow-hidden rounded-[2px] block"
+      className="relative aspect-square overflow-hidden rounded-[2px] block w-full"
       style={{ backgroundColor: bg }}
     >
       {artwork.primary_photo_url && (
@@ -34,6 +35,6 @@ export function DiscoverArtworkTile({ artwork, index, isOwn }: DiscoverArtworkTi
           priority={index < 4}
         />
       )}
-    </Link>
+    </button>
   );
 }

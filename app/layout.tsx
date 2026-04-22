@@ -42,19 +42,10 @@ export const metadata: Metadata = {
   description: 'An artist-only community, where we trade our original artwork with each other.',
 };
 
-export default function RootLayout({
-  children,
-  modal,
-}: {
-  children: React.ReactNode;
-  modal: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${rockSalt.variable}`}>
-      <body>
-        {children}
-        {modal}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

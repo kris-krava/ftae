@@ -4,7 +4,13 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { SearchSm, XCircle } from '@/components/icons';
 import { DiscoverArtworkTile } from '@/components/DiscoverArtworkTile';
 import { ArtistCard } from '@/components/ArtistCard';
-import { loadMoreArtworks, searchArtistsAction } from '@/app/_actions/discover';
+import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
+import {
+  fetchArtworkModal,
+  loadMoreArtworks,
+  searchArtistsAction,
+  type ArtworkModalPayload,
+} from '@/app/_actions/discover';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
@@ -32,6 +38,14 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
   const [artistsLoading, setArtistsLoading] = useState(false);
   const [artistsLoadingMore, setArtistsLoadingMore] = useState(false);
   const [, startSearch] = useTransition();
+
+  const [modal, setModal] = useState<ArtworkModalPayload | null>(null);
+
+  const openArtwork = useCallback(async (artworkId: string) => {
+    const payload = await fetchArtworkModal(artworkId);
+    if (payload) setModal(payload);
+  }, []);
+  const closeModal = useCallback(() => setModal(null), []);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -151,6 +165,19 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           loadingMore={loadingMore}
           hasMore={Boolean(artworksCursor)}
           currentUserId={currentUserId}
+          onOpen={openArtwork}
+        />
+      )}
+
+      {modal && (
+        <ArtworkDetailsModal
+          mode="overlay"
+          artwork={modal.artwork}
+          neighbors={modal.neighbors}
+          initialFollowing={modal.initialFollowing}
+          isAuthenticated={modal.isAuthenticated}
+          isOwner={modal.isOwner}
+          onClose={closeModal}
         />
       )}
     </>
@@ -163,12 +190,14 @@ function ArtworkGridSection({
   loadingMore,
   hasMore,
   currentUserId,
+  onOpen,
 }: {
   artworks: DiscoverArtwork[];
   sentinelRef: React.RefObject<HTMLDivElement>;
   loadingMore: boolean;
   hasMore: boolean;
   currentUserId: string;
+  onOpen: (artworkId: string) => void;
 }) {
   if (artworks.length === 0) {
     return (
@@ -184,7 +213,12 @@ function ArtworkGridSection({
       <div className="flex flex-wrap justify-center gap-[4px]">
         {artworks.map((art, i) => (
           <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile artwork={art} index={i} isOwn={art.user_id === currentUserId} />
+            <DiscoverArtworkTile
+              artwork={art}
+              index={i}
+              isOwn={art.user_id === currentUserId}
+              onOpen={onOpen}
+            />
           </div>
         ))}
       </div>

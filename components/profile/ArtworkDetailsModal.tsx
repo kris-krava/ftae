@@ -16,6 +16,8 @@ interface ArtworkDetailsModalProps {
   isOwner: boolean;
   /** "overlay" dismisses via router.back(); "standalone" pushes to artist profile. */
   mode: 'overlay' | 'standalone';
+  /** When provided, called on dismiss instead of the default router behavior. */
+  onClose?: () => void;
 }
 
 function relativeTime(iso: string): string {
@@ -49,6 +51,7 @@ export function ArtworkDetailsModal({
   isAuthenticated,
   isOwner,
   mode,
+  onClose,
 }: ArtworkDetailsModalProps) {
   const router = useRouter();
   const [imageIdx, setImageIdx] = useState(0);
@@ -57,9 +60,10 @@ export function ArtworkDetailsModal({
   const currentPhoto = photos[imageIdx];
 
   const close = useCallback(() => {
-    if (mode === 'overlay') router.back();
+    if (onClose) onClose();
+    else if (mode === 'overlay') router.back();
     else router.push(`/${artwork.artist.username}`);
-  }, [mode, router, artwork.artist.username]);
+  }, [onClose, mode, router, artwork.artist.username]);
 
   const prevImage = useCallback(() => {
     setImageIdx((i) => (i > 0 ? i - 1 : photos.length - 1));

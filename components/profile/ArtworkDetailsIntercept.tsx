@@ -5,21 +5,23 @@ import { getArtworkDetail, getArtworkNeighbors, isFollowing } from '@/app/_lib/p
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export const dynamic = 'force-dynamic';
-
-interface Props {
-  params: { username: string; artworkId: string };
-}
-
-// Root-level intercept: fires from anywhere in the app (Discover, Profile,
-// direct deep link, etc.) and renders the Art Details modal over the current
-// page without a full navigation.
-export default async function ArtworkDetailsIntercept({ params }: Props) {
+// Shared server component for the Art Details overlay. The per-subtree
+// intercepting page files (under app/[username]/@modal/ for profile clicks,
+// app/app/@modal/ for /app/* clicks) call this with their resolved params.
+// Root-level @modal slots have been flaky on Vercel with this nested-dynamic
+// pattern, so we keep each intercept scoped to the subtree it serves.
+export async function ArtworkDetailsIntercept({
+  username,
+  artworkId,
+}: {
+  username: string;
+  artworkId: string;
+}) {
   noStore();
   try {
-    const artwork = await getArtworkDetail(params.artworkId);
+    const artwork = await getArtworkDetail(artworkId);
     if (!artwork) notFound();
-    if (artwork.artist.username !== params.username.toLowerCase()) notFound();
+    if (artwork.artist.username !== username.toLowerCase()) notFound();
 
     const neighbors = await getArtworkNeighbors(artwork.user_id, artwork.id);
 
@@ -44,13 +46,9 @@ export default async function ArtworkDetailsIntercept({ params }: Props) {
       </ErrorBoundary>
     );
   } catch (err) {
-    // Server-side errors inside a parallel-slot intercept get swallowed by
-    // Next.js and surface as a generic client-side "not iterable" crash on
-    // RSC parse. Log the real stack here so Vercel logs show it, then let
-    // Next.js render its default error boundary.
     console.error('[art-details-intercept] failed', {
-      username: params.username,
-      artworkId: params.artworkId,
+      username,
+      artworkId,
       error: err instanceof Error ? { message: err.message, stack: err.stack } : err,
     });
     throw err;
