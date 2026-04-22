@@ -26,7 +26,7 @@ export async function fetchArtworksPage(
   let query = supabaseAdmin
     .from('artworks')
     .select(
-      'id, title, user_id, created_at, users!inner(username, name, is_active, is_test_user), artwork_photos(url, sort_order, photo_type, focal_x, focal_y)',
+      'id, title, user_id, created_at, users!inner(username, name, is_active, is_test_user), artwork_photos(url, sort_order, focal_x, focal_y)',
     )
     .eq('is_active', true)
     .eq('users.is_active', true)
@@ -48,15 +48,13 @@ export async function fetchArtworksPage(
     created_at: string;
     users: { username: string; name: string | null };
     artwork_photos:
-      | { url: string; sort_order: number; photo_type: string; focal_x: number; focal_y: number }[]
+      | { url: string; sort_order: number; focal_x: number; focal_y: number }[]
       | null;
   }>;
 
   const items: DiscoverArtwork[] = rows.slice(0, PAGE_SIZE).map((row) => {
     const photos = row.artwork_photos ?? [];
-    const front = photos.find((p) => p.photo_type === 'front');
-    const sorted = [...photos].sort((a, b) => a.sort_order - b.sort_order);
-    const primary = front ?? sorted[0];
+    const primary = [...photos].sort((a, b) => a.sort_order - b.sort_order)[0];
     return {
       id: row.id,
       title: row.title,

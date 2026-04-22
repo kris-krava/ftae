@@ -419,13 +419,10 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
   console.log('[step4-server] artworks INSERT:', ms(tArtInsert));
   if (artErr || !artwork) return { ok: false, error: 'Could not save artwork.' };
 
-  const photoTypes: ('front' | 'back' | 'detail' | 'shipping')[] = ['front', 'back', 'detail', 'shipping'];
-
   for (let i = 0; i < photos.length; i += 1) {
     const photo = photos[i];
     const ext = photo.type === 'image/png' ? 'png' : photo.type === 'image/webp' ? 'webp' : 'jpg';
-    const photoType = photoTypes[i] ?? 'detail';
-    const path = `${userId}/${artwork.id}/${photoType}-${i}.${ext}`;
+    const path = `${userId}/${artwork.id}/${i}.${ext}`;
 
     const tUpload = Date.now();
     const { error: uploadError } = await supabaseAdmin.storage
@@ -447,7 +444,6 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     await supabaseAdmin.from('artwork_photos').insert({
       artwork_id: artwork.id,
       url: pub.publicUrl,
-      photo_type: photoType,
       sort_order: i,
       focal_x: focals[i].x,
       focal_y: focals[i].y,

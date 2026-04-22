@@ -294,7 +294,6 @@ async function insertArtwork(userId: string, art: ScenarioArtwork): Promise<void
     await supabaseAdmin.from('artwork_photos').insert({
       artwork_id: data.id,
       url: photo.url,
-      photo_type: photo.photo_type,
       sort_order: i,
     });
   }

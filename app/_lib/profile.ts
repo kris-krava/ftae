@@ -65,7 +65,7 @@ const PROFILE_ARTWORK_LIMIT = 60;
 export async function getUserArtworks(userId: string): Promise<ProfileArtwork[]> {
   const { data } = await supabaseAdmin
     .from('artworks')
-    .select('id, title, artwork_photos(url, sort_order, photo_type, focal_x, focal_y)')
+    .select('id, title, artwork_photos(url, sort_order, focal_x, focal_y)')
     .eq('user_id', userId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -74,12 +74,10 @@ export async function getUserArtworks(userId: string): Promise<ProfileArtwork[]>
   return data.map((row) => {
     const photos = (row as unknown as {
       artwork_photos:
-        | { url: string; sort_order: number; photo_type: string; focal_x: number; focal_y: number }[]
+        | { url: string; sort_order: number; focal_x: number; focal_y: number }[]
         | null;
     }).artwork_photos ?? [];
-    const front = photos.find((p) => p.photo_type === 'front');
-    const sorted = [...photos].sort((a, b) => a.sort_order - b.sort_order);
-    const primary = front ?? sorted[0];
+    const primary = [...photos].sort((a, b) => a.sort_order - b.sort_order)[0];
     return {
       id: row.id as string,
       title: row.title as string | null,
@@ -105,7 +103,6 @@ export interface ArtworkPhoto {
   id: string;
   url: string;
   sort_order: number;
-  photo_type: string;
   focal_x: number;
   focal_y: number;
 }
@@ -138,7 +135,7 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
     .from('artworks')
     .select(
       `id, user_id, title, year, medium, width, height, depth, description:artist_statement, created_at,
-       artwork_photos(id, url, sort_order, photo_type, focal_x, focal_y),
+       artwork_photos(id, url, sort_order, focal_x, focal_y),
        users:user_id ( id, username, name, avatar_url, is_founding_member )`,
     )
     .eq('id', artworkId)
@@ -148,11 +145,7 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
 
   const rawPhotos =
     ((data as unknown as { artwork_photos: ArtworkPhoto[] | null }).artwork_photos ?? []);
-  const photos = [...rawPhotos].sort((a, b) => {
-    if (a.photo_type === 'front' && b.photo_type !== 'front') return -1;
-    if (b.photo_type === 'front' && a.photo_type !== 'front') return 1;
-    return a.sort_order - b.sort_order;
-  });
+  const photos = [...rawPhotos].sort((a, b) => a.sort_order - b.sort_order);
 
   const artist = (data as unknown as { users: ArtworkArtist | null }).users;
   if (!artist) return null;

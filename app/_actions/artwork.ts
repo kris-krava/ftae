@@ -9,12 +9,6 @@ import { rateLimit } from '@/lib/rate-limit';
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_ARTWORK_BYTES = 5_000_000;
 const MAX_ARTWORK_PHOTOS = 6;
-const PHOTO_TYPES: ('front' | 'back' | 'detail' | 'shipping')[] = [
-  'front',
-  'back',
-  'detail',
-  'shipping',
-];
 
 export type ArtworkActionResult = { ok: true } | { ok: false; error: string };
 
@@ -172,13 +166,11 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
 
   for (let i = 0; i < order.length; i += 1) {
     const entry = order[i];
-    const photoType = PHOTO_TYPES[i] ?? 'detail';
     if (entry.kind === 'existing') {
       await supabaseAdmin
         .from('artwork_photos')
         .update({
           sort_order: i,
-          photo_type: photoType,
           focal_x: entry.focal[0],
           focal_y: entry.focal[1],
         })
@@ -189,7 +181,7 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
       if (!file) continue;
       const ext =
         file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-      const path = `${userId}/${artworkId}/${photoType}-${Date.now()}-${i}.${ext}`;
+      const path = `${userId}/${artworkId}/${i}-${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabaseAdmin.storage
         .from('artwork-photos')
         .upload(path, file, {
@@ -204,7 +196,6 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
       await supabaseAdmin.from('artwork_photos').insert({
         artwork_id: artworkId,
         url: pub.publicUrl,
-        photo_type: photoType,
         sort_order: i,
         focal_x: entry.focal[0],
         focal_y: entry.focal[1],

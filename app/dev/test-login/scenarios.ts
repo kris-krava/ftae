@@ -24,7 +24,7 @@ export interface ScenarioArtwork {
   year: number;
   medium: string;
   dimensions?: string;
-  photos?: { url: string; photo_type: 'front' | 'back' | 'detail' | 'shipping' }[];
+  photos?: { url: string }[];
 }
 
 export interface ScenarioCredit {
@@ -133,14 +133,14 @@ export const SCENARIOS: Scenario[] = [
         year: 2024,
         medium: 'Oil on linen',
         dimensions: '24 × 36 in',
-        photos: [{ url: SAMPLE_PHOTO('founder-1'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('founder-1') }],
       },
       {
         title: 'Quiet Pecan Grove',
         year: 2023,
         medium: 'Oil on canvas',
         dimensions: '18 × 24 in',
-        photos: [{ url: SAMPLE_PHOTO('founder-2'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('founder-2') }],
       },
     ],
     credits: [{ credit_type: 'founding_member', months_credited: 3, note: 'Test — founding grant' }],
@@ -168,42 +168,42 @@ export const SCENARIOS: Scenario[] = [
         year: 2024,
         medium: 'Oil on panel',
         dimensions: '9 × 12 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-1'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-1') }],
       },
       {
         title: 'Shem Creek',
         year: 2023,
         medium: 'Oil on panel',
         dimensions: '11 × 14 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-2'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-2') }],
       },
       {
         title: 'Sullivan’s Island Shadows',
         year: 2024,
         medium: 'Oil on linen',
         dimensions: '12 × 16 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-3'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-3') }],
       },
       {
         title: 'Pineapple Fountain',
         year: 2023,
         medium: 'Oil on panel',
         dimensions: '8 × 10 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-4'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-4') }],
       },
       {
         title: 'Morris Lighthouse',
         year: 2022,
         medium: 'Oil on canvas',
         dimensions: '16 × 20 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-5'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-5') }],
       },
       {
         title: 'Edisto Oaks',
         year: 2024,
         medium: 'Oil on panel',
         dimensions: '10 × 12 in',
-        photos: [{ url: SAMPLE_PHOTO('ret-6'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('ret-6') }],
       },
     ],
     credits: [{ credit_type: 'founding_member', months_credited: 3, note: 'Test — founding grant' }],
@@ -233,7 +233,7 @@ export const SCENARIOS: Scenario[] = [
         year: 2024,
         medium: 'Oil on panel',
         dimensions: '11 × 14 in',
-        photos: [{ url: SAMPLE_PHOTO('discover-primary'), photo_type: 'front' }],
+        photos: [{ url: SAMPLE_PHOTO('discover-primary') }],
       },
     ],
     discoverPeers: [
@@ -247,7 +247,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2024,
           medium: 'Watercolor on paper',
           dimensions: '8 × 10 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-juniper'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-juniper') }],
         },
       },
       {
@@ -260,7 +260,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2023,
           medium: 'Acrylic on canvas',
           dimensions: '12 × 16 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-marco'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-marco') }],
         },
       },
       {
@@ -273,7 +273,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2024,
           medium: 'Linocut',
           dimensions: '10 × 12 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-eleanor'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-eleanor') }],
         },
       },
       {
@@ -286,7 +286,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2022,
           medium: 'Charcoal on paper',
           dimensions: '14 × 17 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-theo'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-theo') }],
         },
       },
       {
@@ -299,7 +299,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2024,
           medium: 'Mixed media on board',
           dimensions: '9 × 12 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-amal'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-amal') }],
         },
       },
       {
@@ -312,7 +312,7 @@ export const SCENARIOS: Scenario[] = [
           year: 2023,
           medium: 'Oil on linen',
           dimensions: '16 × 20 in',
-          photos: [{ url: SAMPLE_PHOTO('peer-rosa'), photo_type: 'front' }],
+          photos: [{ url: SAMPLE_PHOTO('peer-rosa') }],
         },
       },
     ],
