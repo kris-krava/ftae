@@ -228,7 +228,6 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
       setConfirmOpen(false);
       setResult('deleted');
       setTimeout(() => {
-        router.refresh();
         router.push(backHref);
       }, SUCCESS_DISPLAY_MS);
     });
