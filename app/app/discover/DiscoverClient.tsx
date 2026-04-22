@@ -118,7 +118,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
             }}
             onFocus={() => setSearchActive(true)}
             placeholder="Search artists or medium…"
-            className="flex-1 min-w-0 bg-transparent font-sans text-[15px] text-ink placeholder:text-placeholder focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent border-0 p-0 font-sans text-[15px] text-ink placeholder:text-placeholder focus:outline-none focus:ring-0"
           />
           {searchActive && (
             <button
