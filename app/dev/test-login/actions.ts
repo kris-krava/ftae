@@ -248,6 +248,10 @@ async function seedDiscoverPeer(
     referral_code: referralCode,
     name: peer.name,
     location_city: peer.location_city,
+    bio: peer.bio ?? null,
+    website_url: peer.website_url ?? null,
+    social_platform: peer.social_platform ?? null,
+    social_handle: peer.social_handle ?? null,
     avatar_url: peer.avatar_url,
     is_active: true,
     is_test_user: true,
@@ -270,7 +274,9 @@ async function seedDiscoverPeer(
       .upsert({ user_id: peerUserId, medium_id: mediumRow.id as string });
   }
 
-  await insertArtwork(peerUserId, peer.artwork);
+  for (const art of peer.artworks) {
+    await insertArtwork(peerUserId, art);
+  }
 }
 
 async function insertArtwork(userId: string, art: ScenarioArtwork): Promise<void> {
@@ -281,6 +287,10 @@ async function insertArtwork(userId: string, art: ScenarioArtwork): Promise<void
       title: art.title,
       year: art.year,
       medium: art.medium,
+      width: art.width ?? null,
+      height: art.height ?? null,
+      depth: art.depth ?? null,
+      artist_statement: art.description ?? null,
       dimension_unit: 'in',
       is_trade_available: false, // keep test artworks out of prod stats counter
       is_active: true,
