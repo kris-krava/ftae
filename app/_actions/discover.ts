@@ -4,16 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage, type DiscoverArtwork } from '@/app/_lib/artworks';
 import { searchArtists, followingSet, type DiscoverArtist } from '@/app/_lib/artists';
-import {
-  getArtworkDetail,
-  getArtworkNeighbors,
-  isFollowing,
-  type ArtworkDetail,
-} from '@/app/_lib/profile';
+import { getArtworkDetail, isFollowing, type ArtworkDetail } from '@/app/_lib/profile';
 
 export interface ArtworkModalPayload {
   artwork: ArtworkDetail;
-  neighbors: { prev: string | null; next: string | null };
   initialFollowing: boolean;
   isAuthenticated: boolean;
   isOwner: boolean;
@@ -22,8 +16,6 @@ export interface ArtworkModalPayload {
 export async function fetchArtworkModal(artworkId: string): Promise<ArtworkModalPayload | null> {
   const artwork = await getArtworkDetail(artworkId);
   if (!artwork) return null;
-
-  const neighbors = await getArtworkNeighbors(artwork.user_id, artwork.id);
 
   const supabase = createClient();
   const {
@@ -35,7 +27,6 @@ export async function fetchArtworkModal(artworkId: string): Promise<ArtworkModal
 
   return {
     artwork,
-    neighbors,
     initialFollowing,
     isAuthenticated: Boolean(authUser),
     isOwner,

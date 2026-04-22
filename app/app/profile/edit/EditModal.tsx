@@ -51,7 +51,12 @@ export function EditModal({ backHref, initial, mediums }: EditModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
-      <div className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]">
+      <div
+        className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]"
+        onClick={(e) => {
+          if (e.currentTarget === e.target) close();
+        }}
+      >
       <div
         className={
           'bg-surface rounded-[16px] shadow-modal flex flex-col relative w-full ' +

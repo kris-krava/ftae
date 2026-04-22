@@ -18,6 +18,18 @@ const SEARCH_DEBOUNCE_MS = 300;
 const TILE_BASIS =
   'basis-[calc((100%-4px)/2)] tab:basis-[calc((100%-8px)/3)] desk:basis-[calc((100%-16px)/5)]';
 
+function feedNeighbors(
+  feed: { id: string }[],
+  currentId: string,
+): { prev: string | null; next: string | null } {
+  const idx = feed.findIndex((a) => a.id === currentId);
+  if (idx === -1) return { prev: null, next: null };
+  return {
+    prev: idx > 0 ? feed[idx - 1].id : null,
+    next: idx < feed.length - 1 ? feed[idx + 1].id : null,
+  };
+}
+
 interface DiscoverClientProps {
   initialArtworks: DiscoverArtwork[];
   initialCursor: string | null;
@@ -172,7 +184,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           key={modal.artwork.id}
           mode="overlay"
           artwork={modal.artwork}
-          neighbors={modal.neighbors}
+          neighbors={feedNeighbors(artworks, modal.artwork.id)}
           initialFollowing={modal.initialFollowing}
           isAuthenticated={modal.isAuthenticated}
           isOwner={modal.isOwner}

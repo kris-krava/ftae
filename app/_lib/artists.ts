@@ -154,3 +154,11 @@ export async function followingSet(viewerId: string, ids: string[]): Promise<Set
     .in('following_id', ids);
   return new Set((data ?? []).map((r) => r.following_id as string));
 }
+
+export async function followedUserIds(viewerId: string): Promise<string[]> {
+  const { data } = await supabaseAdmin
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', viewerId);
+  return (data ?? []).map((r) => r.following_id as string);
+}

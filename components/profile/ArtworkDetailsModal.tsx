@@ -107,16 +107,13 @@ export function ArtworkDetailsModal({
       aria-modal="true"
       aria-label={artwork.title ?? 'Artwork details'}
       className="fixed inset-0 z-50 bg-black/70 overflow-y-auto"
-      onClick={(e) => {
-        if (e.currentTarget === e.target) close();
-      }}
     >
       {/* Floating close — top-right of viewport */}
       <button
         type="button"
         onClick={close}
         aria-label="Close"
-        className="fixed top-[16px] right-[16px] tab:top-[24px] tab:right-[24px] w-[44px] h-[44px] flex items-center justify-center z-[60]"
+        className="fixed top-[4px] right-[4px] tab:top-[24px] tab:right-[24px] w-[44px] h-[44px] flex items-center justify-center z-[60]"
       >
         <XClose className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
       </button>
@@ -128,7 +125,7 @@ export function ArtworkDetailsModal({
             type="button"
             onClick={() => onNavigate(neighbors.prev!)}
             aria-label="Previous piece"
-            className="fixed left-[4px] tab:left-[16px] desk:left-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+            className="fixed left-[4px] tab:left-[16px] desk:left-[24px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
           >
             <ChevronLeft className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
           </button>
@@ -137,7 +134,7 @@ export function ArtworkDetailsModal({
             href={`/${artwork.artist.username}/artwork/${neighbors.prev}`}
             replace
             aria-label="Previous piece"
-            className="fixed left-[4px] tab:left-[16px] desk:left-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+            className="fixed left-[4px] tab:left-[16px] desk:left-[24px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
           >
             <ChevronLeft className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
           </Link>
@@ -148,7 +145,7 @@ export function ArtworkDetailsModal({
             type="button"
             onClick={() => onNavigate(neighbors.next!)}
             aria-label="Next piece"
-            className="fixed right-[4px] tab:right-[16px] desk:right-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+            className="fixed right-[4px] tab:right-[16px] desk:right-[24px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
           >
             <ChevronRight className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
           </button>
@@ -157,25 +154,27 @@ export function ArtworkDetailsModal({
             href={`/${artwork.artist.username}/artwork/${neighbors.next}`}
             replace
             aria-label="Next piece"
-            className="fixed right-[4px] tab:right-[16px] desk:right-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+            className="fixed right-[4px] tab:right-[16px] desk:right-[24px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
           >
             <ChevronRight className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
           </Link>
         ))}
 
-      <div className="min-h-full flex items-center justify-center px-[24px] py-[24px] tab:px-[60px] tab:py-[60px]">
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="bg-surface rounded-[12px] shadow-modal overflow-hidden w-full max-w-[342px] tab:max-w-[560px] desk:max-w-[1000px] flex flex-col desk:flex-row"
-        >
-          {/* Image column — object-contain so art is never cropped */}
-          <div className="relative w-full desk:w-[600px] desk:h-[640px] aspect-square desk:aspect-auto bg-ink/[0.06]">
+      <div
+        className="min-h-full flex items-center justify-center p-[48px] tab:p-[60px] desk:p-[72px]"
+        onClick={(e) => {
+          if (e.currentTarget === e.target) close();
+        }}
+      >
+        <div className="bg-surface rounded-[12px] shadow-modal overflow-hidden w-full h-[calc(100vh-96px)] tab:h-[calc(100vh-120px)] desk:h-[calc(100vh-144px)] flex flex-col desk:flex-row">
+          {/* Image — fills available space at every breakpoint, object-contain so art is never cropped */}
+          <div className="relative w-full flex-1 min-h-0 bg-ink">
             {currentPhoto?.url && (
               <Image
                 src={currentPhoto.url}
                 alt={artwork.title ?? ''}
                 fill
-                sizes="(min-width: 1280px) 600px, (min-width: 768px) 560px, 342px"
+                sizes="(min-width: 1280px) calc(100vw - 454px), (min-width: 768px) 560px, 342px"
                 className="object-contain"
                 priority
               />
@@ -215,7 +214,7 @@ export function ArtworkDetailsModal({
           </div>
 
           {/* Content column */}
-          <div className="flex-1 flex flex-col min-w-0 desk:w-[400px]">
+          <div className="flex-none flex flex-col min-w-0 overflow-y-auto max-h-[45vh] desk:max-h-none desk:w-[310px]">
             {/* Header */}
             <div className="flex items-center justify-between gap-[12px] p-[16px] tab:p-[24px]">
               <Link

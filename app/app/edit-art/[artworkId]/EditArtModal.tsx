@@ -266,7 +266,12 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
-      <div className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]">
+      <div
+        className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]"
+        onClick={(e) => {
+          if (e.currentTarget === e.target && !saving && !confirmOpen) close();
+        }}
+      >
         <div className="bg-surface rounded-[16px] shadow-modal w-full max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] relative">
           <button
             type="button"
