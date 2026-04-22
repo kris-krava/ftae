@@ -18,6 +18,7 @@ export async function getLandingStats(): Promise<LandingStats> {
       .from('artworks')
       .select('id, users!inner(is_test_user)', { count: 'exact', head: true })
       .eq('is_trade_available', true)
+      .eq('is_active', true)
       .eq('users.is_test_user', false),
     supabaseAdmin
       .from('platform_settings')
