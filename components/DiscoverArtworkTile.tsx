@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart } from '@/components/icons';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
 interface DiscoverArtworkTileProps {
@@ -34,19 +33,6 @@ export function DiscoverArtworkTile({ artwork, index }: DiscoverArtworkTileProps
           style={{ objectPosition: `${artwork.primary_photo_focal_x * 100}% ${artwork.primary_photo_focal_y * 100}%` }}
           priority={index < 4}
         />
-      )}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/70 via-transparent"
-      />
-      <Heart
-        aria-hidden
-        className="absolute top-[12px] right-[12px] w-[24px] h-[24px] text-surface"
-      />
-      {(artwork.artist_name?.trim() || artwork.artist_username) && (
-        <p className="absolute left-[8px] right-[8px] bottom-[8px] font-sans font-semibold text-[13px] text-surface truncate">
-          {artwork.artist_name?.trim() || artwork.artist_username}
-        </p>
       )}
     </Link>
   );
