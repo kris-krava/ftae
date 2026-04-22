@@ -125,7 +125,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             artworks={artworks}
             artistUsername={profileUser.username}
             showAddTile={isOwner}
-            viewerOwnsArt={isOwner}
           />
         </section>
 

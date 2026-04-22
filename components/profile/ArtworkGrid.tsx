@@ -12,7 +12,6 @@ interface ArtworkGridProps {
   artistUsername: string;
   showAddTile: boolean;
   addHref?: string;
-  viewerOwnsArt: boolean;
 }
 
 const TILE_BASIS =
@@ -23,7 +22,6 @@ export function ArtworkGrid({
   artistUsername,
   showAddTile,
   addHref = '/app/add-art',
-  viewerOwnsArt,
 }: ArtworkGridProps) {
   return (
     <div className="flex flex-wrap justify-center gap-[4px] w-full">
@@ -37,12 +35,7 @@ export function ArtworkGrid({
         </Link>
       )}
       {artworks.map((art) => (
-        <ArtworkTile
-          key={art.id}
-          artwork={art}
-          artistUsername={artistUsername}
-          viewerOwnsArt={viewerOwnsArt}
-        />
+        <ArtworkTile key={art.id} artwork={art} artistUsername={artistUsername} />
       ))}
     </div>
   );
@@ -51,11 +44,9 @@ export function ArtworkGrid({
 function ArtworkTile({
   artwork,
   artistUsername,
-  viewerOwnsArt,
 }: {
   artwork: ProfileArtwork;
   artistUsername: string;
-  viewerOwnsArt: boolean;
 }) {
   return (
     <Link
@@ -69,7 +60,7 @@ function ArtworkTile({
           alt={artwork.title ?? ''}
           fill
           sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
-          className={`object-cover ${viewerOwnsArt ? '' : 'blur-2xl scale-110'}`}
+          className="object-cover"
           style={objectPositionStyle(artwork.primary_photo_focal_x, artwork.primary_photo_focal_y)}
         />
       )}

@@ -176,7 +176,7 @@ export function ArtworkDetailsModal({
                 alt={artwork.title ?? ''}
                 fill
                 sizes="(min-width: 1280px) 600px, (min-width: 768px) 560px, 342px"
-                className={`object-contain ${isOwner ? '' : 'blur-2xl scale-110'}`}
+                className="object-contain"
                 priority
               />
             )}

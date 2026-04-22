@@ -22,10 +22,9 @@ interface DiscoverClientProps {
   initialArtworks: DiscoverArtwork[];
   initialCursor: string | null;
   isAuthenticated: boolean;
-  currentUserId: string;
 }
 
-export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated, currentUserId }: DiscoverClientProps) {
+export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated }: DiscoverClientProps) {
   const [query, setQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
 
@@ -164,7 +163,6 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           sentinelRef={sentinelRef}
           loadingMore={loadingMore}
           hasMore={Boolean(artworksCursor)}
-          currentUserId={currentUserId}
           onOpen={openArtwork}
         />
       )}
@@ -191,14 +189,12 @@ function ArtworkGridSection({
   sentinelRef,
   loadingMore,
   hasMore,
-  currentUserId,
   onOpen,
 }: {
   artworks: DiscoverArtwork[];
   sentinelRef: React.RefObject<HTMLDivElement>;
   loadingMore: boolean;
   hasMore: boolean;
-  currentUserId: string;
   onOpen: (artworkId: string) => void;
 }) {
   if (artworks.length === 0) {
@@ -215,12 +211,7 @@ function ArtworkGridSection({
       <div className="flex flex-wrap justify-center gap-[4px]">
         {artworks.map((art, i) => (
           <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile
-              artwork={art}
-              index={i}
-              isOwn={art.user_id === currentUserId}
-              onOpen={onOpen}
-            />
+            <DiscoverArtworkTile artwork={art} index={i} onOpen={onOpen} />
           </div>
         ))}
       </div>

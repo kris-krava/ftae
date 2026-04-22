@@ -4,7 +4,6 @@ import type { DiscoverArtwork } from '@/app/_lib/artworks';
 interface DiscoverArtworkTileProps {
   artwork: DiscoverArtwork;
   index: number;
-  isOwn: boolean;
   onOpen: (artworkId: string) => void;
 }
 
@@ -14,7 +13,7 @@ const FALLBACK_COLORS = [
   '#999c7c', '#c78b6e', '#8a9eb5', '#a68b73',
 ];
 
-export function DiscoverArtworkTile({ artwork, index, isOwn, onOpen }: DiscoverArtworkTileProps) {
+export function DiscoverArtworkTile({ artwork, index, onOpen }: DiscoverArtworkTileProps) {
   const bg = FALLBACK_COLORS[index % FALLBACK_COLORS.length];
   return (
     <button
@@ -30,7 +29,7 @@ export function DiscoverArtworkTile({ artwork, index, isOwn, onOpen }: DiscoverA
           alt={artwork.title ?? ''}
           fill
           sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
-          className={`object-cover ${isOwn ? '' : 'blur-2xl scale-110'}`}
+          className="object-cover"
           style={{ objectPosition: `${artwork.primary_photo_focal_x * 100}% ${artwork.primary_photo_focal_y * 100}%` }}
           priority={index < 4}
         />
