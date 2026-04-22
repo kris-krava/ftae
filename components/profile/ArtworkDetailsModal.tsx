@@ -18,6 +18,11 @@ interface ArtworkDetailsModalProps {
   mode: 'overlay' | 'standalone';
   /** When provided, called on dismiss instead of the default router behavior. */
   onClose?: () => void;
+  /** When provided, prev/next chevrons call this with the neighbor's id instead
+   * of navigating via a Link. Used for the client-side Discover modal, where
+   * cross-subtree navigation to /[username]/artwork/[id] trips Next.js's
+   * parallel-slot intercept with undefined params. */
+  onNavigate?: (artworkId: string) => void;
 }
 
 function relativeTime(iso: string): string {
@@ -52,6 +57,7 @@ export function ArtworkDetailsModal({
   isOwner,
   mode,
   onClose,
+  onNavigate,
 }: ArtworkDetailsModalProps) {
   const router = useRouter();
   const [imageIdx, setImageIdx] = useState(0);
@@ -116,26 +122,46 @@ export function ArtworkDetailsModal({
       </button>
 
       {/* Prev/next piece navigation — floating on overlay at viewport vertical center */}
-      {neighbors.prev && (
-        <Link
-          href={`/${artwork.artist.username}/artwork/${neighbors.prev}`}
-          replace
-          aria-label="Previous piece"
-          className="fixed left-[4px] tab:left-[16px] desk:left-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
-        >
-          <ChevronLeft className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
-        </Link>
-      )}
-      {neighbors.next && (
-        <Link
-          href={`/${artwork.artist.username}/artwork/${neighbors.next}`}
-          replace
-          aria-label="Next piece"
-          className="fixed right-[4px] tab:right-[16px] desk:right-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
-        >
-          <ChevronRight className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
-        </Link>
-      )}
+      {neighbors.prev &&
+        (onNavigate ? (
+          <button
+            type="button"
+            onClick={() => onNavigate(neighbors.prev!)}
+            aria-label="Previous piece"
+            className="fixed left-[4px] tab:left-[16px] desk:left-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+          >
+            <ChevronLeft className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
+          </button>
+        ) : (
+          <Link
+            href={`/${artwork.artist.username}/artwork/${neighbors.prev}`}
+            replace
+            aria-label="Previous piece"
+            className="fixed left-[4px] tab:left-[16px] desk:left-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+          >
+            <ChevronLeft className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
+          </Link>
+        ))}
+      {neighbors.next &&
+        (onNavigate ? (
+          <button
+            type="button"
+            onClick={() => onNavigate(neighbors.next!)}
+            aria-label="Next piece"
+            className="fixed right-[4px] tab:right-[16px] desk:right-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+          >
+            <ChevronRight className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
+          </button>
+        ) : (
+          <Link
+            href={`/${artwork.artist.username}/artwork/${neighbors.next}`}
+            replace
+            aria-label="Next piece"
+            className="fixed right-[4px] tab:right-[16px] desk:right-[32px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] flex items-center justify-center z-[60]"
+          >
+            <ChevronRight className="w-[24px] h-[24px] text-surface" strokeWidth={1.67} />
+          </Link>
+        ))}
 
       <div className="min-h-full flex items-center justify-center px-[24px] py-[24px] tab:px-[60px] tab:py-[60px]">
         <div

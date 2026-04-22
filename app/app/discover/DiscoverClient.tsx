@@ -171,6 +171,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
 
       {modal && (
         <ArtworkDetailsModal
+          key={modal.artwork.id}
           mode="overlay"
           artwork={modal.artwork}
           neighbors={modal.neighbors}
@@ -178,6 +179,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           isAuthenticated={modal.isAuthenticated}
           isOwner={modal.isOwner}
           onClose={closeModal}
+          onNavigate={openArtwork}
         />
       )}
     </>
