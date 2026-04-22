@@ -120,11 +120,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </section>
 
         <section className="w-full mt-[14px]">
-          <ArtworkGrid
-            artworks={artworks}
-            artistUsername={profileUser.username}
-            showAddTile={isOwner}
-          />
+          <ArtworkGrid artworks={artworks} showAddTile={isOwner} />
         </section>
 
         {isOwner && (
