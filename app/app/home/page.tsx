@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Home01 } from '@/components/icons';
+import { Home02 } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export default async function HomePage() {
   return (
     <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px]">
       <div className="flex items-center justify-center w-[96px] h-[96px] rounded-full bg-accent/10">
-        <Home01 className="w-[48px] h-[48px] text-accent" />
+        <Home02 className="w-[48px] h-[48px] text-accent" />
       </div>
       <h1 className="font-serif font-bold text-ink text-center text-[24px] mt-[24px]">
         Your Home Feed

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Home01, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 
 interface MobileNavProps {
   username: string;
@@ -58,7 +58,7 @@ export function MobileNav({ username, initials, avatarUrl, userId, initialUnread
       <span aria-hidden className="absolute top-0 inset-x-0 h-px bg-divider/50" />
       <ul className="grid grid-cols-6 h-full justify-items-center">
         <NavItem href="/app/home" label="Home" active={isHome}>
-          <Home01
+          <Home02
             className={`${ICON_BASE} ${isHome ? 'text-accent' : 'text-muted'}`}
             fill="none"
           />

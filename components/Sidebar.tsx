@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Home01, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 
 interface SidebarProps {
   username: string;
@@ -60,7 +60,7 @@ export function Sidebar({ username, initials, avatarUrl, unreadCount }: SidebarP
           label="Home"
           active={isHome}
           icon={
-            <Home01
+            <Home02
               className={`${ICON_BASE} ${isHome ? 'text-accent' : 'text-muted'}`}
               fill="none"
             />
