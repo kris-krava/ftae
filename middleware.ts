@@ -45,7 +45,12 @@ function safeNext(raw: string | null): string | null {
 }
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  // Propagate the request path so Server Components can branch on it.
+  // Used by the /app layout to skip the global nav on full-takeover routes.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
+
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
   const path = request.nextUrl.pathname;
 
   // /dev/* is gated behind NODE_ENV=development + FTAE_ENABLE_DEV_TOOLS=1.
@@ -72,7 +77,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) => {
             const next: CookieOptions = name.startsWith('sb-')
               ? { ...options, maxAge: ttl }

@@ -98,7 +98,7 @@ export function ProfileHeader({
       )}
 
       {user.bio && (
-        <p className="font-sans text-[14px] text-muted text-center mt-[18px] max-w-[326px]">
+        <p className="font-sans text-[14px] text-muted text-center mt-[18px] w-full">
           &ldquo;{user.bio}&rdquo;
         </p>
       )}

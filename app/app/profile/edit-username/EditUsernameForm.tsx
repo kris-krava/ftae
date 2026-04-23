@@ -88,6 +88,7 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
             maxLength={30}
             className={
               'flex-1 min-w-0 bg-transparent border-0 outline-none p-0 ' +
+              'focus:outline-none focus:ring-0 focus:ring-offset-0 ' +
               'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder'
             }
           />

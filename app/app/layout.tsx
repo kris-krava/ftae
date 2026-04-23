@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -6,6 +7,14 @@ import { MobileNav } from '@/components/MobileNav';
 import { Sidebar } from '@/components/Sidebar';
 
 export const dynamic = 'force-dynamic';
+
+// Routes that hide the global nav and render as a full takeover.
+// Middleware sets x-pathname so this Server Component can branch on the path.
+const TAKEOVER_PREFIXES = [
+  '/app/profile/edit-email',
+  '/app/profile/edit-username',
+  '/app/profile/reauthenticate',
+];
 
 export default async function AppLayout({
   children,
@@ -27,6 +36,12 @@ export default async function AppLayout({
     .single();
 
   if (!profile) redirect('/');
+
+  const path = headers().get('x-pathname') ?? '';
+  const isTakeover = TAKEOVER_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+  if (isTakeover) {
+    return <>{children}</>;
+  }
 
   const { count: unreadCount } = await supabaseAdmin
     .from('notifications')

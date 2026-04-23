@@ -273,6 +273,7 @@ export function Step1Form({
             maxLength={30}
             className={
               'flex-1 min-w-0 bg-transparent border-0 outline-none p-0 ' +
+              'focus:outline-none focus:ring-0 focus:ring-offset-0 ' +
               'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder'
             }
           />
@@ -316,7 +317,7 @@ export function Step1Form({
           }
         />
         <span className="font-sans text-[13px] leading-[20px] text-muted">
-          I agree to{' '}
+          Agree to{' '}
           <Link
             href="/terms"
             target="_blank"
