@@ -194,9 +194,12 @@ export function Step1Form({
   const continueDisabled =
     continuePending ||
     !termsAgreed ||
+    !name.trim() ||
+    !location.trim() ||
+    !avatarUrl ||
+    !username.trim() ||
     usernameStatus.kind === 'error' ||
-    usernameStatus.kind === 'checking' ||
-    !username.trim();
+    usernameStatus.kind === 'checking';
 
   return (
     <div className="w-full max-w-[310px] flex flex-col items-center">

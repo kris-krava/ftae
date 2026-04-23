@@ -53,12 +53,12 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col items-center w-[310px]">
+    <form onSubmit={onSubmit} className="flex flex-col items-center w-full max-w-[480px]">
       <h1 className="font-serif font-bold text-ink text-[28px] leading-[36px] tab:text-[34px] tab:leading-[44px] desk:text-[38px] desk:leading-[50px] text-center">
         Change your username
       </h1>
       <span aria-hidden className="h-[8px] w-px shrink-0" />
-      <p className="font-sans text-muted text-[13px] leading-[20px] text-center">
+      <p className="font-sans text-muted text-[13px] leading-[20px] text-center w-full">
         You can change your username once every 30 days.
       </p>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
@@ -67,7 +67,7 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
       <p className="font-sans text-muted/80 text-[15px] text-center">@{currentUsername}</p>
       <span aria-hidden className="h-[24px] w-px shrink-0" />
 
-      <div className="flex flex-col items-start w-full gap-[6px]">
+      <div className="flex flex-col items-start w-[310px] gap-[6px]">
         <label htmlFor="new_username" className="font-sans font-medium text-muted text-[13px]">
           New username
         </label>
@@ -100,7 +100,7 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
 
       <span aria-hidden className="h-[24px] w-px shrink-0" />
 
-      <div className="flex w-full gap-[12px]">
+      <div className="flex w-[310px] gap-[12px]">
         <button
           type="button"
           onClick={() => router.back()}
@@ -119,7 +119,7 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
       </div>
 
       <span aria-hidden className="h-[16px] w-px shrink-0" />
-      <p className="font-sans text-muted text-[13px] text-center">
+      <p className="font-sans text-muted text-[13px] text-center w-full">
         We&rsquo;ll send a magic link to your email address to confirm the change.
       </p>
       {error && (

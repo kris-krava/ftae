@@ -150,7 +150,7 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
         <button
           type="button"
           onClick={onContinue}
-          disabled={continuePending}
+          disabled={continuePending || selected.size === 0 || !bio.trim()}
           className={
             'flex items-center justify-center w-full h-[48px] rounded-[8px] bg-accent text-surface ' +
             'font-semibold text-[16px] leading-[24px] transition-opacity ' +

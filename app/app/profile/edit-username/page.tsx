@@ -34,7 +34,7 @@ export default async function EditUsernamePage() {
   }
 
   return (
-    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px]">
+    <main className="bg-canvas min-h-dvh w-full flex flex-col items-center justify-center px-[32px] py-[64px] tab:px-[120px] desk:px-[320px]">
       <Wordmark variant="short" />
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       <EditUsernameForm currentUsername={username} />
@@ -49,7 +49,7 @@ function LockedView({ username, unlockOn }: { username: string; unlockOn: Date }
     year: 'numeric',
   });
   return (
-    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] text-center">
+    <main className="bg-canvas min-h-dvh w-full flex flex-col items-center justify-center px-[32px] py-[64px] tab:px-[120px] desk:px-[320px] text-center">
       <Wordmark variant="short" />
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       <h1 className="font-serif font-bold text-ink text-[28px] leading-[36px] tab:text-[34px] tab:leading-[44px] desk:text-[38px] desk:leading-[50px]">
