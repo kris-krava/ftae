@@ -43,7 +43,7 @@ function HeroSection() {
         >
           Art you made
         </span>
-        <XClose className="shrink-0 w-[16px] h-[16px] tab:w-[20px] tab:h-[20px] desk:w-[20px] desk:h-[20px] text-canvas" />
+        <XClose className="shrink-0 w-[16px] h-[16px] tab:w-[20px] tab:h-[20px] desk:w-[20px] desk:h-[20px] text-ink" />
         <span
           className={
             'flex-1 text-left uppercase font-sans font-bold text-canvas ' +
