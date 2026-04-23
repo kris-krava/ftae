@@ -46,7 +46,7 @@ function HeroSection() {
         <XClose className="shrink-0 w-[16px] h-[16px] tab:w-[20px] tab:h-[20px] desk:w-[20px] desk:h-[20px] text-canvas" />
         <span
           className={
-            'flex-1 uppercase font-sans font-bold text-canvas ' +
+            'flex-1 text-left uppercase font-sans font-bold text-canvas ' +
             'text-[17px] leading-[28px] ' +
             'tab:text-[20px] tab:leading-[32px] ' +
             'desk:text-[24px] desk:leading-[36px]'
