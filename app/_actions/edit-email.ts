@@ -1,15 +1,17 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
+import { isReauthFresh, REAUTH_COOKIE } from '@/lib/auth-cookies';
 
 const EmailSchema = z.string().trim().toLowerCase().email();
 
 export type EditEmailResult =
   | { ok: true; pendingEmail: string }
-  | { ok: false; error: string };
+  | { ok: false; error: string; needsReauth?: boolean };
 
 export async function requestEmailChange(formData: FormData): Promise<EditEmailResult> {
   const supabase = createClient();
@@ -17,6 +19,15 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
+
+  const reauthCookie = cookies().get(REAUTH_COOKIE)?.value;
+  if (!isReauthFresh(reauthCookie, user.id)) {
+    return {
+      ok: false,
+      error: 'Please confirm it’s you before changing your email.',
+      needsReauth: true,
+    };
+  }
 
   const limit = rateLimit(`edit-email:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
@@ -37,7 +48,6 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
 }
 
 // Sync auth.users.email → public.users.email after Supabase confirms a change.
-// Spec: do not update users.email until Supabase confirms.
 export async function syncEmailFromAuth(): Promise<{ ok: boolean; email?: string }> {
   const supabase = createClient();
   const {

@@ -4,7 +4,16 @@ interface WordmarkProps {
   className?: string;
 }
 
-const HERO_CLASS =
+// Per the Figma wrap rule (2026-04-22), the full hero wordmark has no hard
+// break — container width drives the natural wrap. 310/400/520 produce the
+// canonical "Free Trade / Art Exchange" two-line layout at hero sizes.
+const HERO_FULL_CLASS =
+  'font-script text-ink text-center tracking-[-0.5px] mx-auto ' +
+  'w-[310px] text-[34px] leading-[42px] ' +
+  'tab:w-[400px] tab:text-[44px] tab:leading-[52px] ' +
+  'desk:w-[520px] desk:text-[56px] desk:leading-[64px]';
+
+const HERO_SHORT_CLASS =
   'font-script text-ink text-center tracking-[-0.5px] ' +
   'text-[34px] leading-[42px] ' +
   'tab:text-[44px] tab:leading-[52px] ' +
@@ -17,16 +26,17 @@ const COMPACT_CLASS =
   'desk:text-[28px] desk:leading-[50px]';
 
 export function Wordmark({ variant, size = 'hero', className }: WordmarkProps) {
-  const base = size === 'compact' ? COMPACT_CLASS : HERO_CLASS;
-
-  if (variant === 'short') {
-    return <p className={`${base} ${className ?? ''}`}>FTAE</p>;
+  if (size === 'compact') {
+    return (
+      <p className={`${COMPACT_CLASS} ${className ?? ''}`}>
+        {variant === 'short' ? 'FTAE' : 'Free Trade Art Exchange'}
+      </p>
+    );
   }
 
-  return (
-    <p className={`${base} ${className ?? ''}`}>
-      <span className="block desk:inline">Free Trade</span>{' '}
-      <span className="block desk:inline">Art Exchange</span>
-    </p>
-  );
+  if (variant === 'short') {
+    return <p className={`${HERO_SHORT_CLASS} ${className ?? ''}`}>FTAE</p>;
+  }
+
+  return <p className={`${HERO_FULL_CLASS} ${className ?? ''}`}>Free Trade Art Exchange</p>;
 }

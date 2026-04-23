@@ -4,12 +4,16 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { generateUniqueUsername } from '@/lib/username';
 import { REFERRAL_COOKIE } from '@/lib/referral';
+import {
+  SESSION_TTL_COOKIE,
+  resolveSessionTtl,
+} from '@/lib/session-persistence';
+import { issueReauthToken, REAUTH_COOKIE, REAUTH_WINDOW_SECONDS } from '@/lib/auth-cookies';
 
 const CODE_PATTERN = /^[A-Za-z0-9._~-]{8,256}$/;
 // Title and body separated by \n — rendered split in the Notification Item.
-// Copy verified against Figma Page 2 notifications screen (frame 99:271).
 const PROFILE_NUDGE_MESSAGE =
-  "Your profile is looking good\nAdd more work you\u2019d love to trade.";
+  "Your profile is looking good\nAdd more work you’d love to trade.";
 
 function getClientIp(request: NextRequest): string | null {
   const fwd = request.headers.get('x-forwarded-for');
@@ -17,14 +21,56 @@ function getClientIp(request: NextRequest): string | null {
   return request.headers.get('x-real-ip');
 }
 
+function safeNext(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith('/')) return null;
+  if (raw.startsWith('//')) return null;
+  if (raw.startsWith('/auth/')) return null;
+  if (raw.startsWith('/api/')) return null;
+  if (raw.length > 512) return null;
+  return raw;
+}
+
+function buildResponse(
+  origin: string,
+  destination: string,
+  ttl: number,
+  reauthFor: string | null,
+  clearReferral: boolean,
+): NextResponse {
+  const response = NextResponse.redirect(`${origin}${destination}`);
+  response.cookies.set({
+    name: SESSION_TTL_COOKIE,
+    value: String(ttl),
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: ttl,
+  });
+  if (reauthFor) {
+    response.cookies.set({
+      name: REAUTH_COOKIE,
+      value: issueReauthToken(reauthFor),
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: REAUTH_WINDOW_SECONDS,
+    });
+  }
+  if (clearReferral) response.cookies.delete(REFERRAL_COOKIE);
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // Supabase appends `type=email_change` (or `email`) when the magic link is from
-  // auth.updateUser({ email }). Route those confirmations to the dedicated success
-  // page instead of dropping the user on /app/home.
   const callbackType = searchParams.get('type');
   const isEmailChange = callbackType === 'email_change' || callbackType === 'email';
+  const isReauth = callbackType === 'reauth';
+  const next = safeNext(searchParams.get('next'));
+  const remember = searchParams.get('remember');
 
   if (!code || !CODE_PATTERN.test(code)) {
     return NextResponse.redirect(`${origin}/?error=invalid_code`);
@@ -44,62 +90,49 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/?error=missing_email`);
   }
 
+  // Resolve and persist the session TTL preference. Read on every Supabase
+  // cookie write (in middleware + lib/supabase/server.ts) to keep refresh-token
+  // cookies aligned with the chosen window.
+  const ttl = resolveSessionTtl(request.headers.get('user-agent'), remember);
+
   const { data: existingUser } = await supabaseAdmin
     .from('users')
     .select('id')
     .eq('id', userId)
     .maybeSingle();
 
-  if (existingUser) {
-    if (isEmailChange) {
-      return NextResponse.redirect(`${origin}/app/profile/edit-email/done`);
-    }
-    return NextResponse.redirect(`${origin}/app/home`);
+  if (existingUser && isReauth) {
+    return buildResponse(origin, next ?? '/app/home', ttl, userId, false);
   }
 
+  if (existingUser && isEmailChange) {
+    return buildResponse(origin, '/app/profile/edit-email/done', ttl, null, false);
+  }
+
+  if (existingUser) {
+    return buildResponse(origin, next ?? '/app/home', ttl, null, false);
+  }
+
+  // First-time sign-in — provision the public.users row, log the IP, drop the
+  // welcome notification, and consume the referral cookie. Founding-member
+  // status and credit are deferred to first-art-add (which is when the user
+  // hits 100% completion). They are not awarded for merely clicking a link.
   const seed = userEmail.split('@')[0] ?? 'artist';
   const username = await generateUniqueUsername(seed);
   const referralCode = randomBytes(16).toString('hex');
-
-  const { data: openSetting } = await supabaseAdmin
-    .from('platform_settings')
-    .select('value')
-    .eq('key', 'founding_member_enrollment_open')
-    .maybeSingle();
-  const isFoundingMember = openSetting?.value === 'true';
 
   const { error: insertUserError } = await supabaseAdmin.from('users').insert({
     id: userId,
     email: userEmail,
     username,
     referral_code: referralCode,
-    is_founding_member: isFoundingMember,
+    is_founding_member: false,
     profile_completion_pct: 0,
   });
 
   if (insertUserError) {
     console.error('User insert failed:', insertUserError);
     return NextResponse.redirect(`${origin}/?error=user_create_failed`);
-  }
-
-  if (isFoundingMember) {
-    const { count: existingFoundingCount } = await supabaseAdmin
-      .from('membership_credits')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('credit_type', 'founding_member');
-
-    if (!existingFoundingCount) {
-      const { error: creditError } = await supabaseAdmin.from('membership_credits').insert({
-        user_id: userId,
-        credit_type: 'founding_member',
-        months_credited: 3,
-        note: 'Founding member enrollment — automatic grant at signup',
-      });
-      if (creditError) {
-        console.error('Founding-member credit insert failed:', creditError);
-      }
-    }
   }
 
   const refCookie = request.cookies.get(REFERRAL_COOKIE)?.value;
@@ -138,7 +171,5 @@ export async function GET(request: NextRequest) {
   });
   if (notifError) console.error('Welcome notification insert failed:', notifError);
 
-  const response = NextResponse.redirect(`${origin}/onboarding/step-1`);
-  response.cookies.delete(REFERRAL_COOKIE);
-  return response;
+  return buildResponse(origin, '/onboarding/step-1', ttl, null, true);
 }

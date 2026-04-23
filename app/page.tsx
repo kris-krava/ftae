@@ -32,10 +32,10 @@ function HeroSection() {
         <Wordmark variant="full" />
       </div>
 
-      <div className="w-full bg-accent flex items-center justify-center gap-[8px] py-[12px] tab:py-[14px] desk:py-[16px]">
+      <div className="w-full bg-accent flex items-center justify-center gap-[4px] py-[12px] tab:py-[12px] desk:py-[16px]">
         <span
           className={
-            'font-sans font-bold text-canvas ' +
+            'flex-1 text-right uppercase font-sans font-bold text-canvas ' +
             'text-[17px] leading-[28px] ' +
             'tab:text-[20px] tab:leading-[32px] ' +
             'desk:text-[24px] desk:leading-[36px]'
@@ -43,10 +43,10 @@ function HeroSection() {
         >
           Art you made
         </span>
-        <XClose className="w-[16px] h-[16px] tab:w-[18px] tab:h-[18px] desk:w-[20px] desk:h-[20px] text-canvas" />
+        <XClose className="shrink-0 w-[16px] h-[16px] tab:w-[20px] tab:h-[20px] desk:w-[20px] desk:h-[20px] text-canvas" />
         <span
           className={
-            'font-sans font-bold text-canvas ' +
+            'flex-1 uppercase font-sans font-bold text-canvas ' +
             'text-[17px] leading-[28px] ' +
             'tab:text-[20px] tab:leading-[32px] ' +
             'desk:text-[24px] desk:leading-[36px]'
@@ -140,7 +140,7 @@ function CTASection() {
       >
         Join now and get 3 months free!
       </p>
-      <LandingForm />
+      <LandingForm checkboxAlign="center" />
       <p className="font-sans text-[13px] leading-[20px] text-muted tab:text-[14px] tab:leading-[22px]">
         I&rsquo;ll send you a magic link &mdash; no password needed.
       </p>

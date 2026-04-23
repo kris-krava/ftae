@@ -323,33 +323,21 @@ const Step4MetaSchema = z.object({
 });
 
 export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> {
-  // ===== TEMP TIMING (remove after debug) =====
-  const tStart = Date.now();
-  const ms = (since: number) => `${Date.now() - since}ms`;
-  console.log('[step4-server] === START ===');
-  // =============================================
-
   let userId: string;
   try {
     userId = await requireUserId();
   } catch {
     return { ok: false, error: 'Not signed in.' };
   }
-  console.log('[step4-server] requireUserId:', ms(tStart));
 
   const limit = rateLimit(`step4:${userId}`, 10, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many uploads.' };
 
-  const tParse = Date.now();
   const photoEntries = formData.getAll('photos');
   const photos: File[] = [];
   for (const entry of photoEntries) {
     if (entry instanceof File && entry.size > 0) photos.push(entry);
   }
-  console.log(
-    `[step4-server] formData parse + ${photos.length} photos extracted: ${ms(tParse)} ` +
-    `(total bytes: ${photos.reduce((s, p) => s + p.size, 0)})`,
-  );
   if (photos.length === 0) return { ok: false, error: 'At least one photo is required.' };
   if (photos.length > MAX_ARTWORK_PHOTOS) return { ok: false, error: `Up to ${MAX_ARTWORK_PHOTOS} photos.` };
 
@@ -357,7 +345,6 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     if (!ALLOWED_IMAGE_TYPES.has(photo.type)) return { ok: false, error: 'JPEG, PNG, or WebP only.' };
     if (photo.size > MAX_ARTWORK_BYTES) return { ok: false, error: 'A photo is too large.' };
   }
-  console.log('[step4-server] photo validation:', ms(tParse));
 
   // Per-photo focal points arrive as a JSON array aligned to photos order.
   // Each entry is [x, y] with values in [0, 1]. Fall back to centered if the
@@ -398,7 +385,6 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     return { ok: false, error: meta.error.issues[0]?.message ?? 'Invalid input.' };
   }
 
-  const tArtInsert = Date.now();
   const { data: artwork, error: artErr } = await supabaseAdmin
     .from('artworks')
     .insert({
@@ -416,7 +402,6 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     })
     .select('id')
     .single();
-  console.log('[step4-server] artworks INSERT:', ms(tArtInsert));
   if (artErr || !artwork) return { ok: false, error: 'Could not save artwork.' };
 
   for (let i = 0; i < photos.length; i += 1) {
@@ -424,23 +409,16 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     const ext = photo.type === 'image/png' ? 'png' : photo.type === 'image/webp' ? 'webp' : 'jpg';
     const path = `${userId}/${artwork.id}/${i}.${ext}`;
 
-    const tUpload = Date.now();
     const { error: uploadError } = await supabaseAdmin.storage
       .from('artwork-photos')
       .upload(path, photo, { contentType: photo.type, upsert: true, cacheControl: '300' });
-    console.log(
-      `[step4-server] storage upload photo[${i}] (${(photo.size / 1024).toFixed(0)}KB ${photo.type}): ${ms(tUpload)}`,
-    );
     if (uploadError) {
       console.error('Photo upload failed:', uploadError);
       continue;
     }
 
-    const tUrl = Date.now();
     const { data: pub } = supabaseAdmin.storage.from('artwork-photos').getPublicUrl(path);
-    console.log(`[step4-server] getPublicUrl photo[${i}]: ${ms(tUrl)}`);
 
-    const tPhotoRow = Date.now();
     await supabaseAdmin.from('artwork_photos').insert({
       artwork_id: artwork.id,
       url: pub.publicUrl,
@@ -448,17 +426,13 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       focal_x: focals[i].x,
       focal_y: focals[i].y,
     });
-    console.log(`[step4-server] artwork_photos INSERT photo[${i}]: ${ms(tPhotoRow)}`);
   }
 
-  const tRecalc = Date.now();
   const newPct = await recalculateCompletion(userId);
-  console.log(`[step4-server] recalculateCompletion → ${newPct}%: ${ms(tRecalc)}`);
 
   if (newPct === 100) {
-    const tBonus = Date.now();
+    await tryGrantFoundingMemberCredit(userId);
     await tryIssueReferralBonus(userId);
-    console.log('[step4-server] tryIssueReferralBonus:', ms(tBonus));
   }
 
   const { data: userRow } = await supabaseAdmin
@@ -468,8 +442,41 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     .single();
   if (userRow?.username) revalidatePath(`/${userRow.username as string}`);
   revalidatePath('/app/home');
-  console.log(`[step4-server] === END (total ${ms(tStart)}) ===`);
   return { ok: true };
+}
+
+// Founding-member status + credit are awarded only when the user reaches 100%
+// completion (first artwork added) AND enrollment is still open. They are not
+// granted at signup — a user who never finishes onboarding never becomes a
+// founding member, even if enrollment was open when they first clicked the
+// magic link.
+async function tryGrantFoundingMemberCredit(userId: string): Promise<void> {
+  const { data: openSetting } = await supabaseAdmin
+    .from('platform_settings')
+    .select('value')
+    .eq('key', 'founding_member_enrollment_open')
+    .maybeSingle();
+  if (openSetting?.value !== 'true') return;
+
+  const { count: existingCount } = await supabaseAdmin
+    .from('membership_credits')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('credit_type', 'founding_member');
+  if (existingCount && existingCount > 0) return;
+
+  await supabaseAdmin
+    .from('users')
+    .update({ is_founding_member: true })
+    .eq('id', userId);
+
+  const { error: creditError } = await supabaseAdmin.from('membership_credits').insert({
+    user_id: userId,
+    credit_type: 'founding_member',
+    months_credited: 3,
+    note: 'Founding member — granted at 100% profile completion',
+  });
+  if (creditError) console.error('Founding-member credit insert failed:', creditError);
 }
 
 async function tryIssueReferralBonus(referredUserId: string): Promise<void> {

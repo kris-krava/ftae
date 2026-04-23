@@ -10,9 +10,9 @@ export function BackButton() {
       type="button"
       onClick={() => router.back()}
       aria-label="Back"
-      className="flex items-center justify-center w-[40px] h-[40px] -ml-[8px]"
+      className="fixed top-[16px] left-[16px] z-30 flex items-center justify-center w-[40px] h-[40px] tab:hidden"
     >
-      <ChevronLeft className="w-[24px] h-[24px] text-ink" />
+      <ChevronLeft className="w-[24px] h-[24px] text-muted" strokeWidth={1.67} />
     </button>
   );
 }
