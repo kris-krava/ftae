@@ -6,29 +6,62 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { PlusSquare } from '@/components/icons';
-import { finalizeStep1, saveStep1Profile, uploadAvatar } from '@/app/_actions/onboarding';
+import {
+  checkUsernameAvailability,
+  finalizeStep1,
+  saveStep1Profile,
+  uploadAvatar,
+} from '@/app/_actions/onboarding';
+import { sanitizeUsernameMirror, validateUsername } from '@/lib/username-validation';
 
 interface Step1FormProps {
   initialName: string;
   initialLocation: string;
   initialAvatarUrl: string | null;
+  initialUsername: string;
 }
 
 const SAVE_DEBOUNCE_MS = 500;
+const USERNAME_CHECK_DEBOUNCE_MS = 400;
 
-export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: Step1FormProps) {
+export function Step1Form({
+  initialName,
+  initialLocation,
+  initialAvatarUrl,
+  initialUsername,
+}: Step1FormProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
+  const [username, setUsername] = useState(initialUsername);
+  // Auto-mirror display name → username until the user manually edits the
+  // username field. Re-enabling is intentional — once they take ownership we
+  // never overwrite their choice from the display name again.
+  const [mirrorEnabled, setMirrorEnabled] = useState(true);
+  const [usernameStatus, setUsernameStatus] = useState<
+    | { kind: 'idle' }
+    | { kind: 'checking' }
+    | { kind: 'available' }
+    | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [continuePending, startContinue] = useTransition();
   const [, startAutosave] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialMount = useRef(true);
 
+  // Auto-mirror: as display name changes (and the user hasn't taken ownership
+  // of the username field), regenerate the candidate from the new name.
+  useEffect(() => {
+    if (!mirrorEnabled) return;
+    setUsername(sanitizeUsernameMirror(name));
+  }, [name, mirrorEnabled]);
+
+  // Debounced autosave — name + location + username.
   useEffect(() => {
     if (initialMount.current) {
       initialMount.current = false;
@@ -39,6 +72,13 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
       const fd = new FormData();
       fd.set('name', name);
       fd.set('location_city', location);
+      // Only autosave the username when it passes format validation — avoids
+      // a stream of "invalid" errors as the user types mid-word.
+      const trimmed = username.trim().toLowerCase();
+      if (trimmed.length > 0) {
+        const v = validateUsername(trimmed);
+        if (v.ok) fd.set('username', trimmed);
+      }
       startAutosave(async () => {
         const result = await saveStep1Profile(fd);
         if (!result.ok) setError(result.error);
@@ -48,7 +88,39 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [name, location]);
+  }, [name, location, username]);
+
+  // Live username availability check (debounced).
+  useEffect(() => {
+    if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+    const trimmed = username.trim().toLowerCase();
+    if (trimmed.length === 0) {
+      setUsernameStatus({ kind: 'idle' });
+      return;
+    }
+    const v = validateUsername(trimmed);
+    if (!v.ok) {
+      setUsernameStatus({ kind: 'error', message: v.reason });
+      return;
+    }
+    setUsernameStatus({ kind: 'checking' });
+    usernameDebounceRef.current = setTimeout(async () => {
+      const r = await checkUsernameAvailability(trimmed);
+      if (r.available) setUsernameStatus({ kind: 'available' });
+      else setUsernameStatus({ kind: 'error', message: r.error ?? 'Taken' });
+    }, USERNAME_CHECK_DEBOUNCE_MS);
+    return () => {
+      if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+    };
+  }, [username]);
+
+  function onUsernameInput(event: React.ChangeEvent<HTMLInputElement>) {
+    setMirrorEnabled(false);
+    // Strip a stray "@" the user may have typed (the prefix is rendered as a
+    // separate visual character) and force lowercase.
+    const v = event.target.value.replace(/^@+/, '').toLowerCase();
+    setUsername(v);
+  }
 
   async function onAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -90,6 +162,20 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
       setError('Please add a profile photo.');
       return;
     }
+    const usernameTrim = username.trim().toLowerCase();
+    if (!usernameTrim) {
+      setError('Please choose a username.');
+      return;
+    }
+    const v = validateUsername(usernameTrim);
+    if (!v.ok) {
+      setError(v.reason);
+      return;
+    }
+    if (usernameStatus.kind === 'error') {
+      setError(usernameStatus.message);
+      return;
+    }
     if (!termsAgreed) {
       setError('Please agree to the Terms of Service and Privacy Policy to continue.');
       return;
@@ -104,7 +190,12 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
     });
   }
 
-  const continueDisabled = continuePending || !termsAgreed;
+  const continueDisabled =
+    continuePending ||
+    !termsAgreed ||
+    usernameStatus.kind === 'error' ||
+    usernameStatus.kind === 'checking' ||
+    !username.trim();
 
   return (
     <>
@@ -115,21 +206,22 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
         className={
           'shrink-0 rounded-full overflow-hidden border-[1.5px] border-field bg-surface/45 ' +
           'flex items-center justify-center ' +
-          'w-[193px] h-[193px] ' +
-          'desk:w-[240px] desk:h-[240px]'
+          'w-[96px] h-[96px] ' +
+          'tab:w-[116px] tab:h-[116px] ' +
+          'desk:w-[120px] desk:h-[120px]'
         }
       >
         {avatarUrl ? (
           <Image
             src={avatarUrl}
             alt=""
-            width={240}
-            height={240}
+            width={120}
+            height={120}
             className="w-full h-full object-cover"
             priority
           />
         ) : (
-          <PlusSquare className="w-[48px] h-[48px] text-accent" />
+          <PlusSquare className="w-[28px] h-[28px] text-accent" />
         )}
       </button>
       <input
@@ -158,6 +250,45 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
         />
       </Field>
       <span aria-hidden className="h-[16px] w-px shrink-0" />
+      <Field label="Username" htmlFor="username">
+        <div
+          className={
+            'w-full h-[44px] rounded-[8px] bg-surface border border-field flex items-center px-[14px] ' +
+            'focus-within:border-accent transition-colors'
+          }
+        >
+          <span className="font-sans text-[15px] leading-[24px] text-placeholder pr-[2px] select-none">
+            @
+          </span>
+          <input
+            id="username"
+            type="text"
+            required
+            value={username}
+            onChange={onUsernameInput}
+            placeholder="yourname"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={30}
+            className={
+              'flex-1 min-w-0 bg-transparent border-0 outline-none p-0 ' +
+              'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder'
+            }
+          />
+        </div>
+        <p
+          className={
+            'font-sans text-[12px] leading-[16px] mt-[2px] ' +
+            (usernameStatus.kind === 'error' ? 'text-accent' : 'text-muted')
+          }
+          role={usernameStatus.kind === 'error' ? 'alert' : undefined}
+        >
+          {usernameStatus.kind === 'error'
+            ? usernameStatus.message
+            : `freetradeartexchange.com/${username || 'yourname'}`}
+        </p>
+      </Field>
+      <span aria-hidden className="h-[16px] w-px shrink-0" />
       <Field label="Where are you based?" htmlFor="location" gap={6}>
         <input
           id="location"
@@ -184,7 +315,7 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
           }
         />
         <span className="font-sans text-[13px] leading-[20px] text-muted">
-          I agree to the{' '}
+          I agree to{' '}
           <Link
             href="/terms"
             target="_blank"
@@ -193,7 +324,7 @@ export function Step1Form({ initialName, initialLocation, initialAvatarUrl }: St
           >
             Terms of Service
           </Link>{' '}
-          and the{' '}
+          and{' '}
           <Link
             href="/privacy"
             target="_blank"

@@ -3,16 +3,16 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Mail01 } from '@/components/icons';
-import { requestEmailChange } from '@/app/_actions/edit-email';
+import { requestUsernameChange } from '@/app/_actions/edit-username';
 
-interface EditEmailFormProps {
-  currentEmail: string;
+interface EditUsernameFormProps {
+  currentUsername: string;
 }
 
-export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
+export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [sentEmail, setSentEmail] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<{ email: string; username: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState('');
 
@@ -20,13 +20,13 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
     event.preventDefault();
     setError(null);
     const fd = new FormData();
-    fd.set('new_email', value.trim());
+    fd.set('new_username', value.trim().toLowerCase());
     start(async () => {
-      const result = await requestEmailChange(fd);
+      const result = await requestUsernameChange(fd);
       if (result.ok) {
-        setSentEmail(result.pendingEmail);
+        setSentTo({ email: result.sentTo, username: result.pendingUsername });
       } else if (result.needsReauth) {
-        const next = encodeURIComponent('/app/profile/edit-email');
+        const next = encodeURIComponent('/app/profile/edit-username');
         router.push(`/app/profile/reauthenticate?next=${next}`);
       } else {
         setError(result.error);
@@ -34,7 +34,7 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
     });
   }
 
-  if (sentEmail) {
+  if (sentTo) {
     return (
       <div className="flex flex-col items-center text-center">
         <Mail01 className="w-[64px] h-[64px] text-accent" strokeWidth={2} />
@@ -44,8 +44,8 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
         </h1>
         <span aria-hidden className="h-[14px] w-px shrink-0" />
         <p className="font-sans text-muted text-[15px] leading-[24px] max-w-[326px]">
-          We sent a verification link to{' '}
-          <span className="font-semibold text-ink">{sentEmail}</span>.
+          We sent a confirmation link to{' '}
+          <span className="font-semibold text-ink">{sentTo.email}</span>.
         </p>
       </div>
     );
@@ -54,33 +54,46 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col items-center w-[310px]">
       <h1 className="font-serif font-bold text-ink text-[28px] leading-[36px] tab:text-[34px] tab:leading-[44px] desk:text-[38px] desk:leading-[50px] text-center">
-        Change your email
+        Change your username
       </h1>
+      <span aria-hidden className="h-[8px] w-px shrink-0" />
+      <p className="font-sans text-muted text-[13px] leading-[20px] text-center">
+        You can change your username once every 30 days.
+      </p>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
-      <p className="font-sans font-medium text-muted text-[13px] text-center">Current email</p>
+      <p className="font-sans font-medium text-muted text-[13px] text-center">Current username</p>
       <span aria-hidden className="h-[4px] w-px shrink-0" />
-      <p className="font-sans text-muted/80 text-[15px] text-center">{currentEmail}</p>
+      <p className="font-sans text-muted/80 text-[15px] text-center">@{currentUsername}</p>
       <span aria-hidden className="h-[24px] w-px shrink-0" />
 
       <div className="flex flex-col items-start w-full gap-[6px]">
-        <label htmlFor="new_email" className="font-sans font-medium text-muted text-[13px]">
-          New email address
+        <label htmlFor="new_username" className="font-sans font-medium text-muted text-[13px]">
+          New username
         </label>
-        <input
-          id="new_email"
-          name="new_email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="Enter your new email"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className={
-            'w-full h-[44px] rounded-[8px] bg-surface border border-field px-[14px] ' +
-            'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder ' +
-            'focus:border-accent focus:outline-none focus:ring-0'
-          }
-        />
+        <div className="w-full h-[44px] rounded-[8px] bg-surface border border-field flex items-center px-[14px] focus-within:border-accent transition-colors">
+          <span className="font-sans text-[15px] leading-[24px] text-placeholder pr-[2px] select-none">
+            @
+          </span>
+          <input
+            id="new_username"
+            name="new_username"
+            type="text"
+            required
+            value={value}
+            onChange={(e) => setValue(e.target.value.replace(/^@+/, '').toLowerCase())}
+            placeholder="yourname"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={30}
+            className={
+              'flex-1 min-w-0 bg-transparent border-0 outline-none p-0 ' +
+              'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder'
+            }
+          />
+        </div>
+        <p className="font-sans text-[12px] leading-[16px] text-muted">
+          freetradeartexchange.com/{value || 'yourname'}
+        </p>
       </div>
 
       <span aria-hidden className="h-[24px] w-px shrink-0" />
@@ -105,7 +118,7 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
 
       <span aria-hidden className="h-[16px] w-px shrink-0" />
       <p className="font-sans text-muted text-[13px] text-center">
-        We&rsquo;ll send a magic link to your new address to confirm the change.
+        We&rsquo;ll send a magic link to your email address to confirm the change.
       </p>
       {error && (
         <p role="alert" className="mt-[12px] text-accent text-[13px] text-center">

@@ -10,11 +10,10 @@ export function AccountSection({ email }: AccountSectionProps) {
     <section className="w-full mt-[16px] flex flex-col items-center gap-[12px]">
       <span aria-hidden className="block w-full h-px bg-muted/20" />
       <h2 className="font-sans font-medium text-[11px] tracking-[1px] text-muted">ACCOUNT</h2>
-      <div className="flex items-center justify-center gap-[10px] font-sans text-[13px]">
+      <div className="flex items-center justify-center gap-[5px] font-sans text-[13px]">
         <span className="text-ink">{email}</span>
-        <span aria-hidden className="text-divider">|</span>
         <Link href="/app/profile/edit-email" className="text-accent">
-          Edit Email
+          Edit
         </Link>
       </div>
       <div className="flex items-center justify-center gap-[10px] font-sans text-[13px]">

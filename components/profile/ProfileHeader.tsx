@@ -3,14 +3,22 @@ import { Edit05, Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
 import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
 import { deriveInitials } from '@/lib/initials';
+import { getPlatformLabel } from '@/lib/social-platform';
 
 interface ProfileHeaderProps {
   user: ProfileUser;
   mediums: ProfileMedium[];
   editHref?: string;
+  /** Whether to render the inline "Edit" link next to the @username row. */
+  showUsernameEdit?: boolean;
 }
 
-export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
+export function ProfileHeader({
+  user,
+  mediums,
+  editHref,
+  showUsernameEdit = false,
+}: ProfileHeaderProps) {
   const displayName = user.name?.trim() || user.username;
   const initials = deriveInitials(user.name, user.email);
   const websiteHref = user.website_url
@@ -22,6 +30,7 @@ export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
   const handle = user.social_handle?.trim().replace(/^@+/, '') ?? null;
   const handleLabel = handle ? `@${handle}` : null;
   const handleHref = handle ? socialHandleUrl(user.social_platform, handle) : null;
+  const platformLabel = getPlatformLabel(user.social_platform);
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -29,8 +38,8 @@ export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
         <Avatar
           initials={initials}
           avatarUrl={user.avatar_url}
-          size={193}
-          textSize="text-[48px]"
+          size={96}
+          textSize="text-[28px]"
           priority
         />
         {editHref && (
@@ -66,6 +75,14 @@ export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
           {user.location_city}
         </p>
       )}
+      <div className="flex items-center justify-center gap-[5px] font-sans text-[13px] mt-[2px]">
+        <span className="text-muted">@{user.username}</span>
+        {showUsernameEdit && (
+          <Link href="/app/profile/edit-username" className="text-accent">
+            Edit
+          </Link>
+        )}
+      </div>
 
       {mediums.length > 0 && (
         <div className="flex flex-wrap justify-center gap-[8px] mt-[22px]">
@@ -96,20 +113,22 @@ export function ProfileHeader({ user, mediums, editHref }: ProfileHeaderProps) {
           {websiteLabel}
         </a>
       )}
-      {handleLabel && handleHref && (
-        <a
-          href={handleHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-sans text-[13px] text-accent text-center mt-[4px]"
-        >
-          {handleLabel}
-        </a>
-      )}
-      {handleLabel && !handleHref && (
-        <span className="font-sans text-[13px] text-accent text-center mt-[4px]">
-          {handleLabel}
-        </span>
+      {handleLabel && (
+        <p className="font-sans text-[13px] text-center mt-[4px]">
+          {platformLabel && <span className="text-muted">{platformLabel}: </span>}
+          {handleHref ? (
+            <a
+              href={handleHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent"
+            >
+              {handleLabel}
+            </a>
+          ) : (
+            <span className="text-accent">{handleLabel}</span>
+          )}
+        </p>
       )}
     </div>
   );

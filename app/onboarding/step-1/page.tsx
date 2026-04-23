@@ -25,6 +25,7 @@ export default async function Step1Page() {
           initialName={profile.name ?? ''}
           initialLocation={profile.location_city ?? ''}
           initialAvatarUrl={profile.avatar_url ?? null}
+          initialUsername={profile.username ?? ''}
         />
       </ErrorBoundary>
     </OnboardingShell>

@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { computeCompletion } from '@/lib/profile-completion';
 import { rateLimit } from '@/lib/rate-limit';
+import { isReservedUsername } from '@/lib/username-rules';
+import { validateUsername } from '@/lib/username-validation';
 
 const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'x', 'tiktok', 'youtube', 'pinterest', 'linkedin'] as const;
 type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
@@ -61,6 +63,7 @@ async function recalculateCompletion(userId: string): Promise<number> {
 const Step1ProfileSchema = z.object({
   name: z.string().trim().max(80).optional().nullable(),
   location_city: z.string().trim().max(120).optional().nullable(),
+  username: z.string().trim().max(30).optional().nullable(),
 });
 
 export async function saveStep1Profile(formData: FormData): Promise<SaveResult> {
@@ -77,15 +80,35 @@ export async function saveStep1Profile(formData: FormData): Promise<SaveResult> 
   const parsed = Step1ProfileSchema.safeParse({
     name: formData.get('name'),
     location_city: formData.get('location_city'),
+    username: formData.get('username'),
   });
   if (!parsed.success) return { ok: false, error: 'Invalid input.' };
 
+  const update: Record<string, string | null> = {
+    name: parsed.data.name?.trim() || null,
+    location_city: parsed.data.location_city?.trim() || null,
+  };
+
+  if (parsed.data.username !== undefined) {
+    const raw = (parsed.data.username ?? '').trim().toLowerCase();
+    if (raw.length > 0) {
+      if (isReservedUsername(raw)) return { ok: false, error: 'That username is reserved.' };
+      const v = validateUsername(raw);
+      if (!v.ok) return { ok: false, error: v.reason };
+      const { data: clash } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('username', raw)
+        .neq('id', userId)
+        .maybeSingle();
+      if (clash) return { ok: false, error: 'That username is taken.' };
+      update.username = raw;
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from('users')
-    .update({
-      name: parsed.data.name?.trim() || null,
-      location_city: parsed.data.location_city?.trim() || null,
-    })
+    .update(update)
     .eq('id', userId);
 
   if (error) return { ok: false, error: 'Could not save.' };
@@ -93,6 +116,30 @@ export async function saveStep1Profile(formData: FormData): Promise<SaveResult> 
   await recalculateCompletion(userId);
   revalidatePath('/onboarding/step-1');
   return { ok: true };
+}
+
+export async function checkUsernameAvailability(
+  raw: string,
+): Promise<{ available: boolean; error?: string }> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { available: false, error: 'Not signed in.' };
+  }
+  const candidate = (raw ?? '').trim().toLowerCase();
+  if (candidate.length === 0) return { available: false, error: 'Enter a username.' };
+  if (isReservedUsername(candidate)) return { available: false, error: 'That username is reserved.' };
+  const v = validateUsername(candidate);
+  if (!v.ok) return { available: false, error: v.reason };
+  const { data: clash } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('username', candidate)
+    .neq('id', userId)
+    .maybeSingle();
+  if (clash) return { available: false, error: 'Taken' };
+  return { available: true };
 }
 
 export async function finalizeStep1(): Promise<SaveResult> {
@@ -108,7 +155,7 @@ export async function finalizeStep1(): Promise<SaveResult> {
 
   const { data: row, error: readErr } = await supabaseAdmin
     .from('users')
-    .select('name, location_city, avatar_url, terms_accepted_at')
+    .select('name, location_city, avatar_url, username, terms_accepted_at')
     .eq('id', userId)
     .single();
 
@@ -117,6 +164,9 @@ export async function finalizeStep1(): Promise<SaveResult> {
   if (!row.name?.trim()) return { ok: false, error: 'Please add your display name.' };
   if (!row.location_city?.trim()) return { ok: false, error: 'Please add your location.' };
   if (!row.avatar_url) return { ok: false, error: 'Please add a profile photo.' };
+  if (!row.username?.trim()) return { ok: false, error: 'Please choose a username.' };
+  const v = validateUsername((row.username as string).trim().toLowerCase());
+  if (!v.ok) return { ok: false, error: v.reason };
 
   if (!row.terms_accepted_at) {
     const { error: stampErr } = await supabaseAdmin

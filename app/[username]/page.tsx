@@ -92,6 +92,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               user={profileUser}
               mediums={mediums}
               editHref={isOwner ? '/app/profile/edit' : undefined}
+              showUsernameEdit={isOwner}
             />
 
             {!isOwner && (
