@@ -10,6 +10,42 @@ export interface CleanupReport {
   errors: string[];
 }
 
+// Walks a bucket path recursively and returns every leaf file path. Storage
+// list() returns child entries (folders have no metadata, files have
+// metadata.size); remove() does not recurse, so we have to expand folders
+// ourselves or nested files leak — which previously left orphaned artwork
+// photos behind after a user was wiped.
+async function listAllFiles(
+  admin: SupabaseClient,
+  bucket: string,
+  root: string,
+): Promise<string[]> {
+  const out: string[] = [];
+  const queue: string[] = [root];
+  while (queue.length > 0) {
+    const prefix = queue.shift()!;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await admin.storage
+        .from(bucket)
+        .list(prefix, { limit: 1000, offset });
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      for (const entry of data) {
+        const fullPath = `${prefix}/${entry.name}`;
+        if (entry.metadata && typeof entry.metadata.size === 'number') {
+          out.push(fullPath);
+        } else {
+          queue.push(fullPath);
+        }
+      }
+      if (data.length < 1000) break;
+      offset += data.length;
+    }
+  }
+  return out;
+}
+
 /**
  * Deletes the specified users fully: auth row + public row (cascades to child
  * tables via FK on delete cascade) + owned storage objects.
@@ -23,9 +59,8 @@ export async function deleteUsersById(
   for (const u of users) {
     for (const bucket of ['avatars', 'artwork-photos']) {
       try {
-        const { data: objects } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
-        if (objects && objects.length > 0) {
-          const paths = objects.map((o) => `${u.id}/${o.name}`);
+        const paths = await listAllFiles(admin, bucket, u.id);
+        if (paths.length > 0) {
           const { error: rmErr } = await admin.storage.from(bucket).remove(paths);
           if (rmErr) report.errors.push(`${bucket} remove for ${u.id}: ${rmErr.message}`);
           else report.storagePrefixesRemoved += 1;

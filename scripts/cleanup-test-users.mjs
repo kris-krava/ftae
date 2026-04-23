@@ -58,6 +58,36 @@ const admin = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+// remove() does not recurse into folders — list returns child entries
+// (folders have no metadata, files have metadata.size). Walk the tree so
+// nested artwork photos are collected as leaf paths.
+async function listAllFiles(admin, bucket, root) {
+  const out = [];
+  const queue = [root];
+  while (queue.length > 0) {
+    const prefix = queue.shift();
+    let offset = 0;
+    while (true) {
+      const { data, error } = await admin.storage
+        .from(bucket)
+        .list(prefix, { limit: 1000, offset });
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      for (const entry of data) {
+        const fullPath = `${prefix}/${entry.name}`;
+        if (entry.metadata && typeof entry.metadata.size === 'number') {
+          out.push(fullPath);
+        } else {
+          queue.push(fullPath);
+        }
+      }
+      if (data.length < 1000) break;
+      offset += data.length;
+    }
+  }
+  return out;
+}
+
 async function listAllTestUsers() {
   const out = [];
   let page = 1;
@@ -108,9 +138,8 @@ async function main() {
 
   for (const u of testUsers) {
     for (const bucket of ['avatars', 'artwork-photos']) {
-      const { data: objects } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
-      if (objects && objects.length > 0) {
-        const paths = objects.map((o) => `${u.id}/${o.name}`);
+      const paths = await listAllFiles(admin, bucket, u.id);
+      if (paths.length > 0) {
         const { error } = await admin.storage.from(bucket).remove(paths);
         if (error) errors.push(`${bucket} remove ${u.id}: ${error.message}`);
       }
