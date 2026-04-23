@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { Edit02, XClose, PlusSquare } from '@/components/icons';
+import { PlatformBadge } from '@/components/PlatformBadge';
 import {
   saveStep1Profile,
   uploadAvatar,
@@ -204,22 +205,22 @@ function Step1({
         type="button"
         onClick={() => fileInputRef.current?.click()}
         aria-label="Edit profile photo"
-        className="relative w-[193px] h-[193px] rounded-full overflow-hidden bg-divider border-[1.5px] border-field flex items-center justify-center"
+        className="relative w-[96px] h-[96px] rounded-full overflow-hidden bg-divider border-[1.5px] border-field flex items-center justify-center"
       >
         {avatarUrl ? (
           <Image
             src={avatarUrl}
             alt=""
-            width={193}
-            height={193}
+            width={96}
+            height={96}
             className="w-full h-full object-cover"
             priority
           />
         ) : (
-          <PlusSquare className="w-[48px] h-[48px] text-accent" />
+          <PlusSquare className="w-[28px] h-[28px] text-accent" />
         )}
-        <span className="absolute -top-[13px] left-[163.5px] w-[40px] h-[40px] rounded-full bg-surface flex items-center justify-center shadow-xs">
-          <Edit02 className="w-[20px] h-[20px] text-ink" />
+        <span className="absolute -top-[8px] left-[72px] w-[32px] h-[32px] rounded-full bg-surface flex items-center justify-center shadow-xs">
+          <Edit02 className="w-[16px] h-[16px] text-ink" />
         </span>
       </button>
       <input
@@ -452,6 +453,7 @@ function Step3({
               </option>
             ))}
           </select>
+          {platform && <PlatformBadge platform={platform} />}
           <span className="font-sans font-medium text-[14px] text-ink truncate flex-1">
             {PLATFORMS.find((p) => p.value === platform)?.label ?? 'Platform'}
           </span>

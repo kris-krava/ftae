@@ -42,6 +42,20 @@ export function validateUsername(raw: string): UsernameValidation {
   return { ok: true };
 }
 
+// Live input filter for the username field — applied as the user types so
+// disallowed characters never appear in state. Less aggressive than the
+// mirror function: leaves leading/trailing/consecutive specials alone so the
+// user can finish typing; final correctness is enforced by `validateUsername`
+// on submit.
+export function liveSanitizeUsernameInput(raw: string): string {
+  let s = raw.toLowerCase();
+  s = s.replace(/^@+/, '');
+  s = s.replace(/\s+/g, '.');
+  s = s.replace(/[^a-z0-9._-]/g, '');
+  if (s.length > USERNAME_MAX_LEN) s = s.slice(0, USERNAME_MAX_LEN);
+  return s;
+}
+
 export function sanitizeUsernameMirror(displayName: string): string {
   let s = displayName.toLowerCase();
   s = s.replace(/\s+/g, '.');

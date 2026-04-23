@@ -98,7 +98,10 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
   }
 
   return (
-    <>
+    <div className="w-full flex flex-col items-center">
+      {/* Medium tags fill the full content area — they pre-date the 310px
+          form-column rule, and their wrapping makes the wider canvas feel
+          intentional. */}
       <div className="flex flex-wrap items-start gap-[8px] w-full">
         {mediums.map((m) => {
           const isOn = selected.has(m.id);
@@ -121,45 +124,47 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
         })}
       </div>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
-      <label htmlFor="bio" className="font-sans font-medium text-[13px] leading-[18px] text-muted w-full">
-        In one line, who are you as an artist?
-      </label>
-      <span aria-hidden className="h-[6px] w-px shrink-0" />
-      <textarea
-        id="bio"
-        value={bio}
-        onChange={(e) => setBio(e.target.value.slice(0, MAX_BIO))}
-        rows={2}
-        maxLength={MAX_BIO}
-        placeholder="e.g. I paint figurative and landscape oil paintings in rural Georgia"
-        className={
-          'w-full rounded-[8px] bg-surface border border-field px-[14px] py-[10px] resize-none ' +
-          'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder ' +
-          'focus:border-accent focus:outline-none focus:ring-0'
-        }
-      />
-      <span aria-hidden className="h-[6px] w-px shrink-0" />
-      <p className="font-sans text-[12px] leading-[18px] text-muted text-right w-full">
-        {bio.length} / {MAX_BIO}
-      </p>
-      <span aria-hidden className="h-[32px] w-px shrink-0" />
-      <button
-        type="button"
-        onClick={onContinue}
-        disabled={continuePending}
-        className={
-          'flex items-center justify-center w-full h-[48px] rounded-[8px] bg-accent text-surface ' +
-          'font-semibold text-[16px] leading-[24px] transition-opacity ' +
-          'disabled:opacity-40 disabled:cursor-not-allowed'
-        }
-      >
-        {continuePending ? 'Saving…' : 'Continue'}
-      </button>
-      {error && (
-        <p role="alert" className="mt-[8px] text-accent text-[13px] text-center">
-          {error}
+      <div className="w-full max-w-[310px] flex flex-col items-center">
+        <label htmlFor="bio" className="font-sans font-medium text-[13px] leading-[18px] text-muted w-full">
+          In one line, who are you as an artist?
+        </label>
+        <span aria-hidden className="h-[6px] w-px shrink-0" />
+        <textarea
+          id="bio"
+          value={bio}
+          onChange={(e) => setBio(e.target.value.slice(0, MAX_BIO))}
+          rows={2}
+          maxLength={MAX_BIO}
+          placeholder="e.g. I paint figurative and landscape oil paintings in rural Georgia"
+          className={
+            'w-full rounded-[8px] bg-surface border border-field px-[14px] py-[10px] resize-none ' +
+            'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder ' +
+            'focus:border-accent focus:outline-none focus:ring-0'
+          }
+        />
+        <span aria-hidden className="h-[6px] w-px shrink-0" />
+        <p className="font-sans text-[12px] leading-[18px] text-muted text-right w-full">
+          {bio.length} / {MAX_BIO}
         </p>
-      )}
-    </>
+        <span aria-hidden className="h-[32px] w-px shrink-0" />
+        <button
+          type="button"
+          onClick={onContinue}
+          disabled={continuePending}
+          className={
+            'flex items-center justify-center w-full h-[48px] rounded-[8px] bg-accent text-surface ' +
+            'font-semibold text-[16px] leading-[24px] transition-opacity ' +
+            'disabled:opacity-40 disabled:cursor-not-allowed'
+          }
+        >
+          {continuePending ? 'Saving…' : 'Continue'}
+        </button>
+        {error && (
+          <p role="alert" className="mt-[8px] text-accent text-[13px] text-center">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

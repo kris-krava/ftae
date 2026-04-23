@@ -12,7 +12,11 @@ import {
   saveStep1Profile,
   uploadAvatar,
 } from '@/app/_actions/onboarding';
-import { sanitizeUsernameMirror, validateUsername } from '@/lib/username-validation';
+import {
+  liveSanitizeUsernameInput,
+  sanitizeUsernameMirror,
+  validateUsername,
+} from '@/lib/username-validation';
 
 interface Step1FormProps {
   initialName: string;
@@ -116,10 +120,7 @@ export function Step1Form({
 
   function onUsernameInput(event: React.ChangeEvent<HTMLInputElement>) {
     setMirrorEnabled(false);
-    // Strip a stray "@" the user may have typed (the prefix is rendered as a
-    // separate visual character) and force lowercase.
-    const v = event.target.value.replace(/^@+/, '').toLowerCase();
-    setUsername(v);
+    setUsername(liveSanitizeUsernameInput(event.target.value));
   }
 
   async function onAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -198,7 +199,7 @@ export function Step1Form({
     !username.trim();
 
   return (
-    <>
+    <div className="w-full max-w-[310px] flex flex-col items-center">
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
@@ -353,7 +354,7 @@ export function Step1Form({
           {error}
         </p>
       )}
-    </>
+    </div>
   );
 }
 

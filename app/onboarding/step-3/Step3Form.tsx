@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { saveStep3Links } from '@/app/_actions/onboarding';
+import { PlatformBadge } from '@/components/PlatformBadge';
 
 interface Step3FormProps {
   initialWebsite: string;
@@ -40,7 +41,10 @@ export function Step3Form({ initialWebsite, initialPlatform, initialHandle }: St
   }
 
   return (
-    <form onSubmit={onSubmit} className="contents">
+    <form
+      onSubmit={onSubmit}
+      className="w-full max-w-[310px] flex flex-col items-center"
+    >
       <div className="flex flex-col gap-[6px] items-start w-full">
         <label htmlFor="website" className="font-sans font-medium text-[13px] leading-[18px] text-muted">
           Your website
@@ -84,6 +88,7 @@ export function Step3Form({ initialWebsite, initialPlatform, initialHandle }: St
               </option>
             ))}
           </select>
+          {platform && <PlatformBadge platform={platform} />}
           <span className="font-sans font-medium text-[14px] leading-[20px] text-ink truncate flex-1">
             {PLATFORMS.find((p) => p.value === platform)?.label ?? 'Platform'}
           </span>

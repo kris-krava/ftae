@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Mail01 } from '@/components/icons';
 import { requestUsernameChange } from '@/app/_actions/edit-username';
+import { liveSanitizeUsernameInput } from '@/lib/username-validation';
 
 interface EditUsernameFormProps {
   currentUsername: string;
@@ -80,7 +81,7 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
             type="text"
             required
             value={value}
-            onChange={(e) => setValue(e.target.value.replace(/^@+/, '').toLowerCase())}
+            onChange={(e) => setValue(liveSanitizeUsernameInput(e.target.value))}
             placeholder="yourname"
             autoComplete="off"
             spellCheck={false}
