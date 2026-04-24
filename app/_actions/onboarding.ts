@@ -9,6 +9,7 @@ import { computeCompletion } from '@/lib/profile-completion';
 import { rateLimit } from '@/lib/rate-limit';
 import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
+import { reportError } from '@/lib/observability';
 
 const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'x', 'tiktok', 'youtube', 'pinterest', 'linkedin'] as const;
 type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
@@ -463,7 +464,13 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       .from('artwork-photos')
       .upload(path, photo, { contentType: photo.type, upsert: true, cacheControl: '300' });
     if (uploadError) {
-      console.error('Photo upload failed:', uploadError);
+      reportError({
+        area: 'onboarding',
+        op: 'photo_upload',
+        err: uploadError,
+        userId,
+        extra: { artwork_id: artwork.id, photo_index: i, path },
+      });
       continue;
     }
 
@@ -526,7 +533,14 @@ async function tryGrantFoundingMemberCredit(userId: string): Promise<void> {
     months_credited: 3,
     note: 'Founding member — granted at 100% profile completion',
   });
-  if (creditError) console.error('Founding-member credit insert failed:', creditError);
+  if (creditError) {
+    reportError({
+      area: 'onboarding',
+      op: 'founding_member_credit',
+      err: creditError,
+      userId,
+    });
+  }
 }
 
 async function tryIssueReferralBonus(referredUserId: string): Promise<void> {
@@ -559,7 +573,13 @@ async function tryIssueReferralBonus(referredUserId: string): Promise<void> {
     note: 'Referral bonus — referred artist completed profile',
   });
   if (creditErr) {
-    console.error('Referral credit insert failed:', creditErr);
+    reportError({
+      area: 'onboarding',
+      op: 'referral_credit',
+      err: creditErr,
+      userId: referral.referrer_user_id,
+      extra: { referral_id: referral.id, referred_user_id: referredUserId },
+    });
     return;
   }
 

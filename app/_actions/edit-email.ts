@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
 import { isReauthFresh, REAUTH_COOKIE } from '@/lib/auth-cookies';
+import { reportError } from '@/lib/observability';
 
 const EmailSchema = z.string().trim().toLowerCase().email();
 
@@ -70,7 +71,12 @@ export async function syncEmailFromAuth(): Promise<{ ok: boolean; email?: string
     .update({ email: user.email })
     .eq('id', user.id);
   if (error) {
-    console.error('email sync failed:', error);
+    reportError({
+      area: 'edit-email',
+      op: 'sync_from_auth',
+      err: error,
+      userId: user.id,
+    });
     return { ok: false };
   }
   return { ok: true, email: user.email };

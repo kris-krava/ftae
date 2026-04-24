@@ -13,6 +13,7 @@ import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
 import { isReservedEmail } from '@/lib/reserved-emails';
 import { safeNext } from '@/lib/safe-next';
+import { reportError } from '@/lib/observability';
 
 const CODE_PATTERN = /^[A-Za-z0-9._~-]{8,256}$/;
 // Title and body separated by \n — rendered split in the Notification Item.
@@ -143,7 +144,13 @@ export async function GET(request: NextRequest) {
       .update({ username: candidate, username_changed_at: new Date().toISOString() })
       .eq('id', userId);
     if (updateError) {
-      console.error('Username update failed:', updateError);
+      reportError({
+        area: 'auth-callback',
+        op: 'username_update',
+        err: updateError,
+        userId,
+        extra: { code: updateError.code, candidate },
+      });
       return buildResponse(origin, '/app/profile/edit-username?error=save', ttl, null, false);
     }
     return buildResponse(origin, '/app/profile/edit-username/done', ttl, null, false);
@@ -181,7 +188,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (insertUserError) {
-    console.error('User insert failed:', insertUserError);
+    reportError({
+      area: 'auth-callback',
+      op: 'user_insert',
+      err: insertUserError,
+      userId,
+      extra: { code: insertUserError.code },
+    });
     return NextResponse.redirect(`${origin}/?error=user_create_failed`);
   }
 
@@ -199,7 +212,15 @@ export async function GET(request: NextRequest) {
         referral_code: refCookie,
         signup_completed_at: new Date().toISOString(),
       });
-      if (refError) console.error('Referral insert failed:', refError);
+      if (refError) {
+        reportError({
+          area: 'auth-callback',
+          op: 'referral_insert',
+          err: refError,
+          userId,
+          extra: { referrer_id: referrer.id },
+        });
+      }
     }
   }
 
@@ -210,7 +231,14 @@ export async function GET(request: NextRequest) {
       ip_address: ip,
       event_type: 'signup',
     });
-    if (ipError) console.error('user_ips insert failed:', ipError);
+    if (ipError) {
+      reportError({
+        area: 'auth-callback',
+        op: 'user_ips_insert',
+        err: ipError,
+        userId,
+      });
+    }
   }
 
   const { error: notifError } = await supabaseAdmin.from('notifications').insert({
@@ -219,7 +247,14 @@ export async function GET(request: NextRequest) {
     message: PROFILE_NUDGE_MESSAGE,
     is_read: false,
   });
-  if (notifError) console.error('Welcome notification insert failed:', notifError);
+  if (notifError) {
+    reportError({
+      area: 'auth-callback',
+      op: 'welcome_notification_insert',
+      err: notifError,
+      userId,
+    });
+  }
 
   return buildResponse(origin, '/onboarding/step-1', ttl, null, true);
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
+import { reportError } from '@/lib/observability';
 
 export type AdminToggleResult = { ok: true; isActive: boolean } | { ok: false; error: string };
 
@@ -42,7 +43,13 @@ export async function toggleUserActive(
     .update({ is_active: nextActive })
     .eq('id', targetUserId);
   if (updateError) {
-    console.error('admin toggle update failed:', updateError);
+    reportError({
+      area: 'admin-actions',
+      op: 'toggle_user_active',
+      err: updateError,
+      userId: user.id,
+      extra: { target_user_id: targetUserId, next_active: nextActive },
+    });
     return { ok: false, error: 'Could not update user.' };
   }
 
@@ -52,7 +59,13 @@ export async function toggleUserActive(
     action_type: nextActive ? 'activate' : 'deactivate',
   });
   if (actionError) {
-    console.error('admin_actions insert failed:', actionError);
+    reportError({
+      area: 'admin-actions',
+      op: 'audit_insert',
+      err: actionError,
+      userId: user.id,
+      extra: { target_user_id: targetUserId },
+    });
     // Don't fail the request — the toggle succeeded.
   }
 
