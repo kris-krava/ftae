@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { requestMagicLink } from '@/app/_actions/sign-in';
 
 interface LandingFormProps {
   /** Optional same-origin path to land on after auth (deep-link funnel). */
@@ -30,25 +30,18 @@ export function LandingForm({ next = null, checkboxAlign = 'center' }: LandingFo
       return;
     }
     setPending(true);
-    const supabase = createClient();
 
-    const callbackParams = new URLSearchParams();
-    if (next) callbackParams.set('next', next);
-    if (remember) callbackParams.set('remember', '1');
-    const callbackQs = callbackParams.toString();
-    const callbackUrl =
-      `${window.location.origin}/auth/callback` + (callbackQs ? `?${callbackQs}` : '');
-
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: {
-        emailRedirectTo: callbackUrl,
-        shouldCreateUser: true,
-      },
-    });
-    if (otpError) {
+    // The server action handles email sending plus per-email/per-IP rate
+    // limiting. The browser used to call signInWithOtp directly, which had
+    // no throttling and could be used to flood any inbox.
+    const fd = new FormData();
+    fd.set('email', trimmed);
+    if (next) fd.set('next', next);
+    if (remember) fd.set('remember', '1');
+    const result = await requestMagicLink(fd);
+    if (!result.ok) {
       setPending(false);
-      setError('Could not send magic link. Please try again.');
+      setError(result.error);
       return;
     }
 

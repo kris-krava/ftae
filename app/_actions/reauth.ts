@@ -3,20 +3,11 @@
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
+import { safeNext } from '@/lib/safe-next';
 
 export type ReauthResult =
   | { ok: true; sentTo: string }
   | { ok: false; error: string };
-
-function safeNext(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  if (!raw.startsWith('/')) return null;
-  if (raw.startsWith('//')) return null;
-  if (raw.startsWith('/auth/')) return null;
-  if (raw.startsWith('/api/')) return null;
-  if (raw.length > 512) return null;
-  return raw;
-}
 
 export async function requestReauth(formData: FormData): Promise<ReauthResult> {
   const supabase = createClient();

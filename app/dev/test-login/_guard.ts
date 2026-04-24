@@ -44,5 +44,7 @@ export function assertNotProdHost(host: string | null | undefined): void {
   }
 }
 
-export const TEST_EMAIL_DOMAIN = 'test.ftae.local';
-export const TEST_DOMAIN_MATCH = /@test\.ftae\.local$/i;
+// Canonical definitions live in lib/reserved-emails.ts so the auth callback
+// can reject signups with these domains without importing from the dev-only
+// folder. Re-exported here for the existing in-folder consumers.
+export { TEST_EMAIL_DOMAIN, TEST_DOMAIN_MATCH } from '@/lib/reserved-emails';

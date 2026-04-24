@@ -11,6 +11,8 @@ import {
 import { issueReauthToken, REAUTH_COOKIE, REAUTH_WINDOW_SECONDS } from '@/lib/auth-cookies';
 import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
+import { isReservedEmail } from '@/lib/reserved-emails';
+import { safeNext } from '@/lib/safe-next';
 
 const CODE_PATTERN = /^[A-Za-z0-9._~-]{8,256}$/;
 // Title and body separated by \n — rendered split in the Notification Item.
@@ -21,16 +23,6 @@ function getClientIp(request: NextRequest): string | null {
   const fwd = request.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();
   return request.headers.get('x-real-ip');
-}
-
-function safeNext(raw: string | null): string | null {
-  if (!raw) return null;
-  if (!raw.startsWith('/')) return null;
-  if (raw.startsWith('//')) return null;
-  if (raw.startsWith('/auth/')) return null;
-  if (raw.startsWith('/api/')) return null;
-  if (raw.length > 512) return null;
-  return raw;
 }
 
 function buildResponse(
@@ -94,6 +86,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/?error=missing_email`);
   }
 
+  // Reserve internal/system email domains. If a real user managed to obtain a
+  // session with one (e.g. existing rows from before this guard), refuse and
+  // sign them back out — better than letting test-cleanup silently delete
+  // their data later.
+  if (isReservedEmail(userEmail)) {
+    const { data: existingTestRow } = await supabaseAdmin
+      .from('users')
+      .select('id, is_test_user')
+      .eq('id', userId)
+      .maybeSingle();
+    // Allow seeded test users (is_test_user = true) through; block everything
+    // else, including any anonymous session that just claimed the domain.
+    if (!existingTestRow || existingTestRow.is_test_user !== true) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/?error=reserved_email`);
+    }
+  }
+
   // Resolve and persist the session TTL preference. Read on every Supabase
   // cookie write (in middleware + lib/supabase/server.ts) to keep refresh-token
   // cookies aligned with the chosen window.
@@ -148,17 +158,27 @@ export async function GET(request: NextRequest) {
   // status and credit are deferred to first-art-add (which is when the user
   // hits 100% completion). They are not awarded for merely clicking a link.
   const seed = userEmail.split('@')[0] ?? 'artist';
-  const username = await generateUniqueUsername(seed);
   const referralCode = randomBytes(16).toString('hex');
 
-  const { error: insertUserError } = await supabaseAdmin.from('users').insert({
-    id: userId,
-    email: userEmail,
-    username,
-    referral_code: referralCode,
-    is_founding_member: false,
-    profile_completion_pct: 0,
-  });
+  // Username generation is select-then-insert (TOCTOU). Two concurrent first-
+  // time sign-ins from similar emails could pick the same candidate. Retry on
+  // unique-violation a couple of times before giving up, regenerating the
+  // candidate each loop so we don't busy-spin on the same collision.
+  let insertUserError: { code?: string; message: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const username = await generateUniqueUsername(seed);
+    const { error } = await supabaseAdmin.from('users').insert({
+      id: userId,
+      email: userEmail,
+      username,
+      referral_code: referralCode,
+      is_founding_member: false,
+      profile_completion_pct: 0,
+    });
+    if (!error) { insertUserError = null; break; }
+    insertUserError = error;
+    if (error.code !== '23505') break; // not a uniqueness collision — bail
+  }
 
   if (insertUserError) {
     console.error('User insert failed:', insertUserError);

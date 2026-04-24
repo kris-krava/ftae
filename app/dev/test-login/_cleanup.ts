@@ -87,9 +87,15 @@ export async function deleteUsersById(
 }
 
 /**
- * Discovers every test user (auth + orphaned public rows) and deletes them.
- * Identifies primarily via users.is_test_user = true, with email-domain
- * fallback for pre-migration rows or auth-only leftovers.
+ * Discovers every test user and deletes them. Safety is enforced by AND-gating
+ * the two identifiers: a public.users row is only a deletion candidate when
+ * is_test_user = true AND email matches the reserved test domain. Either
+ * condition alone is treated as suspect (could be a real user with a misset
+ * flag, or a real user whose email accidentally matches the domain) and
+ * skipped with a logged warning.
+ *
+ * Auth-only orphans (no public.users row) are deleted only when the auth
+ * email matches the reserved domain — real users always have a public row.
  */
 export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<CleanupReport> {
   const report: CleanupReport = {
@@ -101,28 +107,35 @@ export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<Cleanu
 
   const collected = new Map<string, { id: string; email?: string }>();
 
-  // Primary: public.users rows marked as test users.
-  const { data: flaggedRows, error: flaggedErr } = await admin
+  // Pull every potentially-test row (flag OR domain), then AND-gate on the
+  // application side so we can log mismatches rather than silently include
+  // them. The set is small (test users only) so a single fetch is fine.
+  const { data: candidateRows, error: candidatesErr } = await admin
     .from('users')
-    .select('id, email')
-    .eq('is_test_user', true);
-  if (flaggedErr) report.errors.push(`users flagged lookup: ${flaggedErr.message}`);
-  for (const r of flaggedRows ?? []) {
-    collected.set(r.id, { id: r.id, email: r.email });
+    .select('id, email, is_test_user')
+    .or(`is_test_user.eq.true,email.like.%@test.ftae.local`);
+  if (candidatesErr) {
+    report.errors.push(`users candidate lookup: ${candidatesErr.message}`);
   }
 
-  // Fallback 1: public.users rows with the test email domain (in case the
-  // flag was missed for any reason).
-  const { data: orphanRows } = await admin
-    .from('users')
-    .select('id, email')
-    .like('email', '%@test.ftae.local');
-  for (const r of orphanRows ?? []) {
-    collected.set(r.id, { id: r.id, email: r.email });
+  for (const r of candidateRows ?? []) {
+    const flagged = r.is_test_user === true;
+    const domainMatch = typeof r.email === 'string' && TEST_DOMAIN_MATCH.test(r.email);
+    if (flagged && domainMatch) {
+      collected.set(r.id, { id: r.id, email: r.email ?? undefined });
+    } else {
+      // SAFETY SKIP: don't delete a row that's missing one half of the test
+      // identity. Surface it so the developer can investigate.
+      report.errors.push(
+        `safety-skip user ${r.id} (${r.email ?? 'no-email'}): is_test_user=${flagged} domainMatch=${domainMatch}`,
+      );
+    }
   }
 
-  // Fallback 2: auth.users entries with a test email (catches rows where the
-  // public row was already deleted but the auth row survived).
+  // Auth-only orphans: a real user always has a corresponding public.users
+  // row (created in /auth/callback). If an auth row exists with the reserved
+  // domain but no public row, it's a test artifact (interrupted seed, or
+  // public row already deleted by a prior pass) and safe to remove.
   let page = 1;
   const perPage = 200;
   while (true) {
@@ -130,9 +143,16 @@ export async function cleanupAllTestUsers(admin: SupabaseClient): Promise<Cleanu
     if (error) { report.errors.push(`auth.admin.listUsers: ${error.message}`); break; }
     const users = data?.users ?? [];
     for (const u of users) {
-      if (u.email && TEST_DOMAIN_MATCH.test(u.email)) {
-        if (!collected.has(u.id)) collected.set(u.id, { id: u.id, email: u.email });
-      }
+      if (!u.email || !TEST_DOMAIN_MATCH.test(u.email)) continue;
+      if (collected.has(u.id)) continue;
+      // Confirm there's no surviving public row before treating as orphan.
+      const { data: row } = await admin
+        .from('users')
+        .select('id')
+        .eq('id', u.id)
+        .maybeSingle();
+      if (row) continue; // belongs to a public row that failed the AND gate above
+      collected.set(u.id, { id: u.id, email: u.email });
     }
     if (users.length < perPage) break;
     page += 1;
@@ -158,15 +178,35 @@ export async function cleanupByEmails(
   };
   if (emails.length === 0) return report;
 
+  // Safety gate: every address must match the reserved test domain. A typo or
+  // miswired caller that slips a real email into this list must not be able
+  // to wipe that account.
+  for (const e of emails) {
+    if (!TEST_DOMAIN_MATCH.test(e)) {
+      report.errors.push(`safety-refuse cleanupByEmails: ${e} is not a reserved-domain address`);
+      return report;
+    }
+  }
+
   const lower = emails.map((e) => e.toLowerCase());
   const collected = new Map<string, { id: string; email?: string }>();
 
-  // Look up public rows by email.
+  // Look up public rows by email — AND-gate on is_test_user so an accidentally
+  // reused address (e.g. a real user who somehow owns a reserved email) is
+  // still protected.
   const { data: rows } = await admin
     .from('users')
-    .select('id, email')
+    .select('id, email, is_test_user')
     .in('email', lower);
-  for (const r of rows ?? []) collected.set(r.id, { id: r.id, email: r.email });
+  for (const r of rows ?? []) {
+    if (r.is_test_user !== true) {
+      report.errors.push(
+        `safety-skip cleanupByEmails user ${r.id} (${r.email}): is_test_user=${r.is_test_user}`,
+      );
+      continue;
+    }
+    collected.set(r.id, { id: r.id, email: r.email });
+  }
 
   // Look up auth rows by email.
   let page = 1;

@@ -4,6 +4,7 @@ import {
   SESSION_TTL_COOKIE,
   SESSION_TTL_30D_SECONDS,
 } from '@/lib/session-persistence';
+import { safeNext } from '@/lib/safe-next';
 
 const ADMIN_PREFIX = '/admin';
 const DEV_PREFIX = '/dev';
@@ -29,19 +30,6 @@ const APP_HOME = '/app/home';
 function isPublicPath(path: string): boolean {
   if (PUBLIC_ROUTES.has(path)) return true;
   return PUBLIC_PREFIXES.some((p) => path.startsWith(p));
-}
-
-// Validate ?next= to prevent open-redirects: must be a same-origin path,
-// must start with `/`, must not be `//` (protocol-relative), must not be `/api`
-// or any of the auth-internal routes that would loop.
-function safeNext(raw: string | null): string | null {
-  if (!raw) return null;
-  if (!raw.startsWith('/')) return null;
-  if (raw.startsWith('//')) return null;
-  if (raw.startsWith('/auth/')) return null;
-  if (raw.startsWith('/api/')) return null;
-  if (raw.length > 512) return null;
-  return raw;
 }
 
 export async function middleware(request: NextRequest) {
