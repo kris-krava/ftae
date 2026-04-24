@@ -54,13 +54,17 @@ function makePhotoId(): string {
 
 interface EditArtModalProps {
   artwork: ArtworkDetail;
-  /** Where to return after save/delete/close. */
+  /** Fallback URL used when the modal was opened via direct navigation
+   *  (e.g. refresh on /app/edit-art/[id]) — router history isn't meaningful there. */
   backHref: string;
+  /** "overlay" dismisses via router.back() so the underlying page stays put.
+   *  "standalone" falls through to a router.push(backHref). */
+  mode?: 'overlay' | 'standalone';
 }
 
 type ResultMode = 'saved' | 'deleted';
 
-export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
+export function EditArtModal({ artwork, backHref, mode = 'standalone' }: EditArtModalProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<PhotoEntry[]>(() =>
     artwork.photos.map((p) => ({
@@ -101,7 +105,8 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
   );
 
   function close() {
-    router.push(backHref);
+    if (mode === 'overlay') router.back();
+    else router.push(backHref);
   }
 
   function openPicker() {
@@ -211,7 +216,8 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
       setResult('saved');
       setTimeout(() => {
         router.refresh();
-        router.push(backHref);
+        if (mode === 'overlay') router.back();
+        else router.push(backHref);
       }, SUCCESS_DISPLAY_MS);
     });
   }
@@ -228,7 +234,9 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
       setConfirmOpen(false);
       setResult('deleted');
       setTimeout(() => {
-        router.push(backHref);
+        router.refresh();
+        if (mode === 'overlay') router.back();
+        else router.push(backHref);
       }, SUCCESS_DISPLAY_MS);
     });
   }
@@ -236,7 +244,7 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
   if (result) {
     return (
       <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
-        <div className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]">
+        <div className="min-h-full flex items-center justify-center px-[16px] py-[24px]">
           <div
             role="status"
             aria-live="polite"
@@ -267,7 +275,7 @@ export function EditArtModal({ artwork, backHref }: EditArtModalProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
       <div
-        className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]"
+        className="min-h-full flex items-center justify-center px-[16px] py-[24px]"
         onClick={(e) => {
           if (e.currentTarget === e.target && !saving && !confirmOpen) close();
         }}
