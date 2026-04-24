@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import type { LandingStats } from '@/app/_lib/landing-stats';
 
 export function StatsBand() {
@@ -13,7 +14,9 @@ export function StatsBand() {
       .then((data: LandingStats | null) => {
         if (!cancelled && data) setStats(data);
       })
-      .catch(() => {});
+      .catch((err) => {
+        Sentry.captureException(err, { tags: { component: 'StatsBand' } });
+      });
     return () => {
       cancelled = true;
     };

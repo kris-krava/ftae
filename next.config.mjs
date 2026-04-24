@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -9,6 +11,7 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
+      // Production Supabase project.
       {
         protocol: 'https',
         hostname: 'agwulzsczrrjyhyjhwgw.supabase.co',
@@ -17,6 +20,18 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'agwulzsczrrjyhyjhwgw.supabase.co',
+        pathname: '/storage/v1/render/image/public/**',
+      },
+      // Dev Supabase project — local development against the platform-dev
+      // project's storage URLs.
+      {
+        protocol: 'https',
+        hostname: 'spwrpridrbfscsdgoycy.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'spwrpridrbfscsdgoycy.supabase.co',
         pathname: '/storage/v1/render/image/public/**',
       },
       // picsum.photos is only referenced by /dev/test-login seeded data.
@@ -36,4 +51,33 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry — only uploads source maps when SENTRY_AUTH_TOKEN is set,
+// which keeps local builds fast and silent. Org/project come from env so the
+// repo doesn't hardcode the Sentry workspace.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  // Hide source maps from public bundle URLs — Sentry still gets them via the
+  // upload step.
+  hideSourceMaps: true,
+  disableLogger: true,
+  // Skip source-map upload entirely when no auth token (dev / CI without the
+  // env var). Avoids noisy build output and broken `next build` runs.
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  // Tunnel browser SDK requests through our domain to avoid ad-blocker
+  // dropouts. Adds an /monitoring/* route handled by Sentry's middleware.
+  tunnelRoute: '/monitoring',
+  // Trim the browser bundle — we don't use Replay or Profiling, and don't
+  // need the debug ID logger or the tracing extras. Keeps the landing page
+  // close to its pre-Sentry First-Load JS size.
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeReplayCanvas: true,
+    excludeReplayIframe: true,
+    excludeReplayShadowDom: true,
+    excludeReplayWorker: true,
+  },
+});
