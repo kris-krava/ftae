@@ -48,9 +48,14 @@ if (!url || !serviceKey) {
   process.exit(1);
 }
 
-if (!force && /freetradeartexchange/i.test(url)) {
-  console.error('Refusing to run against', url, '— looks like production.');
-  console.error('If dev + prod truly share this project, re-run with --force.');
+// Hardcoded prod project ref — the only thing that reliably identifies the
+// prod project across URL formats. The previous substring check
+// (/freetradeartexchange/) never matched the actual prod URL and gave a
+// false sense of safety.
+const PROD_PROJECT_REF = 'agwulzsczrrjyhyjhwgw';
+if (!force && url.includes(`${PROD_PROJECT_REF}.supabase.co`)) {
+  console.error('Refusing to run against', url, '— this is the production project.');
+  console.error('Point .env.local at a dev project, or re-run with --force if you really mean it.');
   process.exit(1);
 }
 
