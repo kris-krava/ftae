@@ -4,8 +4,6 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AddArtModal } from './AddArtModal';
 
-export const dynamic = 'force-dynamic';
-
 export default async function AddArtPage() {
   const supabase = createClient();
   const {

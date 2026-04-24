@@ -6,8 +6,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getArtworkDetail } from '@/app/_lib/profile';
 import { EditArtModal } from './EditArtModal';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: { artworkId: string };
 }

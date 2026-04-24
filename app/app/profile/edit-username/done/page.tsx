@@ -5,8 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Wordmark } from '@/app/_components/Wordmark';
 import { CheckCircle } from '@/components/icons';
 
-export const dynamic = 'force-dynamic';
-
 export default async function UsernameUpdatedPage() {
   const supabase = createClient();
   const {

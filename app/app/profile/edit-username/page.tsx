@@ -6,8 +6,6 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { EditUsernameForm } from './EditUsernameForm';
 import { USERNAME_COOLDOWN_MS } from '@/lib/username-cooldown';
 
-export const dynamic = 'force-dynamic';
-
 export default async function EditUsernamePage() {
   const supabase = createClient();
   const {

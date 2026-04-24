@@ -18,8 +18,6 @@ import { BackButton } from '@/components/profile/BackButton';
 import { MobileNav } from '@/components/MobileNav';
 import { Sidebar } from '@/components/Sidebar';
 
-export const dynamic = 'force-dynamic';
-
 interface ProfilePageProps {
   params: { username: string };
 }

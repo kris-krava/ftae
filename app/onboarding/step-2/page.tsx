@@ -3,8 +3,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { requireOnboardingUser, getMediums, getUserMediumIds } from '@/app/_lib/onboarding';
 import { Step2Form } from './Step2Form';
 
-export const dynamic = 'force-dynamic';
-
 export default async function Step2Page() {
   const { userId, profile } = await requireOnboardingUser();
   const [mediums, selectedIds] = await Promise.all([getMediums(), getUserMediumIds(userId)]);

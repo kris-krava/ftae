@@ -4,8 +4,6 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { LandingForm } from '@/app/_components/LandingForm';
 import { StatsBand } from '@/app/_components/StatsBand';
 
-export const dynamic = 'force-dynamic';
-
 export default function LandingPage() {
   return (
     <main className="flex flex-col items-center w-full min-h-full bg-canvas">

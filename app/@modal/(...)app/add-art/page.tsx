@@ -4,8 +4,6 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AddArtModal } from '@/app/app/add-art/AddArtModal';
 
-export const dynamic = 'force-dynamic';
-
 // Root-level intercept (`(...)`) so navigation to /app/add-art from anywhere —
 // /app/* routes (Home, Discover, Trades, …) AND /[username] profile pages —
 // renders the modal in the root @modal slot, leaving the originating page

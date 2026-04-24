@@ -5,8 +5,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getMediums, getUserMediumIds } from '@/app/_lib/onboarding';
 import { EditModal } from './EditModal';
 
-export const dynamic = 'force-dynamic';
-
 export default async function ProfileEditPage() {
   const supabase = createClient();
   const {

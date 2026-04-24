@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getArtworkDetail, getArtworkNeighbors, isFollowing } from '@/app/_lib/profile';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: { username: string; artworkId: string };
 }

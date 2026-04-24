@@ -5,8 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchAdminUsersPage } from '@/app/_lib/admin';
 import { UserRow } from './UserRow';
 
-export const dynamic = 'force-dynamic';
-
 interface AdminPageProps {
   searchParams: { cursor?: string; test?: string };
 }

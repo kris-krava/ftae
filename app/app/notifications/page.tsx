@@ -4,8 +4,6 @@ import { fetchUserNotifications } from '@/app/_lib/notifications';
 import { markAllNotificationsRead } from '@/app/_actions/notifications';
 import { NotificationItem } from '@/components/NotificationItem';
 
-export const dynamic = 'force-dynamic';
-
 export default async function NotificationsPage() {
   const supabase = createClient();
   const {

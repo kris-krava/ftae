@@ -3,8 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { Wordmark } from '@/app/_components/Wordmark';
 import { EditEmailForm } from './EditEmailForm';
 
-export const dynamic = 'force-dynamic';
-
 export default async function EditEmailPage() {
   const supabase = createClient();
   const {

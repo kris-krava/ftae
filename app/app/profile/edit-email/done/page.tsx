@@ -6,8 +6,6 @@ import { syncEmailFromAuth } from '@/app/_actions/edit-email';
 import { Wordmark } from '@/app/_components/Wordmark';
 import { CheckCircle } from '@/components/icons';
 
-export const dynamic = 'force-dynamic';
-
 export default async function EmailUpdatedPage() {
   const supabase = createClient();
   const {

@@ -3,8 +3,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { requireOnboardingUser } from '@/app/_lib/onboarding';
 import { Step3Form } from './Step3Form';
 
-export const dynamic = 'force-dynamic';
-
 export default async function Step3Page() {
   const { profile } = await requireOnboardingUser();
 

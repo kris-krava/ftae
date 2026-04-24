@@ -3,8 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { Wordmark } from '@/app/_components/Wordmark';
 import { ReauthForm } from './ReauthForm';
 
-export const dynamic = 'force-dynamic';
-
 interface ReauthPageProps {
   searchParams: { next?: string };
 }

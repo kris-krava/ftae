@@ -6,8 +6,6 @@ import { deriveInitials } from '@/lib/initials';
 import { MobileNav } from '@/components/MobileNav';
 import { Sidebar } from '@/components/Sidebar';
 
-export const dynamic = 'force-dynamic';
-
 // Routes that hide the global nav and render as a full takeover.
 // Middleware sets x-pathname so this Server Component can branch on the path.
 const TAKEOVER_PREFIXES = [

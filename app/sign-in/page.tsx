@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { Wordmark } from '@/app/_components/Wordmark';
 import { LandingForm } from '@/app/_components/LandingForm';
 
-export const dynamic = 'force-dynamic';
-
 interface SignInPageProps {
   searchParams: { next?: string };
 }

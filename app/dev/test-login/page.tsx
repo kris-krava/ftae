@@ -5,8 +5,6 @@ import { DEV_TOOLS_ENABLED, assertDev, assertNotProdHost } from './_guard';
 import { SCENARIOS } from './scenarios';
 import { TestLoginClient } from './TestLoginClient';
 
-export const dynamic = 'force-dynamic';
-
 export default function TestLoginPage() {
   if (!DEV_TOOLS_ENABLED) notFound();
   assertDev();

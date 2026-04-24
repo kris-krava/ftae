@@ -2,8 +2,6 @@ import Image from 'next/image';
 import { requireOnboardingUser } from '@/app/_lib/onboarding';
 import { SuccessTransition } from './SuccessTransition';
 
-export const dynamic = 'force-dynamic';
-
 const REDIRECT_DELAY_MS = 3200;
 
 export default async function SuccessPage() {
