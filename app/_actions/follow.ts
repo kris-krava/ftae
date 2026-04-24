@@ -15,7 +15,7 @@ export async function toggleFollow(targetUserId: string, targetUsername: string)
   if (!user) return { ok: false, error: 'Sign in to follow.' };
   if (user.id === targetUserId) return { ok: false, error: 'Cannot follow yourself.' };
 
-  const limit = rateLimit(`follow:${user.id}`, 60, 60_000);
+  const limit = await rateLimit(`follow:${user.id}`, 60, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many actions.' };
 
   const { data: existing } = await supabaseAdmin

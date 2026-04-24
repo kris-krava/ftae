@@ -29,7 +29,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     };
   }
 
-  const limit = rateLimit(`edit-email:${user.id}`, 5, 60 * 60_000);
+  const limit = await rateLimit(`edit-email:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
 
   const parsed = EmailSchema.safeParse(formData.get('new_email'));

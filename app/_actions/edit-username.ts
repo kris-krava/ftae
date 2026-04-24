@@ -32,7 +32,7 @@ export async function requestUsernameChange(formData: FormData): Promise<EditUse
     };
   }
 
-  const limit = rateLimit(`edit-username:${user.id}`, 5, 60 * 60_000);
+  const limit = await rateLimit(`edit-username:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
 
   const parsed = UsernameSchema.safeParse(formData.get('new_username'));

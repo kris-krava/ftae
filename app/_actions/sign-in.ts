@@ -35,13 +35,13 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   // Two limits: per-email (protects an inbox from being spammed by one
   // attacker hitting many IPs) and per-IP (protects against one IP iterating
   // many emails). 5/hour matches the existing edit-username limit.
-  const emailLimit = rateLimit(`signin-email:${email}`, 5, 60 * 60_000);
+  const emailLimit = await rateLimit(`signin-email:${email}`, 5, 60 * 60_000);
   if (!emailLimit.ok) {
     return { ok: false, error: 'Too many sign-in attempts for this email. Please try again later.' };
   }
   const ip = getClientIp();
   if (ip) {
-    const ipLimit = rateLimit(`signin-ip:${ip}`, 20, 60 * 60_000);
+    const ipLimit = await rateLimit(`signin-ip:${ip}`, 20, 60 * 60_000);
     if (!ipLimit.ok) {
       return { ok: false, error: 'Too many sign-in attempts. Please try again later.' };
     }

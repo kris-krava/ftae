@@ -28,7 +28,7 @@ export async function toggleUserActive(
     return { ok: false, error: 'Unauthorized.' };
   }
 
-  const limit = rateLimit(`admin-toggle:${user.id}`, 30, 60_000);
+  const limit = await rateLimit(`admin-toggle:${user.id}`, 30, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many actions. Please slow down.' };
 
   if (targetUserId === user.id) {

@@ -74,7 +74,7 @@ export async function saveStep1Profile(formData: FormData): Promise<SaveResult> 
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step1:${userId}`, 60, 60_000);
+  const limit = await rateLimit(`step1:${userId}`, 60, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many saves. Please wait a moment.' };
 
   const parsed = Step1ProfileSchema.safeParse({
@@ -150,7 +150,7 @@ export async function finalizeStep1(): Promise<SaveResult> {
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step1-finalize:${userId}`, 20, 60_000);
+  const limit = await rateLimit(`step1-finalize:${userId}`, 20, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many attempts. Please wait a moment.' };
 
   const { data: row, error: readErr } = await supabaseAdmin
@@ -189,7 +189,7 @@ export async function uploadAvatar(formData: FormData): Promise<SaveResult & { a
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`avatar:${userId}`, 8, 60_000);
+  const limit = await rateLimit(`avatar:${userId}`, 8, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many uploads. Please wait a moment.' };
 
   const file = formData.get('avatar');
@@ -233,7 +233,7 @@ export async function saveStep2Mediums(mediumIds: string[]): Promise<SaveResult>
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step2-mediums:${userId}`, 60, 60_000);
+  const limit = await rateLimit(`step2-mediums:${userId}`, 60, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many saves.' };
 
   const cleanIds = Array.from(new Set(mediumIds))
@@ -274,7 +274,7 @@ export async function saveStep2Bio(bio: string): Promise<SaveResult> {
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step2-bio:${userId}`, 60, 60_000);
+  const limit = await rateLimit(`step2-bio:${userId}`, 60, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many saves.' };
 
   const parsed = BioSchema.safeParse(bio);
@@ -319,7 +319,7 @@ export async function saveStep3Links(formData: FormData): Promise<SaveResult> {
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step3:${userId}`, 30, 60_000);
+  const limit = await rateLimit(`step3:${userId}`, 30, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many saves.' };
 
   const platformRaw = formData.get('social_platform');
@@ -380,7 +380,7 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const limit = rateLimit(`step4:${userId}`, 10, 60_000);
+  const limit = await rateLimit(`step4:${userId}`, 10, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many uploads.' };
 
   const photoEntries = formData.getAll('photos');

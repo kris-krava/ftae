@@ -73,7 +73,7 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const rl = rateLimit(`art:update:${userId}`, 20, 60_000);
+  const rl = await rateLimit(`art:update:${userId}`, 20, 60_000);
   if (!rl.ok) return { ok: false, error: 'Too many updates.' };
 
   const artworkId = String(formData.get('artworkId') ?? '').trim();
@@ -239,7 +239,7 @@ export async function softDeleteArtwork(artworkId: string): Promise<ArtworkActio
     return { ok: false, error: 'Not signed in.' };
   }
 
-  const rl = rateLimit(`art:delete:${userId}`, 20, 60_000);
+  const rl = await rateLimit(`art:delete:${userId}`, 20, 60_000);
   if (!rl.ok) return { ok: false, error: 'Too many deletes.' };
 
   if (!artworkId) return { ok: false, error: 'Missing artwork id.' };

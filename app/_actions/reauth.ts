@@ -16,7 +16,7 @@ export async function requestReauth(formData: FormData): Promise<ReauthResult> {
   } = await supabase.auth.getUser();
   if (!user || !user.email) return { ok: false, error: 'Not signed in.' };
 
-  const limit = rateLimit(`reauth:${user.id}`, 5, 60 * 60_000);
+  const limit = await rateLimit(`reauth:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
 
   const next = safeNext(formData.get('next') as string | null) ?? '/app/home';
