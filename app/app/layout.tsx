@@ -18,10 +18,8 @@ const TAKEOVER_PREFIXES = [
 
 export default async function AppLayout({
   children,
-  modal,
 }: {
   children: React.ReactNode;
-  modal: React.ReactNode;
 }) {
   const supabase = createClient();
   const {
@@ -62,7 +60,6 @@ export default async function AppLayout({
         unreadCount={unread}
       />
       <div className="min-h-dvh flex flex-col pb-[96px] tab:pb-0 tab:pl-[60px]">{children}</div>
-      {modal}
       <MobileNav
         username={username}
         initials={initials}

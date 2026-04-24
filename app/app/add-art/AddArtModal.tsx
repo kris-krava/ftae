@@ -166,7 +166,7 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
   return (
     <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
       <div
-        className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]"
+        className="min-h-full flex items-center justify-center px-[16px] py-[24px]"
         onClick={(e) => {
           if (e.currentTarget === e.target && !success) close();
         }}
