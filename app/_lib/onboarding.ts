@@ -13,6 +13,9 @@ export interface OnboardingProfile {
   location_country: string | null;
   bio: string | null;
   avatar_url: string | null;
+  avatar_focal_x: number;
+  avatar_focal_y: number;
+  avatar_aspect_ratio: number | null;
   website_url: string | null;
   social_platform: string | null;
   social_handle: string | null;
@@ -35,7 +38,7 @@ export async function requireOnboardingUser(): Promise<{
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select(
-      'id, email, username, name, location_city, location_region, location_country, bio, avatar_url, website_url, social_platform, social_handle, is_founding_member, referral_code, profile_completion_pct',
+      'id, email, username, name, location_city, location_region, location_country, bio, avatar_url, avatar_focal_x, avatar_focal_y, avatar_aspect_ratio, website_url, social_platform, social_handle, is_founding_member, referral_code, profile_completion_pct',
     )
     .eq('id', user.id)
     .single();

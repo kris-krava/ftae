@@ -41,6 +41,9 @@ export function ProfileHeader({
           size={96}
           textSize="text-[28px]"
           priority
+          focalX={user.avatar_focal_x}
+          focalY={user.avatar_focal_y}
+          aspectRatio={user.avatar_aspect_ratio}
         />
         {editHref && (
           <Link

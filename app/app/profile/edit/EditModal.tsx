@@ -1,18 +1,20 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
-import { Edit02, XClose, PlusSquare } from '@/components/icons';
+import { XClose, PlusSquare } from '@/components/icons';
 import { PlatformBadge } from '@/components/PlatformBadge';
+import { AvatarEditor } from '@/components/profile/AvatarEditor';
 import {
   saveStep1Profile,
+  setAvatarFocal,
   uploadAvatar,
   saveStep2Mediums,
   saveStep2Bio,
   saveStep3Links,
 } from '@/app/_actions/onboarding';
+import type { FocalPoint } from '@/lib/focal-point';
 
 const SAVE_DEBOUNCE_MS = 500;
 const MAX_BIO = 160;
@@ -32,6 +34,8 @@ interface EditModalProps {
     name: string;
     location: string;
     avatarUrl: string | null;
+    avatarFocalX: number;
+    avatarFocalY: number;
     mediumIds: string[];
     bio: string;
     website: string;
@@ -97,6 +101,8 @@ export function EditModal({ backHref, initial, mediums }: EditModalProps) {
               initialName={initial.name}
               initialLocation={initial.location}
               initialAvatarUrl={initial.avatarUrl}
+              initialAvatarFocalX={initial.avatarFocalX}
+              initialAvatarFocalY={initial.avatarFocalY}
               onContinue={() => setStep(2)}
               onError={setError}
             />
@@ -136,18 +142,23 @@ function Step1({
   initialName,
   initialLocation,
   initialAvatarUrl,
+  initialAvatarFocalX,
+  initialAvatarFocalY,
   onContinue,
   onError,
 }: {
   initialName: string;
   initialLocation: string;
   initialAvatarUrl: string | null;
+  initialAvatarFocalX: number;
+  initialAvatarFocalY: number;
   onContinue: () => void;
   onError: (e: string | null) => void;
 }) {
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
+  const [focal, setFocal] = useState<FocalPoint>({ x: initialAvatarFocalX, y: initialAvatarFocalY });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialMount = useRef(true);
@@ -185,12 +196,19 @@ function Step1({
         useWebWorker: true,
         fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
       });
+      const bitmap = await createImageBitmap(compressed);
+      const aspect = bitmap.height > 0 ? bitmap.width / bitmap.height : 1;
+      bitmap.close();
       const fd = new FormData();
       fd.set('avatar', compressed, compressed.name || file.name);
+      fd.set('aspect', String(aspect));
       start(async () => {
         const r = await uploadAvatar(fd);
         if (!r.ok) onError(r.error);
-        else if ('avatarUrl' in r && r.avatarUrl) setAvatarUrl(r.avatarUrl);
+        else if ('avatarUrl' in r && r.avatarUrl) {
+          setAvatarUrl(r.avatarUrl);
+          setFocal({ x: 0.5, y: 0.5 });
+        }
       });
     } catch {
       onError('Could not process image.');
@@ -199,30 +217,25 @@ function Step1({
     }
   }
 
+  function handleSetFocal(next: FocalPoint) {
+    setFocal(next);
+    void setAvatarFocal(next);
+  }
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        aria-label="Edit profile photo"
-        className="relative w-[96px] h-[96px] rounded-full overflow-hidden bg-divider border-[1.5px] border-field flex items-center justify-center"
-      >
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt=""
-            width={96}
-            height={96}
-            className="w-full h-full object-cover"
-            priority
-          />
-        ) : (
+      {avatarUrl ? (
+        <AvatarEditor src={avatarUrl} size={96} focal={focal} onSetFocal={handleSetFocal} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Add profile photo"
+          className="relative w-[96px] h-[96px] rounded-full overflow-hidden bg-divider border-[1.5px] border-field flex items-center justify-center"
+        >
           <PlusSquare className="w-[28px] h-[28px] text-accent" />
-        )}
-        <span className="absolute -top-[8px] left-[72px] w-[32px] h-[32px] rounded-full bg-surface flex items-center justify-center shadow-xs">
-          <Edit02 className="w-[16px] h-[16px] text-ink" />
-        </span>
-      </button>
+        </button>
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -231,7 +244,23 @@ function Step1({
         onChange={onAvatarChange}
       />
       <span className="h-[10px] w-px shrink-0" />
-      <p className="font-sans text-[12px] text-muted text-center w-full">Tap to replace photo</p>
+      {avatarUrl ? (
+        <>
+          <p className="font-sans text-[12px] text-muted text-center w-full">
+            Tap inside to choose what stays centered
+          </p>
+          <span className="h-[6px] w-px shrink-0" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="font-sans text-[12px] text-accent underline"
+          >
+            Replace photo
+          </button>
+        </>
+      ) : (
+        <p className="font-sans text-[12px] text-muted text-center w-full">Tap to add photo</p>
+      )}
       <span className="h-[16px] w-px shrink-0" />
       <Field label="Display name" htmlFor="edit-name">
         <input

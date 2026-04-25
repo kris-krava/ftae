@@ -45,7 +45,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     getUserArtworks(profileUser.id),
     supabaseAdmin
       .from('users')
-      .select('username, name, avatar_url')
+      .select('username, name, avatar_url, avatar_focal_x, avatar_focal_y, avatar_aspect_ratio')
       .eq('id', authUser.id)
       .single()
       .then((r) => r.data),
@@ -67,6 +67,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         initials={deriveInitials(viewerProfile.name as string | null, authUser.email ?? null)}
         avatarUrl={(viewerProfile.avatar_url as string | null) ?? null}
         unreadCount={viewerUnread}
+        avatarFocalX={(viewerProfile.avatar_focal_x as number | null) ?? 0.5}
+        avatarFocalY={(viewerProfile.avatar_focal_y as number | null) ?? 0.5}
+        avatarAspectRatio={(viewerProfile.avatar_aspect_ratio as number | null) ?? null}
       />
       <MobileNav
         username={viewerProfile.username as string}
@@ -74,6 +77,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         avatarUrl={(viewerProfile.avatar_url as string | null) ?? null}
         userId={authUser.id}
         initialUnread={viewerUnread}
+        avatarFocalX={(viewerProfile.avatar_focal_x as number | null) ?? 0.5}
+        avatarFocalY={(viewerProfile.avatar_focal_y as number | null) ?? 0.5}
+        avatarAspectRatio={(viewerProfile.avatar_aspect_ratio as number | null) ?? null}
       />
 
       <main

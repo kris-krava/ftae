@@ -35,7 +35,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('username, name, avatar_url')
+    .select('username, name, avatar_url, avatar_focal_x, avatar_focal_y, avatar_aspect_ratio')
     .eq('id', user.id)
     .single();
 
@@ -64,6 +64,9 @@ export default async function AppLayout({
         initials={initials}
         avatarUrl={profile.avatar_url ?? null}
         unreadCount={unread}
+        avatarFocalX={(profile.avatar_focal_x as number | null) ?? 0.5}
+        avatarFocalY={(profile.avatar_focal_y as number | null) ?? 0.5}
+        avatarAspectRatio={(profile.avatar_aspect_ratio as number | null) ?? null}
       />
       <div className="min-h-dvh flex flex-col pb-[96px] tab:pb-0 tab:pl-[60px]">{children}</div>
       <MobileNav
@@ -72,6 +75,9 @@ export default async function AppLayout({
         avatarUrl={profile.avatar_url ?? null}
         userId={user.id}
         initialUnread={unread}
+        avatarFocalX={(profile.avatar_focal_x as number | null) ?? 0.5}
+        avatarFocalY={(profile.avatar_focal_y as number | null) ?? 0.5}
+        avatarAspectRatio={(profile.avatar_aspect_ratio as number | null) ?? null}
       />
     </>
   );

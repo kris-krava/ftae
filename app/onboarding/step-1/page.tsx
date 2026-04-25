@@ -23,6 +23,8 @@ export default async function Step1Page() {
           initialName={profile.name ?? ''}
           initialLocation={profile.location_city ?? ''}
           initialAvatarUrl={profile.avatar_url ?? null}
+          initialAvatarFocalX={profile.avatar_focal_x ?? 0.5}
+          initialAvatarFocalY={profile.avatar_focal_y ?? 0.5}
           initialUsername={profile.username ?? ''}
         />
       </ErrorBoundary>

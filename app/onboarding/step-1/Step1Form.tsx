@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { PlusSquare } from '@/components/icons';
+import { AvatarEditor } from '@/components/profile/AvatarEditor';
 import {
   checkUsernameAvailability,
   finalizeStep1,
   saveStep1Profile,
+  setAvatarFocal,
   uploadAvatar,
 } from '@/app/_actions/onboarding';
 import {
@@ -17,11 +18,14 @@ import {
   sanitizeUsernameMirror,
   validateUsername,
 } from '@/lib/username-validation';
+import type { FocalPoint } from '@/lib/focal-point';
 
 interface Step1FormProps {
   initialName: string;
   initialLocation: string;
   initialAvatarUrl: string | null;
+  initialAvatarFocalX: number;
+  initialAvatarFocalY: number;
   initialUsername: string;
 }
 
@@ -32,12 +36,15 @@ export function Step1Form({
   initialName,
   initialLocation,
   initialAvatarUrl,
+  initialAvatarFocalX,
+  initialAvatarFocalY,
   initialUsername,
 }: Step1FormProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
+  const [focal, setFocal] = useState<FocalPoint>({ x: initialAvatarFocalX, y: initialAvatarFocalY });
   const [username, setUsername] = useState(initialUsername);
   // Auto-mirror display name → username until the user manually edits the
   // username field. Re-enabling is intentional — once they take ownership we
@@ -134,12 +141,23 @@ export function Step1Form({
         useWebWorker: true,
         fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
       });
+      // Pass the natural aspect ratio to the server so display code can
+      // compute object-position via lib/focal-point without re-loading the
+      // image. createImageBitmap is well-supported across modern browsers
+      // (mobile Safari 16+, all evergreen desktop).
+      const bitmap = await createImageBitmap(compressed);
+      const aspect = bitmap.height > 0 ? bitmap.width / bitmap.height : 1;
+      bitmap.close();
       const fd = new FormData();
       fd.set('avatar', compressed, compressed.name || file.name);
+      fd.set('aspect', String(aspect));
       startAutosave(async () => {
         const result = await uploadAvatar(fd);
         if (!result.ok) setError(result.error);
-        else if ('avatarUrl' in result && result.avatarUrl) setAvatarUrl(result.avatarUrl);
+        else if ('avatarUrl' in result && result.avatarUrl) {
+          setAvatarUrl(result.avatarUrl);
+          setFocal({ x: 0.5, y: 0.5 });
+        }
       });
     } catch (err) {
       console.error(err);
@@ -147,6 +165,13 @@ export function Step1Form({
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  }
+
+  // Save each focal tap immediately. setAvatarFocal is rate-limited
+  // server-side (30/min) so a chatty user can't blow through it.
+  function handleSetFocal(next: FocalPoint) {
+    setFocal(next);
+    void setAvatarFocal(next);
   }
 
   function onContinue() {
@@ -203,31 +228,24 @@ export function Step1Form({
 
   return (
     <div className="w-full max-w-[310px] flex flex-col items-center">
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        aria-label="Add profile photo"
-        className={
-          'shrink-0 rounded-full overflow-hidden border-[1.5px] border-field bg-surface/45 ' +
-          'flex items-center justify-center ' +
-          'w-[96px] h-[96px] ' +
-          'tab:w-[116px] tab:h-[116px] ' +
-          'desk:w-[120px] desk:h-[120px]'
-        }
-      >
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt=""
-            width={120}
-            height={120}
-            className="w-full h-full object-cover"
-            priority
-          />
-        ) : (
+      {avatarUrl ? (
+        <AvatarEditor src={avatarUrl} size={120} focal={focal} onSetFocal={handleSetFocal} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Add profile photo"
+          className={
+            'shrink-0 rounded-full overflow-hidden border-[1.5px] border-field bg-surface/45 ' +
+            'flex items-center justify-center ' +
+            'w-[96px] h-[96px] ' +
+            'tab:w-[116px] tab:h-[116px] ' +
+            'desk:w-[120px] desk:h-[120px]'
+          }
+        >
           <PlusSquare className="w-[28px] h-[28px] text-accent" />
-        )}
-      </button>
+        </button>
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -236,9 +254,25 @@ export function Step1Form({
         onChange={onAvatarChange}
       />
       <span aria-hidden className="h-[10px] w-px shrink-0" />
-      <p className="font-sans text-[12px] leading-[18px] text-muted text-center w-full">
-        {avatarUrl ? 'Tap to replace photo' : 'Tap to add photo'}
-      </p>
+      {avatarUrl ? (
+        <>
+          <p className="font-sans text-[12px] leading-[18px] text-muted text-center w-full">
+            Tap inside to choose what stays centered
+          </p>
+          <span aria-hidden className="h-[6px] w-px shrink-0" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="font-sans text-[12px] leading-[18px] text-accent underline"
+          >
+            Replace photo
+          </button>
+        </>
+      ) : (
+        <p className="font-sans text-[12px] leading-[18px] text-muted text-center w-full">
+          Tap to add photo
+        </p>
+      )}
       <span aria-hidden className="h-[16px] w-px shrink-0" />
       <Field label="Display name" htmlFor="name">
         <input

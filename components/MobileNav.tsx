@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
+import { focalToObjectPosition } from '@/lib/focal-point';
 
 interface MobileNavProps {
   username: string;
@@ -13,12 +14,24 @@ interface MobileNavProps {
   avatarUrl: string | null;
   userId: string;
   initialUnread: number;
+  avatarFocalX?: number;
+  avatarFocalY?: number;
+  avatarAspectRatio?: number | null;
 }
 
 const ITEM_BASE = 'relative flex items-center justify-center h-[80px] w-[65px]';
 const ICON_BASE = 'w-[24px] h-[24px]';
 
-export function MobileNav({ username, initials, avatarUrl, userId, initialUnread }: MobileNavProps) {
+export function MobileNav({
+  username,
+  initials,
+  avatarUrl,
+  userId,
+  initialUnread,
+  avatarFocalX = 0.5,
+  avatarFocalY = 0.5,
+  avatarAspectRatio,
+}: MobileNavProps) {
   const pathname = usePathname() ?? '';
   const isHome = pathname.startsWith('/app/home');
   const isDiscover = pathname.startsWith('/app/discover');
@@ -79,7 +92,15 @@ export function MobileNav({ username, initials, avatarUrl, userId, initialUnread
             aria-current={isProfile ? 'page' : undefined}
             className={ITEM_BASE}
           >
-            <Avatar initials={initials} avatarUrl={avatarUrl} size={28} active={isProfile} />
+            <Avatar
+              initials={initials}
+              avatarUrl={avatarUrl}
+              size={28}
+              active={isProfile}
+              focalX={avatarFocalX}
+              focalY={avatarFocalY}
+              aspectRatio={avatarAspectRatio}
+            />
             {isProfile && (
               <span
                 aria-hidden
@@ -150,17 +171,23 @@ function Avatar({
   avatarUrl,
   size,
   active,
+  focalX = 0.5,
+  focalY = 0.5,
+  aspectRatio,
 }: {
   initials: string;
   avatarUrl: string | null;
   size: number;
   active?: boolean;
+  focalX?: number;
+  focalY?: number;
+  aspectRatio?: number | null;
 }) {
   const ring = active ? 'ring-2 ring-accent' : '';
   if (avatarUrl) {
-    // Wrap the image in an explicit square span with overflow-hidden so the
-    // circle is enforced by the wrapper regardless of how next/image renders
-    // the inner img. Same pattern as components/profile/Avatar.tsx.
+    const pos = aspectRatio
+      ? focalToObjectPosition(aspectRatio, { x: focalX, y: focalY })
+      : { x: 50, y: 50 };
     return (
       <span
         style={{ width: size, height: size }}
@@ -172,6 +199,7 @@ function Avatar({
           width={size}
           height={size}
           className="w-full h-full object-cover"
+          style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
         />
       </span>
     );

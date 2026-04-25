@@ -202,6 +202,13 @@ export async function uploadAvatar(formData: FormData): Promise<SaveResult & { a
     return { ok: false, error: 'File too large.' };
   }
 
+  // Aspect ratio is sent by the client (where it knows the natural pixel
+  // dimensions of the compressed image) so display code can compute
+  // object-position via lib/focal-point without loading the image again.
+  const aspectRaw = formData.get('aspect');
+  const aspect = typeof aspectRaw === 'string' ? Number.parseFloat(aspectRaw) : NaN;
+  const aspectRatio = Number.isFinite(aspect) && aspect > 0 ? aspect : null;
+
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
   const path = `${userId}/avatar.${ext}`;
 
@@ -213,15 +220,51 @@ export async function uploadAvatar(formData: FormData): Promise<SaveResult & { a
   const { data: pub } = supabaseAdmin.storage.from('avatars').getPublicUrl(path);
   const avatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
 
+  // New upload resets the focal to center — old focal would point at a
+  // location in the previous image that may not exist (or look weird) in
+  // the new one.
   const { error: updateError } = await supabaseAdmin
     .from('users')
-    .update({ avatar_url: avatarUrl })
+    .update({
+      avatar_url: avatarUrl,
+      avatar_focal_x: 0.5,
+      avatar_focal_y: 0.5,
+      avatar_aspect_ratio: aspectRatio,
+    })
     .eq('id', userId);
   if (updateError) return { ok: false, error: 'Could not save.' };
 
   await recalculateCompletion(userId);
   revalidatePath('/onboarding/step-1');
   return { ok: true, avatarUrl };
+}
+
+const FocalSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+
+export async function setAvatarFocal(focal: { x: number; y: number }): Promise<SaveResult> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: 'Not signed in.' };
+  }
+
+  const limit = await rateLimit(`avatar-focal:${userId}`, 30, 60_000);
+  if (!limit.ok) return { ok: false, error: 'Too many updates. Please wait a moment.' };
+
+  const parsed = FocalSchema.safeParse(focal);
+  if (!parsed.success) return { ok: false, error: 'Invalid focal point.' };
+
+  const { error } = await supabaseAdmin
+    .from('users')
+    .update({ avatar_focal_x: parsed.data.x, avatar_focal_y: parsed.data.y })
+    .eq('id', userId);
+  if (error) return { ok: false, error: 'Could not save.' };
+
+  return { ok: true };
 }
 
 const MediumIdSchema = z.string().uuid();
