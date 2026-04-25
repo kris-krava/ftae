@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { PlusSquare } from '@/components/icons';
-import { AvatarEditor } from '@/components/profile/AvatarEditor';
+import { AvatarEditor, AvatarUploading } from '@/components/profile/AvatarEditor';
 import {
   checkUsernameAvailability,
   finalizeStep1,
@@ -45,6 +45,7 @@ export function Step1Form({
   const [location, setLocation] = useState(initialLocation);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
   const [focal, setFocal] = useState<FocalPoint>({ x: initialAvatarFocalX, y: initialAvatarFocalY });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [username, setUsername] = useState(initialUsername);
   // Auto-mirror display name → username until the user manually edits the
   // username field. Re-enabling is intentional — once they take ownership we
@@ -134,6 +135,7 @@ export function Step1Form({
     const file = event.target.files?.[0];
     if (!file) return;
     setError(null);
+    setIsUploadingAvatar(true);
     try {
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
@@ -152,16 +154,21 @@ export function Step1Form({
       fd.set('avatar', compressed, compressed.name || file.name);
       fd.set('aspect', String(aspect));
       startAutosave(async () => {
-        const result = await uploadAvatar(fd);
-        if (!result.ok) setError(result.error);
-        else if ('avatarUrl' in result && result.avatarUrl) {
-          setAvatarUrl(result.avatarUrl);
-          setFocal({ x: 0.5, y: 0.5 });
+        try {
+          const result = await uploadAvatar(fd);
+          if (!result.ok) setError(result.error);
+          else if ('avatarUrl' in result && result.avatarUrl) {
+            setAvatarUrl(result.avatarUrl);
+            setFocal({ x: 0.5, y: 0.5 });
+          }
+        } finally {
+          setIsUploadingAvatar(false);
         }
       });
     } catch (err) {
       console.error(err);
       setError('Could not process image.');
+      setIsUploadingAvatar(false);
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -228,7 +235,9 @@ export function Step1Form({
 
   return (
     <div className="w-full max-w-[310px] flex flex-col items-center">
-      {avatarUrl ? (
+      {isUploadingAvatar ? (
+        <AvatarUploading size={120} />
+      ) : avatarUrl ? (
         <AvatarEditor src={avatarUrl} size={120} focal={focal} onSetFocal={handleSetFocal} />
       ) : (
         <button

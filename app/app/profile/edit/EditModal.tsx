@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { XClose, PlusSquare } from '@/components/icons';
 import { PlatformBadge } from '@/components/PlatformBadge';
-import { AvatarEditor } from '@/components/profile/AvatarEditor';
+import { AvatarEditor, AvatarUploading } from '@/components/profile/AvatarEditor';
 import {
   saveStep1Profile,
   setAvatarFocal,
@@ -159,6 +159,7 @@ function Step1({
   const [location, setLocation] = useState(initialLocation);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
   const [focal, setFocal] = useState<FocalPoint>({ x: initialAvatarFocalX, y: initialAvatarFocalY });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialMount = useRef(true);
@@ -189,6 +190,7 @@ function Step1({
     const file = event.target.files?.[0];
     if (!file) return;
     onError(null);
+    setIsUploadingAvatar(true);
     try {
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
@@ -203,15 +205,20 @@ function Step1({
       fd.set('avatar', compressed, compressed.name || file.name);
       fd.set('aspect', String(aspect));
       start(async () => {
-        const r = await uploadAvatar(fd);
-        if (!r.ok) onError(r.error);
-        else if ('avatarUrl' in r && r.avatarUrl) {
-          setAvatarUrl(r.avatarUrl);
-          setFocal({ x: 0.5, y: 0.5 });
+        try {
+          const r = await uploadAvatar(fd);
+          if (!r.ok) onError(r.error);
+          else if ('avatarUrl' in r && r.avatarUrl) {
+            setAvatarUrl(r.avatarUrl);
+            setFocal({ x: 0.5, y: 0.5 });
+          }
+        } finally {
+          setIsUploadingAvatar(false);
         }
       });
     } catch {
       onError('Could not process image.');
+      setIsUploadingAvatar(false);
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -224,7 +231,9 @@ function Step1({
 
   return (
     <>
-      {avatarUrl ? (
+      {isUploadingAvatar ? (
+        <AvatarUploading size={96} />
+      ) : avatarUrl ? (
         <AvatarEditor src={avatarUrl} size={96} focal={focal} onSetFocal={handleSetFocal} />
       ) : (
         <button

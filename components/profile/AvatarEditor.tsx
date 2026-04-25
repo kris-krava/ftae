@@ -103,3 +103,28 @@ export function AvatarEditor({ src, size = 200, focal, onSetFocal }: AvatarEdito
     </div>
   );
 }
+
+// Solid circle with a spinning arc, shown in place of the avatar/editor while
+// a new file is uploading. Using the same surface dimensions as the editor
+// keeps the layout from jumping when state swaps.
+export function AvatarUploading({ size = 120 }: { size?: number }) {
+  const spinSize = Math.max(20, Math.round(size * 0.25));
+  return (
+    <div
+      role="status"
+      aria-label="Uploading photo"
+      style={{ width: size, height: size }}
+      className="rounded-full bg-divider flex items-center justify-center"
+    >
+      <svg
+        className="animate-spin text-accent"
+        style={{ width: spinSize, height: spinSize }}
+        viewBox="0 0 24 24"
+        fill="none"
+      >
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
