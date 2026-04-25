@@ -41,7 +41,7 @@ export function StatsBand() {
     >
       <div className="w-full px-[24px]">
         <div className={`${STATS_MAXW} mx-auto flex flex-col items-stretch`}>
-          <LaunchTab text="Preparing for Launch" position="top" />
+          <LaunchTab text="Founding Artists Have Posted" position="top" />
           <div
             className={
               'bg-muted text-canvas flex flex-col items-center justify-center ' +

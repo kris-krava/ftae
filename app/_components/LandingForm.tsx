@@ -99,7 +99,7 @@ export function LandingForm({ next = null, checkboxAlign = 'center' }: LandingFo
             'transition-opacity disabled:opacity-60'
           }
         >
-          {pending ? 'Sending…' : 'Join or Sign In'}
+          {pending ? 'Sending…' : 'Create Account or Sign In'}
         </button>
       </div>
 

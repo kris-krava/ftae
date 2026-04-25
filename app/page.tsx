@@ -179,10 +179,14 @@ function CTASection() {
               'font-sans font-semibold text-ink ' +
               'text-[15px] leading-[24px] ' +
               'tab:text-[16px] tab:leading-[26px] ' +
-              'desk:text-[17px] desk:leading-[28px]'
+              'desk:text-[17px] desk:leading-[28px] ' +
+              // Constrain on desktop only — without this the line runs nearly
+              // edge-to-edge of the 580px CTA cap and reads as one continuous
+              // ribbon. ~388px gives a 2-line wrap closer to mobile/tablet.
+              'desk:max-w-[388px]'
             }
           >
-            Join now as a founding artist!
+            Become a founding artist, add your art, and see what others want to trade!
           </p>
           <LandingForm checkboxAlign="center" />
           <p className="font-sans text-[13px] leading-[20px] text-muted tab:text-[14px] tab:leading-[22px]">
@@ -245,9 +249,9 @@ function PricingSection() {
               'desk:text-[15px] desk:leading-[24px]'
             }
           >
-            I do also want to figure out a way to reward you and other founding artists. I appreciate
-            your patience and participation. Expect changes to the overall platform as I refine it and
-            prepare for official launch.
+            I also want to figure out a way to reward you and other founding artists. I appreciate
+            your patience and participation. The design will continue to evolve as I add functionality
+            to the website, leading up to the official launch.
           </p>
         </div>
       </div>
@@ -267,10 +271,10 @@ function KravaSection() {
         been designing apps and websites for 30yrs.
       </p>
       <p className={kravaBody}>
-        In May 2026, I was driving to Lake City, SC to deliver this painting for Artfields. On that
-        5hr drive from Atlanta, I had an idea.
+        In March 2026, I was driving to Lake City, SC to deliver this painting for Artfields. On
+        that 5hr drive from Atlanta, I had an idea.
       </p>
-      <p className={kravaItalic}>What if there was a way to help artists trade art?</p>
+      <p className={kravaItalic}>How might I help artists trade art?</p>
       <p className={kravaBody}>
         I spent that entire drive dictating to my phone, asking Claude to document the concept. I
         then decided to challenge myself to ONLY use Claude Code to design and develop this
@@ -279,7 +283,8 @@ function KravaSection() {
       <p className={kravaBody}>
         Over the past couple weeks, I&rsquo;ve been working on it. The pre-launch version is ready,
         you&rsquo;re looking at it! I hope you join, add your art, and share with friends! Let me
-        know what you think.
+        know if you find any errors or have ideas on how to make FTAE better &mdash; thanks for
+        being here!
       </p>
     </>
   );
