@@ -21,7 +21,7 @@ export default async function UsernameUpdatedPage() {
 
   const username = profile.username as string;
   return (
-    <main className="bg-canvas flex-1 w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] text-center">
+    <main className="bg-canvas min-h-dvh w-full flex flex-col items-center justify-center px-[32px] tab:px-[120px] desk:px-[320px] text-center">
       <Wordmark variant="short" />
       <span aria-hidden className="h-[24px] tab:h-[28px] desk:h-[32px] w-px shrink-0" />
       <CheckCircle
