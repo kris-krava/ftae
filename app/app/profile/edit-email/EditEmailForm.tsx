@@ -25,9 +25,6 @@ export function EditEmailForm({ currentEmail }: EditEmailFormProps) {
       const result = await requestEmailChange(fd);
       if (result.ok) {
         setSentEmail(result.pendingEmail);
-      } else if (result.needsReauth) {
-        const next = encodeURIComponent('/app/profile/edit-email');
-        router.push(`/app/profile/reauthenticate?next=${next}`);
       } else {
         setError(result.error);
       }

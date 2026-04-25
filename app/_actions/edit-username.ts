@@ -1,36 +1,31 @@
 'use server';
 
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
-import { isReauthFresh, REAUTH_COOKIE } from '@/lib/auth-cookies';
 import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
 import { USERNAME_COOLDOWN_MS } from '@/lib/username-cooldown';
+import { reportError } from '@/lib/observability';
 
 export type EditUsernameResult =
   | { ok: true; sentTo: string; pendingUsername: string }
-  | { ok: false; error: string; needsReauth?: boolean; cooldownUntil?: string };
+  | { ok: false; error: string; cooldownUntil?: string };
 
 const UsernameSchema = z.string().trim().toLowerCase().min(3).max(30);
 
+// Identity verification is the magic-link confirmation: signInWithOtp sends a
+// link to the user's current email, and the auth callback completes the
+// username change only when that link is clicked. A session-hijacked actor
+// would need the user's inbox to complete the change.
 export async function requestUsernameChange(formData: FormData): Promise<EditUsernameResult> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !user.email) return { ok: false, error: 'Not signed in.' };
-
-  const reauthCookie = cookies().get(REAUTH_COOKIE)?.value;
-  if (!isReauthFresh(reauthCookie, user.id)) {
-    return {
-      ok: false,
-      error: 'Please confirm it’s you before changing your username.',
-      needsReauth: true,
-    };
-  }
 
   const limit = await rateLimit(`edit-username:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
@@ -91,7 +86,23 @@ export async function requestUsernameChange(formData: FormData): Promise<EditUse
       shouldCreateUser: false,
     },
   });
-  if (error) return { ok: false, error: 'Could not send confirmation link. Please try again.' };
+  if (error) {
+    const code = (error as { code?: string }).code;
+    if (code === 'over_email_send_rate_limit') {
+      return {
+        ok: false,
+        error: 'Too many email requests recently. Please try again in an hour.',
+      };
+    }
+    reportError({
+      area: 'edit-username',
+      op: 'send_otp',
+      err: error,
+      userId: user.id,
+      extra: { code, status: (error as { status?: number }).status },
+    });
+    return { ok: false, error: 'Could not send confirmation link. Please try again.' };
+  }
 
   return { ok: true, sentTo: user.email, pendingUsername: next };
 }

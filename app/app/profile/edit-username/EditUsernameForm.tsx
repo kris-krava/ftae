@@ -26,9 +26,6 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
       const result = await requestUsernameChange(fd);
       if (result.ok) {
         setSentTo({ email: result.sentTo, username: result.pendingUsername });
-      } else if (result.needsReauth) {
-        const next = encodeURIComponent('/app/profile/edit-username');
-        router.push(`/app/profile/reauthenticate?next=${next}`);
       } else {
         setError(result.error);
       }

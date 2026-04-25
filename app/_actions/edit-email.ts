@@ -1,34 +1,28 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
-import { isReauthFresh, REAUTH_COOKIE } from '@/lib/auth-cookies';
 import { reportError } from '@/lib/observability';
 
 const EmailSchema = z.string().trim().toLowerCase().email();
 
 export type EditEmailResult =
   | { ok: true; pendingEmail: string }
-  | { ok: false; error: string; needsReauth?: boolean };
+  | { ok: false; error: string };
 
+// Identity verification is delegated to Supabase's "Secure email change"
+// behavior: the confirmation link is sent to BOTH the current and new
+// addresses, and the change only completes when both are clicked. A
+// session-hijacked actor would need access to the current inbox (which they
+// don't) to complete the change.
 export async function requestEmailChange(formData: FormData): Promise<EditEmailResult> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
-
-  const reauthCookie = cookies().get(REAUTH_COOKIE)?.value;
-  if (!isReauthFresh(reauthCookie, user.id)) {
-    return {
-      ok: false,
-      error: 'Please confirm it’s you before changing your email.',
-      needsReauth: true,
-    };
-  }
 
   const limit = await rateLimit(`edit-email:${user.id}`, 5, 60 * 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many requests. Please try again later.' };
@@ -43,6 +37,23 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
 
   const { error } = await supabase.auth.updateUser({ email: newEmail });
   if (error) {
+    // Supabase Auth's per-address email rate limit (default 4/hour across all
+    // email types). Distinct from our own per-user limit above — this fires
+    // when the inbox itself has received too many recent transactional emails.
+    const code = (error as { code?: string }).code;
+    if (code === 'over_email_send_rate_limit') {
+      return {
+        ok: false,
+        error: 'Too many email requests recently. Please try again in an hour.',
+      };
+    }
+    reportError({
+      area: 'edit-email',
+      op: 'update_user',
+      err: error,
+      userId: user.id,
+      extra: { code, status: (error as { status?: number }).status },
+    });
     return { ok: false, error: 'Could not start email change. Please try again.' };
   }
   return { ok: true, pendingEmail: newEmail };
