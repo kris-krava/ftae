@@ -9,8 +9,6 @@ import {
   resolveSessionTtl,
 } from '@/lib/session-persistence';
 import { issueReauthToken, REAUTH_COOKIE, REAUTH_WINDOW_SECONDS } from '@/lib/auth-cookies';
-import { isReservedUsername } from '@/lib/username-rules';
-import { validateUsername } from '@/lib/username-validation';
 import { isReservedEmail } from '@/lib/reserved-emails';
 import { safeNext } from '@/lib/safe-next';
 import { reportError } from '@/lib/observability';
@@ -64,8 +62,6 @@ export async function GET(request: NextRequest) {
   const callbackType = searchParams.get('type');
   const isEmailChange = callbackType === 'email_change' || callbackType === 'email';
   const isReauth = callbackType === 'reauth';
-  const isUsernameChange = callbackType === 'username_change';
-  const pendingUsernameRaw = searchParams.get('pending_username');
   const next = safeNext(searchParams.get('next'));
   const remember = searchParams.get('remember');
 
@@ -149,38 +145,6 @@ export async function GET(request: NextRequest) {
       null,
       false,
     );
-  }
-
-  if (existingUser && isUsernameChange && pendingUsernameRaw) {
-    const candidate = pendingUsernameRaw.trim().toLowerCase();
-    const v = validateUsername(candidate);
-    if (!v.ok || isReservedUsername(candidate)) {
-      return buildResponse(origin, '/app/profile/edit-username?error=invalid', ttl, null, false);
-    }
-    const { data: clash } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('username', candidate)
-      .neq('id', userId)
-      .maybeSingle();
-    if (clash) {
-      return buildResponse(origin, '/app/profile/edit-username?error=taken', ttl, null, false);
-    }
-    const { error: updateError } = await supabaseAdmin
-      .from('users')
-      .update({ username: candidate, username_changed_at: new Date().toISOString() })
-      .eq('id', userId);
-    if (updateError) {
-      reportError({
-        area: 'auth-callback',
-        op: 'username_update',
-        err: updateError,
-        userId,
-        extra: { code: updateError.code, candidate },
-      });
-      return buildResponse(origin, '/app/profile/edit-username?error=save', ttl, null, false);
-    }
-    return buildResponse(origin, '/app/profile/edit-username/done', ttl, null, false);
   }
 
   if (existingUser) {

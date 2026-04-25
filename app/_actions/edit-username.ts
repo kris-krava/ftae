@@ -9,6 +9,12 @@ import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
 import { USERNAME_COOLDOWN_MS } from '@/lib/username-cooldown';
 import { reportError } from '@/lib/observability';
+import { resend, FROM_EMAIL } from '@/lib/resend';
+import { issueUsernameChangeToken } from '@/lib/username-change-token';
+import {
+  CONFIRM_USERNAME_CHANGE_SUBJECT,
+  renderConfirmUsernameChangeHtml,
+} from '@/lib/email-templates/confirm-username-change';
 
 export type EditUsernameResult =
   | { ok: true; sentTo: string; pendingUsername: string }
@@ -16,10 +22,16 @@ export type EditUsernameResult =
 
 const UsernameSchema = z.string().trim().toLowerCase().min(3).max(30);
 
-// Identity verification is the magic-link confirmation: signInWithOtp sends a
-// link to the user's current email, and the auth callback completes the
-// username change only when that link is clicked. A session-hijacked actor
-// would need the user's inbox to complete the change.
+// Identity verification is delivered via a custom Resend email rather than
+// Supabase's signInWithOtp. signInWithOtp would fire Supabase's "Magic Link"
+// template (copy reads "Welcome back / sign in") — exactly the wrong action
+// label for a username change. Custom email lets us write copy that matches
+// what the user is actually confirming.
+//
+// The link in the email points at /auth/confirm-username-change and carries
+// an HMAC-signed, expiring token (lib/username-change-token.ts). The route
+// re-validates state at click time so a concurrent rename or cooldown change
+// still wins.
 export async function requestUsernameChange(formData: FormData): Promise<EditUsernameResult> {
   const supabase = createClient();
   const {
@@ -67,39 +79,38 @@ export async function requestUsernameChange(formData: FormData): Promise<EditUse
     .maybeSingle();
   if (clash) return { ok: false, error: 'That username is taken.' };
 
+  if (!resend) {
+    reportError({
+      area: 'edit-username',
+      op: 'resend_unavailable',
+      err: new Error('Resend client unavailable — RESEND_API_KEY missing'),
+      userId: user.id,
+    });
+    return { ok: false, error: 'Email service is unavailable. Please try again later.' };
+  }
+
   const h = headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };
   const origin = `${proto}://${host}`;
 
-  const callbackParams = new URLSearchParams({
-    type: 'username_change',
-    pending_username: next,
-  });
-  const redirectTo = `${origin}/auth/callback?${callbackParams.toString()}`;
+  const token = issueUsernameChangeToken(user.id, next);
+  const confirmUrl = `${origin}/auth/confirm-username-change?token=${encodeURIComponent(token)}`;
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email: user.email,
-    options: {
-      emailRedirectTo: redirectTo,
-      shouldCreateUser: false,
-    },
+  const { error: sendError } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: user.email,
+    subject: CONFIRM_USERNAME_CHANGE_SUBJECT,
+    html: renderConfirmUsernameChangeHtml({ newUsername: next, confirmUrl }),
   });
-  if (error) {
-    const code = (error as { code?: string }).code;
-    if (code === 'over_email_send_rate_limit') {
-      return {
-        ok: false,
-        error: 'Too many email requests recently. Please try again in an hour.',
-      };
-    }
+  if (sendError) {
     reportError({
       area: 'edit-username',
-      op: 'send_otp',
-      err: error,
+      op: 'resend_send',
+      err: sendError,
       userId: user.id,
-      extra: { code, status: (error as { status?: number }).status },
+      extra: { name: sendError.name, message: sendError.message },
     });
     return { ok: false, error: 'Could not send confirmation link. Please try again.' };
   }
