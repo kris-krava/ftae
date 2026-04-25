@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -35,7 +36,22 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     return { ok: false, error: 'That is already your current email.' };
   }
 
-  const { error } = await supabase.auth.updateUser({ email: newEmail });
+  // Without emailRedirectTo, Supabase routes the confirmation click to the
+  // project's Site URL with a hash-fragment message (e.g. "Confirmation link
+  // accepted. Please proceed to confirm link sent to the other email") and
+  // never hits our /auth/callback. Pointing it at /auth/callback lets our
+  // existing email-change branch query the user's email_change field and
+  // route to /pending (still partway through) or /done (fully confirmed).
+  const h = headers();
+  const proto = h.get('x-forwarded-proto') ?? 'https';
+  const host = h.get('host');
+  if (!host) return { ok: false, error: 'Could not determine request origin.' };
+  const callbackUrl = `${proto}://${host}/auth/callback?type=email_change`;
+
+  const { error } = await supabase.auth.updateUser(
+    { email: newEmail },
+    { emailRedirectTo: callbackUrl },
+  );
   if (error) {
     // Supabase Auth's per-address email rate limit (default 4/hour across all
     // email types). Distinct from our own per-user limit above — this fires
