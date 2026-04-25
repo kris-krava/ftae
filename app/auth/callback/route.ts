@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const callbackType = searchParams.get('type');
-  const isEmailChange = callbackType === 'email_change' || callbackType === 'email';
   const isReauth = callbackType === 'reauth';
   const next = safeNext(searchParams.get('next'));
   const remember = searchParams.get('remember');
@@ -114,37 +113,6 @@ export async function GET(request: NextRequest) {
 
   if (existingUser && isReauth) {
     return buildResponse(origin, next ?? '/app/home', ttl, userId, false);
-  }
-
-  if (existingUser && isEmailChange) {
-    // Supabase's "Secure email change" sends a confirmation to BOTH the old
-    // and new addresses. Until BOTH are clicked, auth.users.email_change keeps
-    // the pending new email; once both are clicked, Supabase rotates the
-    // primary email and clears email_change. So the field's presence is the
-    // signal for "still partway through".
-    const { data: refreshed, error: refreshError } = await supabaseAdmin.auth.admin.getUserById(userId);
-    if (refreshError) {
-      reportError({
-        area: 'auth-callback',
-        op: 'email_change_status_check',
-        err: refreshError,
-        userId,
-      });
-      // Degraded path: assume the change is complete rather than stranding the
-      // user on a confusing screen. The /done page will sync best-effort.
-      return buildResponse(origin, '/app/profile/edit-email/done', ttl, null, false);
-    }
-    // `email_change` exists on auth.users at runtime but isn't surfaced on
-    // Supabase's public User type, so we read it through an `unknown` cast.
-    const refreshedUser = refreshed?.user as unknown as { email_change?: string | null } | null;
-    const stillPending = Boolean(refreshedUser?.email_change);
-    return buildResponse(
-      origin,
-      stillPending ? '/app/profile/edit-email/pending' : '/app/profile/edit-email/done',
-      ttl,
-      null,
-      false,
-    );
   }
 
   if (existingUser) {
