@@ -43,7 +43,8 @@ export function EditUsernameForm({ currentUsername }: EditUsernameFormProps) {
         <span aria-hidden className="h-[14px] w-px shrink-0" />
         <p className="font-sans text-muted text-[15px] leading-[24px] max-w-[326px]">
           We sent a confirmation link to{' '}
-          <span className="font-semibold text-ink">{sentTo.email}</span>.
+          <span className="font-semibold text-ink">{sentTo.email}</span>. Tap it to confirm your
+          new username <span className="font-semibold text-ink">@{sentTo.username}</span>.
         </p>
       </div>
     );
