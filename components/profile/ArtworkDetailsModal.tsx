@@ -25,24 +25,6 @@ interface ArtworkDetailsModalProps {
   onNavigate?: (artworkId: string) => void;
 }
 
-function relativeTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(ms / 86_400_000);
-  if (days < 1) return 'today';
-  if (days < 7) return `${days}d`;
-  if (days < 30) return `${Math.floor(days / 7)}w`;
-  if (days < 365) return `${Math.floor(days / 30)}mo`;
-  return `${Math.floor(days / 365)}y`;
-}
-
-function formatPosted(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
 function formatDimensions(w: number | null, h: number | null, d: number | null): string | null {
   if (w == null || h == null) return null;
   const depth = d != null ? ` × ${d}` : '';
@@ -236,7 +218,7 @@ export function ArtworkDetailsModal({
                     )}
                   </div>
                   <span className="font-sans text-[12px] text-muted truncate">
-                    @{artwork.artist.username} · {relativeTime(artwork.created_at)}
+                    @{artwork.artist.username}
                   </span>
                 </div>
               </Link>
@@ -285,14 +267,6 @@ export function ArtworkDetailsModal({
               )}
             </div>
 
-            <div className="border-t border-divider/50" />
-
-            {/* Footer */}
-            <div className="p-[16px] tab:p-[24px]">
-              <p className="font-sans text-[12px] text-muted">
-                Posted {formatPosted(artwork.created_at)}
-              </p>
-            </div>
           </div>
         </div>
       </div>

@@ -180,14 +180,23 @@ function Avatar({
 }) {
   const ring = active ? 'ring-2 ring-accent' : '';
   if (avatarUrl) {
+    // Wrap the image in an explicit square span with overflow-hidden so the
+    // circle is enforced by the wrapper regardless of how next/image renders
+    // the inner img (e.g., if its intrinsic ratio leaks through). Same
+    // pattern as components/profile/Avatar.tsx.
     return (
-      <Image
-        src={avatarUrl}
-        alt=""
-        width={size}
-        height={size}
-        className={`rounded-full object-cover ${ring}`}
-      />
+      <span
+        style={{ width: size, height: size }}
+        className={`block rounded-full overflow-hidden shrink-0 bg-divider ${ring}`}
+      >
+        <Image
+          src={avatarUrl}
+          alt=""
+          width={size}
+          height={size}
+          className="w-full h-full object-cover"
+        />
+      </span>
     );
   }
   return (

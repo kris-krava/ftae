@@ -29,8 +29,7 @@ export function DiscoverArtworkTile({ artwork, index, onOpen }: DiscoverArtworkT
           alt={artwork.title ?? ''}
           fill
           sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
-          className="object-cover"
-          style={{ objectPosition: `${artwork.primary_photo_focal_x * 100}% ${artwork.primary_photo_focal_y * 100}%` }}
+          className="object-contain"
           priority={index < 4}
         />
       )}
