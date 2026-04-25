@@ -6,6 +6,14 @@ import { deriveInitials } from '@/lib/initials';
 import { MobileNav } from '@/components/MobileNav';
 import { Sidebar } from '@/components/Sidebar';
 
+// Force per-request rendering. The layout reads `x-pathname` from headers()
+// to decide whether to render the chrome or pass through as a full-screen
+// takeover; without force-dynamic, Next.js's auto-detection has historically
+// missed the headers() signal in production builds and served the layout
+// stale, causing the chrome to leak onto takeover routes (edit-email,
+// edit-username, reauthenticate).
+export const dynamic = 'force-dynamic';
+
 // Routes that hide the global nav and render as a full takeover.
 // Middleware sets x-pathname so this Server Component can branch on the path.
 const TAKEOVER_PREFIXES = [
