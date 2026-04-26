@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getArtworkDetail } from '@/app/_lib/profile';
-import { EditArtModal } from '@/app/app/edit-art/[artworkId]/EditArtModal';
+import { EditArtModal } from '@/app/(authed)/app/edit-art/[artworkId]/EditArtModal';
 
 interface Props {
   params: { artworkId: string };
