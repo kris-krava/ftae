@@ -133,7 +133,7 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
           id="bio"
           value={bio}
           onChange={(e) => setBio(e.target.value.slice(0, MAX_BIO))}
-          rows={2}
+          rows={5}
           maxLength={MAX_BIO}
           placeholder="e.g. I paint figurative and landscape oil paintings in rural Georgia"
           className={

@@ -13,10 +13,10 @@ export default function CheckEmailPage({ searchParams }: Props) {
   return (
     <main
       className={
-        'flex flex-col items-center text-center w-full min-h-full bg-canvas ' +
-        'px-[32px] py-[88px] ' +
-        'tab:px-[120px] tab:py-[100px] ' +
-        'desk:px-[320px] desk:py-[120px]'
+        'flex flex-col items-center justify-center text-center w-full min-h-screen bg-canvas ' +
+        'px-[32px] py-[40px] ' +
+        'tab:px-[120px] ' +
+        'desk:px-[320px]'
       }
     >
       <Wordmark variant="short" />

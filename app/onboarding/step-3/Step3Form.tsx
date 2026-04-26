@@ -107,9 +107,9 @@ export function Step3Form({ initialWebsite, initialPlatform, initialHandle }: St
           maxLength={60}
           autoComplete="off"
           className={
-            'flex-1 min-w-0 px-[12px] bg-transparent ' +
+            'flex-1 min-w-0 px-[12px] bg-transparent border-0 ' +
             'font-sans text-[15px] leading-[24px] text-ink placeholder:text-placeholder ' +
-            'focus:outline-none'
+            'focus:outline-none focus:ring-0'
           }
         />
       </div>

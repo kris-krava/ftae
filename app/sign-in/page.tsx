@@ -22,10 +22,10 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <main
       className={
-        'flex flex-col items-center text-center w-full min-h-full bg-canvas ' +
-        'px-[32px] py-[88px] ' +
-        'tab:px-[120px] tab:py-[100px] ' +
-        'desk:px-[320px] desk:py-[120px]'
+        'flex flex-col items-center justify-center text-center w-full min-h-screen bg-canvas ' +
+        'px-[32px] py-[40px] ' +
+        'tab:px-[120px] ' +
+        'desk:px-[320px]'
       }
     >
       <Wordmark variant="full" />
@@ -38,7 +38,7 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
           'desk:mt-[40px] desk:text-[17px] desk:leading-[28px]'
         }
       >
-        Join now and get 3 months free!
+        Welcome, but first&hellip;
       </p>
 
       <div className="mt-[16px]">

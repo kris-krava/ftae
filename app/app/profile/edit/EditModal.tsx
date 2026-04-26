@@ -405,7 +405,7 @@ function Step2({
         id="edit-bio"
         value={bio}
         onChange={(e) => setBio(e.target.value.slice(0, MAX_BIO))}
-        rows={2}
+        rows={5}
         maxLength={MAX_BIO}
         className={`${inputClass} h-auto py-[10px] resize-none`}
       />
@@ -506,7 +506,7 @@ function Step3({
           onChange={(e) => setHandle(e.target.value)}
           placeholder="@yourhandle"
           maxLength={60}
-          className="flex-1 min-w-0 px-[12px] bg-transparent font-sans text-[15px] text-ink placeholder:text-placeholder focus:outline-none"
+          className="flex-1 min-w-0 px-[12px] bg-transparent border-0 font-sans text-[15px] text-ink placeholder:text-placeholder focus:outline-none focus:ring-0"
         />
       </div>
       <span className="h-[24px] w-px shrink-0" />
