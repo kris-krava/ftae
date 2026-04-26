@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
 import { reportError } from '@/lib/observability';
-import { resend, FROM_EMAIL } from '@/lib/resend';
+import { getResend, FROM_EMAIL } from '@/lib/resend';
 import {
   issueEmailChangeToken,
   EMAIL_CHANGE_TOKEN_TTL_SECONDS,
@@ -37,7 +37,7 @@ export type EditEmailResult =
 // routes mark each side confirmed and, when both are done, apply the change
 // via supabaseAdmin.auth.admin.updateUserById and update public.users.
 export async function requestEmailChange(formData: FormData): Promise<EditEmailResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -67,6 +67,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     return { ok: false, error: 'That email is already in use by another account.' };
   }
 
+  const resend = getResend();
   if (!resend) {
     reportError({
       area: 'edit-email',
@@ -105,7 +106,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     return { ok: false, error: 'Could not start email change. Please try again.' };
   }
 
-  const h = headers();
+  const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };
@@ -155,7 +156,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
 // as a defensive no-op for the /done page in case the route handler's
 // best-effort public.users update failed silently.
 export async function syncEmailFromAuth(): Promise<{ ok: boolean; email?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

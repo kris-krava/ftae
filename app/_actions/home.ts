@@ -11,7 +11,7 @@ export interface HomeFeedPageResult {
 }
 
 export async function loadMoreHomeFeed(cursor: string | null): Promise<HomeFeedPageResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

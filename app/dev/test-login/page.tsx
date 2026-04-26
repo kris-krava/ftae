@@ -5,10 +5,10 @@ import { DEV_TOOLS_ENABLED, assertDev, assertNotProdHost } from './_guard';
 import { SCENARIOS } from './scenarios';
 import { TestLoginClient } from './TestLoginClient';
 
-export default function TestLoginPage() {
+export default async function TestLoginPage() {
   if (!DEV_TOOLS_ENABLED) notFound();
   assertDev();
-  assertNotProdHost(headers().get('host'));
+  assertNotProdHost((await headers()).get('host'));
 
   const scenarios = SCENARIOS.map((s) => ({
     id: s.id,

@@ -3,10 +3,11 @@ import { Mail01 } from '@/components/icons';
 import { Wordmark } from '@/app/_components/Wordmark';
 
 interface Props {
-  searchParams: { email?: string };
+  searchParams: Promise<{ email?: string }>;
 }
 
-export default function CheckEmailPage({ searchParams }: Props) {
+export default async function CheckEmailPage(props: Props) {
+  const searchParams = await props.searchParams;
   const rawEmail = searchParams.email;
   const email = rawEmail ? decodeURIComponent(rawEmail) : null;
 

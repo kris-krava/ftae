@@ -18,7 +18,7 @@ interface RunResult {
 
 export async function runScenarioAction(scenarioId: string): Promise<RunResult> {
   assertDev();
-  const host = headers().get('host');
+  const host = (await headers()).get('host');
   assertNotProdHost(host);
 
   const scenario = getScenario(scenarioId);
@@ -59,7 +59,7 @@ export async function runScenarioAction(scenarioId: string): Promise<RunResult> 
 
 export async function cleanupTestUsersAction(): Promise<CleanupReport> {
   assertDev();
-  assertNotProdHost(headers().get('host'));
+  assertNotProdHost((await headers()).get('host'));
   return await cleanupAllTestUsers(supabaseAdmin);
 }
 

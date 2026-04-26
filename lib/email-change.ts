@@ -43,7 +43,7 @@ export async function handleEmailChangeConfirm(
   // Require an active session that matches the user the token was issued
   // for. Without this, a stolen link clicked from a different account's
   // browser could confirm a side on someone else's pending change.
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

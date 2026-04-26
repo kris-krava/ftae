@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { AddArtModal } from '@/app/(authed)/app/add-art/AddArtModal';
+import { AddArtModal } from '@/app/(authed)/(chrome)/app/add-art/AddArtModal';
 
 // Root-level intercept (`(...)`) so navigation to /app/add-art from anywhere —
 // /app/* routes (Home, Discover, Trades, …) AND /[username] profile pages —
@@ -10,7 +10,7 @@ import { AddArtModal } from '@/app/(authed)/app/add-art/AddArtModal';
 // mounted behind it. A nested intercept under /app/app/@modal couldn't catch
 // navigations originating outside the /app/* layout tree.
 export default async function AddArtModalIntercept() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

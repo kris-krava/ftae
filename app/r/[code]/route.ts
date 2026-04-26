@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { REFERRAL_COOKIE, REFERRAL_COOKIE_MAX_AGE_SECONDS } from '@/lib/referral';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { code: string } },
-) {
+export async function GET(request: Request, props: { params: Promise<{ code: string }> }) {
+  const params = await props.params;
   const { origin } = new URL(request.url);
   const code = params.code?.trim();
 

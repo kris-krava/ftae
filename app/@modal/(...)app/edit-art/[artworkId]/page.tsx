@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getArtworkDetail } from '@/app/_lib/profile';
-import { EditArtModal } from '@/app/(authed)/app/edit-art/[artworkId]/EditArtModal';
+import { EditArtModal } from '@/app/(authed)/(chrome)/app/edit-art/[artworkId]/EditArtModal';
 
 interface Props {
-  params: { artworkId: string };
+  params: Promise<{ artworkId: string }>;
 }
 
 // Root-level intercept (`(...)`) so navigation to /app/edit-art/[id] from
@@ -23,11 +23,12 @@ interface Props {
 // not-found page and flash a full-screen 404 before our delete handler's
 // router.back() lands. Returning null leaves the modal slot empty during
 // that brief transitional re-render. Bad-id direct hits are still 404'd by
-// the standalone page at app/(authed)/app/edit-art/[artworkId]/page.tsx.
-export default async function EditArtModalIntercept({ params }: Props) {
+// the standalone page at app/(authed)/(chrome)/app/edit-art/[artworkId]/page.tsx.
+export default async function EditArtModalIntercept(props: Props) {
+  const params = await props.params;
   noStore();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
