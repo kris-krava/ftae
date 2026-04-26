@@ -62,7 +62,9 @@ export function ArtworkGrid({
         {artworks.map((art) => (
           <ArtworkTile key={art.id} artwork={art} onOpen={openArtwork} />
         ))}
-        <SkeletonFillTiles actualCount={artworks.length + (showAddTile ? 1 : 0)} />
+        {artworks.length > 0 && (
+          <SkeletonFillTiles actualCount={artworks.length + (showAddTile ? 1 : 0)} />
+        )}
       </div>
 
       {modal && (
