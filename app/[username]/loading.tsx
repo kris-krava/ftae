@@ -1,4 +1,4 @@
-import { Skeleton, ArtworkGridSkeleton } from '@/components/Skeleton';
+import { Skeleton } from '@/components/Skeleton';
 
 // Mirrors the populated profile (page.tsx + ProfileHeader + ArtworkGrid +
 // Sidebar/MobileNav) so the swap from skeleton → real content doesn't shift
@@ -43,9 +43,6 @@ export default function Loading() {
           </div>
         </section>
 
-        <section className="w-full mt-[14px]">
-          <ArtworkGridSkeleton tiles={6} />
-        </section>
       </main>
     </>
   );

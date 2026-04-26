@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiscoverArtworkTile } from '@/components/DiscoverArtworkTile';
 import { FollowCTA } from '@/components/FollowCTA';
-import { SkeletonFillTiles } from '@/components/SkeletonFillTiles';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { fetchArtworkModal, type ArtworkModalPayload } from '@/app/_actions/discover';
 import { loadMoreHomeFeed } from '@/app/_actions/home';
@@ -167,7 +166,6 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
             <DiscoverArtworkTile artwork={art} index={i} onOpen={openArtwork} />
           </div>
         ))}
-        <SkeletonFillTiles actualCount={artworks.length} />
       </div>
       <div ref={sentinelRef} aria-hidden className="h-[1px]" />
       {cursor && (

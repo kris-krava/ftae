@@ -6,16 +6,6 @@ export function Skeleton({ className }: SkeletonProps) {
   return <div className={`animate-pulse bg-divider/40 rounded-[6px] ${className ?? ''}`} />;
 }
 
-export function ArtworkGridSkeleton({ tiles = 8 }: { tiles?: number }) {
-  return (
-    <div className="grid grid-cols-2 tab:grid-cols-3 desk:grid-cols-5 gap-[4px] w-full">
-      {Array.from({ length: tiles }).map((_, i) => (
-        <Skeleton key={i} className="aspect-square rounded-[2px]" />
-      ))}
-    </div>
-  );
-}
-
 export function ArtistCardSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <ul className="flex flex-col gap-[16px] w-full">

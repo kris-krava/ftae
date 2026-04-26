@@ -6,7 +6,6 @@ import { DiscoverArtworkTile } from '@/components/DiscoverArtworkTile';
 import { ArtistCard } from '@/components/ArtistCard';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { ReferralCTA } from '@/components/ReferralCTA';
-import { SkeletonFillTiles } from '@/components/SkeletonFillTiles';
 import {
   fetchArtworkModal,
   loadMoreArtworks,
@@ -348,15 +347,18 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
 
       {/* Grid stays mounted whether or not search is active so the page's
           scroll position is preserved when the user opens / closes search.
-          No top padding — the fixed search panel floats over the first row
-          of tiles, filling the viewport edge-to-edge. */}
-      <ArtworkGridSection
-        artworks={artworks}
-        sentinelRef={sentinelRef}
-        loadingMore={loadingMore}
-        hasMore={Boolean(artworksCursor)}
-        onOpen={openArtwork}
-      />
+          Top padding equals the fixed search row's height (76 mobile / 96
+          tab+desk) so the grid starts below the search bar. The bar then
+          translates up on scroll-down via the panel-translate logic above. */}
+      <div className="pt-[76px] tab:pt-[96px]">
+        <ArtworkGridSection
+          artworks={artworks}
+          sentinelRef={sentinelRef}
+          loadingMore={loadingMore}
+          hasMore={Boolean(artworksCursor)}
+          onOpen={openArtwork}
+        />
+      </div>
 
       {/* Search results render as a fixed overlay on top of the grid so the
           underlying scroll position survives toggling search on and off.
@@ -423,9 +425,6 @@ function ArtworkGridSection({
             <DiscoverArtworkTile artwork={art} index={i} onOpen={onOpen} />
           </div>
         ))}
-        {/* Placeholder tiles to fill the viewport when real artwork count
-            is short. Pure visual fillers — no pointer events. */}
-        <SkeletonFillTiles actualCount={artworks.length} />
       </div>
       <div ref={sentinelRef} aria-hidden className="h-[1px]" />
       {hasMore && (
