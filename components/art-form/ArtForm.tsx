@@ -250,7 +250,14 @@ export function ArtForm({
       }
       setResult('saved');
       setTimeout(() => {
-        router.refresh();
+        // No router.refresh() — the server actions already revalidatePath()
+        // /<username> + /app/home, and next.config staleTimes.dynamic=0 means
+        // the client Router Cache is stale on navigation. Refresh would force
+        // a re-fetch of the CURRENT route — fine for save, but in delete the
+        // artwork is gone and the route's getArtworkDetail() returns null, so
+        // the @modal slot's intercept calls notFound() which bubbles up to
+        // the root not-found page and takes over the viewport. Skipping the
+        // refresh avoids that 404 flash AND saves a redundant fetch.
         if (mode === 'overlay') router.back();
         else router.push(backHref);
       }, SUCCESS_DISPLAY_MS);
@@ -270,18 +277,14 @@ export function ArtForm({
       setConfirmOpen(false);
       setResult('deleted');
       setTimeout(() => {
-        if (mode === 'overlay') {
-          // Modal sits over /[username]; refresh invalidates the underlying
-          // RSC so the artwork grid reflects the deletion once we pop back.
-          router.refresh();
-          router.back();
-        } else {
-          // Standalone modal IS the route. router.refresh() would re-fetch
-          // the current route — but the artwork is now soft-deleted, so the
-          // page would render notFound() and flash a 404 before the push to
-          // /<username> lands. Destination calls noStore(); fetches fresh.
-          router.push(backHref);
-        }
+        // No router.refresh() — see the matching note in onFormSubmit. In
+        // delete it's especially important: refreshing while the URL is
+        // still /app/edit-art/<id> re-mounts the @modal intercept whose
+        // getArtworkDetail() now returns null, causing notFound() to bubble
+        // to the root not-found page and a full-screen 404 flash before we
+        // navigate away.
+        if (mode === 'overlay') router.back();
+        else router.push(backHref);
       }, SUCCESS_DISPLAY_MS);
     });
   }
