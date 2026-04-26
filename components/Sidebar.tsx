@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
-import { focalToObjectPosition } from '@/lib/focal-point';
+import { Avatar } from '@/components/profile/Avatar';
 
 interface SidebarProps {
   username: string;
@@ -130,6 +129,7 @@ export function Sidebar({
             avatarUrl={avatarUrl}
             size={32}
             active={isProfile}
+            textSize="text-[12px]"
             focalX={avatarFocalX}
             focalY={avatarFocalY}
             aspectRatio={avatarAspectRatio}
@@ -187,50 +187,3 @@ function BadgeBubble({ count }: { count: number }) {
   );
 }
 
-function Avatar({
-  initials,
-  avatarUrl,
-  size,
-  active,
-  focalX = 0.5,
-  focalY = 0.5,
-  aspectRatio,
-}: {
-  initials: string;
-  avatarUrl: string | null;
-  size: number;
-  active?: boolean;
-  focalX?: number;
-  focalY?: number;
-  aspectRatio?: number | null;
-}) {
-  const ring = active ? 'ring-2 ring-accent' : '';
-  if (avatarUrl) {
-    const pos = aspectRatio
-      ? focalToObjectPosition(aspectRatio, { x: focalX, y: focalY })
-      : { x: 50, y: 50 };
-    return (
-      <span
-        style={{ width: size, height: size }}
-        className={`block rounded-full overflow-hidden shrink-0 bg-divider ${ring}`}
-      >
-        <Image
-          src={avatarUrl}
-          alt=""
-          width={size}
-          height={size}
-          className="w-full h-full object-cover"
-          style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
-        />
-      </span>
-    );
-  }
-  return (
-    <span
-      style={{ width: size, height: size }}
-      className={`rounded-full bg-divider font-semibold text-[12px] flex items-center justify-center ${ring} ${active ? 'text-accent' : 'text-ink'}`}
-    >
-      {initials}
-    </span>
-  );
-}

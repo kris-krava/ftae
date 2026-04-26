@@ -5,6 +5,8 @@ interface AvatarProps {
   initials: string;
   avatarUrl: string | null;
   size: number;
+  /** Adds the active treatment (accent ring + accent-colored initials). */
+  active?: boolean;
   className?: string;
   textSize?: string;
   priority?: boolean;
@@ -22,6 +24,7 @@ export function Avatar({
   initials,
   avatarUrl,
   size,
+  active,
   className,
   textSize,
   priority,
@@ -29,7 +32,8 @@ export function Avatar({
   focalY = 0.5,
   aspectRatio,
 }: AvatarProps) {
-  const baseClass = `rounded-full overflow-hidden shrink-0 bg-divider ${className ?? ''}`;
+  const ring = active ? 'ring-2 ring-accent' : '';
+  const baseClass = `rounded-full overflow-hidden shrink-0 bg-divider ${ring} ${className ?? ''}`.trim();
   if (avatarUrl) {
     const pos = aspectRatio
       ? focalToObjectPosition(aspectRatio, { x: focalX, y: focalY })
@@ -48,9 +52,10 @@ export function Avatar({
       </div>
     );
   }
+  const initialsColor = active ? 'text-accent' : 'text-ink';
   return (
     <div
-      className={`${baseClass} flex items-center justify-center text-ink font-semibold ${textSize ?? 'text-[24px]'}`}
+      className={`${baseClass} flex items-center justify-center font-semibold ${initialsColor} ${textSize ?? 'text-[24px]'}`}
       style={{ width: size, height: size }}
       aria-hidden
     >

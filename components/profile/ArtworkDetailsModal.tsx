@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { XClose, ChevronLeft, ChevronRight, Star01 } from '@/components/icons';
 import { FollowButton } from './FollowButton';
-import type { ArtworkArtist, ArtworkDetail } from '@/app/_lib/profile';
+import { Avatar } from './Avatar';
+import type { ArtworkDetail } from '@/app/_lib/profile';
 
 interface ArtworkDetailsModalProps {
   artwork: ArtworkDetail;
@@ -203,7 +204,15 @@ export function ArtworkDetailsModal({
                 href={`/${artwork.artist.username}`}
                 className="flex items-center gap-[10px] min-w-0"
               >
-                <Avatar artist={artwork.artist} size={40} />
+                <Avatar
+                  initials={(artwork.artist.name?.trim() || artwork.artist.username).slice(0, 2).toUpperCase()}
+                  avatarUrl={artwork.artist.avatar_url}
+                  size={40}
+                  textSize="text-[12px]"
+                  focalX={artwork.artist.avatar_focal_x ?? 0.5}
+                  focalY={artwork.artist.avatar_focal_y ?? 0.5}
+                  aspectRatio={artwork.artist.avatar_aspect_ratio}
+                />
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-[6px]">
                     <span className="font-sans font-semibold text-[14px] text-ink truncate">
@@ -274,25 +283,3 @@ export function ArtworkDetailsModal({
   );
 }
 
-function Avatar({ artist, size }: { artist: ArtworkArtist; size: number }) {
-  if (artist.avatar_url) {
-    return (
-      <Image
-        src={artist.avatar_url}
-        alt=""
-        width={size}
-        height={size}
-        className="rounded-full object-cover shrink-0"
-      />
-    );
-  }
-  const initials = (artist.name?.trim() || artist.username).slice(0, 2).toUpperCase();
-  return (
-    <span
-      style={{ width: size, height: size }}
-      className="rounded-full bg-divider text-ink text-[12px] font-semibold flex items-center justify-center shrink-0"
-    >
-      {initials}
-    </span>
-  );
-}

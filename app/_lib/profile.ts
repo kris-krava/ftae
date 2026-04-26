@@ -115,6 +115,9 @@ export interface ArtworkArtist {
   username: string;
   name: string | null;
   avatar_url: string | null;
+  avatar_focal_x: number | null;
+  avatar_focal_y: number | null;
+  avatar_aspect_ratio: number | null;
   is_founding_member: boolean;
 }
 
@@ -139,7 +142,7 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
     .select(
       `id, user_id, title, year, medium, width, height, depth, description:artist_statement, created_at,
        artwork_photos(id, url, sort_order, focal_x, focal_y),
-       users:user_id ( id, username, name, avatar_url, is_founding_member )`,
+       users:user_id ( id, username, name, avatar_url, avatar_focal_x, avatar_focal_y, avatar_aspect_ratio, is_founding_member )`,
     )
     .eq('id', artworkId)
     .eq('is_active', true)
@@ -170,6 +173,9 @@ export async function getArtworkDetail(artworkId: string): Promise<ArtworkDetail
       username: artist.username,
       name: artist.name,
       avatar_url: artist.avatar_url,
+      avatar_focal_x: artist.avatar_focal_x,
+      avatar_focal_y: artist.avatar_focal_y,
+      avatar_aspect_ratio: artist.avatar_aspect_ratio,
       is_founding_member: artist.is_founding_member,
     },
   };
