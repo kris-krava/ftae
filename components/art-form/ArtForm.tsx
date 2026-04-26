@@ -270,9 +270,18 @@ export function ArtForm({
       setConfirmOpen(false);
       setResult('deleted');
       setTimeout(() => {
-        router.refresh();
-        if (mode === 'overlay') router.back();
-        else router.push(backHref);
+        if (mode === 'overlay') {
+          // Modal sits over /[username]; refresh invalidates the underlying
+          // RSC so the artwork grid reflects the deletion once we pop back.
+          router.refresh();
+          router.back();
+        } else {
+          // Standalone modal IS the route. router.refresh() would re-fetch
+          // the current route — but the artwork is now soft-deleted, so the
+          // page would render notFound() and flash a 404 before the push to
+          // /<username> lands. Destination calls noStore(); fetches fresh.
+          router.push(backHref);
+        }
       }, SUCCESS_DISPLAY_MS);
     });
   }
