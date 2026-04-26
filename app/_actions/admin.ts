@@ -12,7 +12,7 @@ export async function toggleUserActive(
   targetUserId: string,
   currentlyActive: boolean,
 ): Promise<AdminToggleResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -9,7 +9,7 @@ import { Home02 } from '@/components/icons';
 import { HomeFeedClient } from './HomeFeedClient';
 
 export default async function HomePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

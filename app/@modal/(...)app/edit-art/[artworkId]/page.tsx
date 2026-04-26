@@ -28,7 +28,7 @@ export default async function EditArtModalIntercept(props: Props) {
   const params = await props.params;
   noStore();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

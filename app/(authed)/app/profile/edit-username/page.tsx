@@ -7,7 +7,7 @@ import { EditUsernameForm } from './EditUsernameForm';
 import { USERNAME_COOLDOWN_MS } from '@/lib/username-cooldown';
 
 export default async function EditUsernamePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

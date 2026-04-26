@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { reportError } from '@/lib/observability';
 
 export async function markAllNotificationsRead(): Promise<{ ok: boolean }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

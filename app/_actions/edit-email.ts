@@ -37,7 +37,7 @@ export type EditEmailResult =
 // routes mark each side confirmed and, when both are done, apply the change
 // via supabaseAdmin.auth.admin.updateUserById and update public.users.
 export async function requestEmailChange(formData: FormData): Promise<EditEmailResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -156,7 +156,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
 // as a defensive no-op for the /done page in case the route handler's
 // best-effort public.users update failed silently.
 export async function syncEmailFromAuth(): Promise<{ ok: boolean; email?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

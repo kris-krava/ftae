@@ -10,7 +10,7 @@ export type ReauthResult =
   | { ok: false; error: string };
 
 export async function requestReauth(formData: FormData): Promise<ReauthResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

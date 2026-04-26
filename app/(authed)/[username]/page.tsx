@@ -27,7 +27,7 @@ export default async function ProfilePage(props: ProfilePageProps) {
   const profileUser = await getUserByUsername(username);
   if (!profileUser) notFound();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();

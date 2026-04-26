@@ -22,7 +22,7 @@ const MAX_ARTWORK_PHOTOS = 6;
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 async function requireUserId(): Promise<string> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -19,7 +19,7 @@ function safeNext(raw: string | undefined): string | null {
 
 export default async function ReauthPage(props: ReauthPageProps) {
   const searchParams = await props.searchParams;
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

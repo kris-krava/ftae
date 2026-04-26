@@ -7,7 +7,7 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { CheckCircle } from '@/components/icons';
 
 export default async function EmailUpdatedPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

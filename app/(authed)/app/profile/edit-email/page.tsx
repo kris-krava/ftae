@@ -4,7 +4,7 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { EditEmailForm } from './EditEmailForm';
 
 export default async function EditEmailPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

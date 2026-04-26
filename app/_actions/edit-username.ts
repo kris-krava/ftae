@@ -33,7 +33,7 @@ const UsernameSchema = z.string().trim().toLowerCase().min(3).max(30);
 // re-validates state at click time so a concurrent rename or cooldown change
 // still wins.
 export async function requestUsernameChange(formData: FormData): Promise<EditUsernameResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

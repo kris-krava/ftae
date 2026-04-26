@@ -18,7 +18,7 @@ const HELP_EMAIL = 'help@freetradeartexchange.com';
 export default async function PendingEmailChangePage() {
   noStore();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

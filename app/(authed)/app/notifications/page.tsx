@@ -5,7 +5,7 @@ import { markAllNotificationsRead } from '@/app/_actions/notifications';
 import { NotificationItem } from '@/components/NotificationItem';
 
 export default async function NotificationsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

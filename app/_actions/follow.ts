@@ -8,7 +8,7 @@ import { rateLimit } from '@/lib/rate-limit';
 export type FollowResult = { ok: true; following: boolean } | { ok: false; error: string };
 
 export async function toggleFollow(targetUserId: string, targetUsername: string): Promise<FollowResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

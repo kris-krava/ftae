@@ -17,7 +17,7 @@ export default async function ArtworkDetailsPage(props: Props) {
 
   const neighbors = await getArtworkNeighbors(artwork.user_id, artwork.id);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();

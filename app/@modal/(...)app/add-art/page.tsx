@@ -10,7 +10,7 @@ import { AddArtModal } from '@/app/(authed)/app/add-art/AddArtModal';
 // mounted behind it. A nested intercept under /app/app/@modal couldn't catch
 // navigations originating outside the /app/* layout tree.
 export default async function AddArtModalIntercept() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -14,7 +14,7 @@ export default async function EditArtPage(props: Props) {
   const params = await props.params;
   noStore();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

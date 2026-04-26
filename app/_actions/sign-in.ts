@@ -1,6 +1,6 @@
 'use server';
 
-import { headers, type UnsafeUnwrappedHeaders } from 'next/headers';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { isReservedEmail } from '@/lib/reserved-emails';
@@ -12,8 +12,8 @@ export type RequestMagicLinkResult =
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function getClientIp(): string | null {
-  const h = (headers() as unknown as UnsafeUnwrappedHeaders);
+async function getClientIp(): Promise<string | null> {
+  const h = await headers();
   const fwd = h.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();
   return h.get('x-real-ip');
@@ -39,7 +39,7 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   if (!emailLimit.ok) {
     return { ok: false, error: 'Too many sign-in attempts for this email. Please try again later.' };
   }
-  const ip = getClientIp();
+  const ip = await getClientIp();
   if (ip) {
     const ipLimit = await rateLimit(`signin-ip:${ip}`, 20, 60 * 60_000);
     if (!ipLimit.ok) {
@@ -62,7 +62,7 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   const callbackQs = callbackParams.toString();
   const callbackUrl = `${origin}/auth/callback` + (callbackQs ? `?${callbackQs}` : '');
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {

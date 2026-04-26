@@ -29,7 +29,7 @@ export async function requireOnboardingUser(): Promise<{
   email: string;
   profile: OnboardingProfile;
 }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

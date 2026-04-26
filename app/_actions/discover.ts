@@ -17,7 +17,7 @@ export async function fetchArtworkModal(artworkId: string): Promise<ArtworkModal
   const artwork = await getArtworkDetail(artworkId);
   if (!artwork) return null;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
@@ -39,7 +39,7 @@ export interface ArtworksPageResult {
 }
 
 export async function loadMoreArtworks(cursor: string | null): Promise<ArtworksPageResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -61,7 +61,7 @@ export interface ArtistsSearchResult {
 }
 
 export async function searchArtistsAction(query: string, cursor: string | null): Promise<ArtistsSearchResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

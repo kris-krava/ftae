@@ -6,7 +6,7 @@ import { getMediums, getUserMediumIds } from '@/app/_lib/onboarding';
 import { EditModal } from './EditModal';
 
 export default async function ProfileEditPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

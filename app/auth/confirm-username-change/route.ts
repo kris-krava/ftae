@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   // Confirm the request originates from the same authenticated user the
   // token was issued for. Without this check, a stolen-link attacker who's
   // signed in to a different account could change THAT account's username.
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
