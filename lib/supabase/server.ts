@@ -1,9 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, type UnsafeUnwrappedCookies } from 'next/headers';
 import { SESSION_TTL_COOKIE, SESSION_TTL_30D_SECONDS } from '@/lib/session-persistence'
 
 export function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = (cookies() as unknown as UnsafeUnwrappedCookies)
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

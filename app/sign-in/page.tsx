@@ -3,7 +3,7 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { LandingForm } from '@/app/_components/LandingForm';
 
 interface SignInPageProps {
-  searchParams: { next?: string };
+  searchParams: Promise<{ next?: string }>;
 }
 
 function safeNext(raw: string | undefined): string | null {
@@ -16,7 +16,8 @@ function safeNext(raw: string | undefined): string | null {
   return raw;
 }
 
-export default function SignInPage({ searchParams }: SignInPageProps) {
+export default async function SignInPage(props: SignInPageProps) {
+  const searchParams = await props.searchParams;
   const next = safeNext(searchParams.next);
 
   return (

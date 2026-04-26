@@ -7,10 +7,11 @@ import { getArtworkDetail } from '@/app/_lib/profile';
 import { EditArtModal } from './EditArtModal';
 
 interface Props {
-  params: { artworkId: string };
+  params: Promise<{ artworkId: string }>;
 }
 
-export default async function EditArtPage({ params }: Props) {
+export default async function EditArtPage(props: Props) {
+  const params = await props.params;
   noStore();
 
   const supabase = createClient();

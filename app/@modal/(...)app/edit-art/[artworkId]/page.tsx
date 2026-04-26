@@ -7,7 +7,7 @@ import { getArtworkDetail } from '@/app/_lib/profile';
 import { EditArtModal } from '@/app/(authed)/app/edit-art/[artworkId]/EditArtModal';
 
 interface Props {
-  params: { artworkId: string };
+  params: Promise<{ artworkId: string }>;
 }
 
 // Root-level intercept (`(...)`) so navigation to /app/edit-art/[id] from
@@ -24,7 +24,8 @@ interface Props {
 // router.back() lands. Returning null leaves the modal slot empty during
 // that brief transitional re-render. Bad-id direct hits are still 404'd by
 // the standalone page at app/(authed)/app/edit-art/[artworkId]/page.tsx.
-export default async function EditArtModalIntercept({ params }: Props) {
+export default async function EditArtModalIntercept(props: Props) {
+  const params = await props.params;
   noStore();
 
   const supabase = createClient();

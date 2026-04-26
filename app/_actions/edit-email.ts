@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
 import { reportError } from '@/lib/observability';
-import { resend, FROM_EMAIL } from '@/lib/resend';
+import { getResend, FROM_EMAIL } from '@/lib/resend';
 import {
   issueEmailChangeToken,
   EMAIL_CHANGE_TOKEN_TTL_SECONDS,
@@ -67,6 +67,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     return { ok: false, error: 'That email is already in use by another account.' };
   }
 
+  const resend = getResend();
   if (!resend) {
     reportError({
       area: 'edit-email',
@@ -105,7 +106,7 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
     return { ok: false, error: 'Could not start email change. Please try again.' };
   }
 
-  const h = headers();
+  const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };

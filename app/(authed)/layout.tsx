@@ -41,7 +41,7 @@ export default async function AppLayout({
 
   if (!profile) redirect('/');
 
-  const path = headers().get('x-pathname') ?? '';
+  const path = (await headers()).get('x-pathname') ?? '';
   const isTakeover = TAKEOVER_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
   if (isTakeover) {
     return <>{children}</>;

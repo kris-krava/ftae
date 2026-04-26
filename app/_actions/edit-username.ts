@@ -9,7 +9,7 @@ import { isReservedUsername } from '@/lib/username-rules';
 import { validateUsername } from '@/lib/username-validation';
 import { USERNAME_COOLDOWN_MS } from '@/lib/username-cooldown';
 import { reportError } from '@/lib/observability';
-import { resend, FROM_EMAIL } from '@/lib/resend';
+import { getResend, FROM_EMAIL } from '@/lib/resend';
 import { issueUsernameChangeToken } from '@/lib/username-change-token';
 import {
   CONFIRM_USERNAME_CHANGE_SUBJECT,
@@ -79,6 +79,7 @@ export async function requestUsernameChange(formData: FormData): Promise<EditUse
     .maybeSingle();
   if (clash) return { ok: false, error: 'That username is taken.' };
 
+  const resend = getResend();
   if (!resend) {
     reportError({
       area: 'edit-username',
@@ -89,7 +90,7 @@ export async function requestUsernameChange(formData: FormData): Promise<EditUse
     return { ok: false, error: 'Email service is unavailable. Please try again later.' };
   }
 
-  const h = headers();
+  const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };

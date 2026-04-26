@@ -5,10 +5,11 @@ import { getArtworkDetail, getArtworkNeighbors, isFollowing } from '@/app/_lib/p
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 
 interface Props {
-  params: { username: string; artworkId: string };
+  params: Promise<{ username: string; artworkId: string }>;
 }
 
-export default async function ArtworkDetailsPage({ params }: Props) {
+export default async function ArtworkDetailsPage(props: Props) {
+  const params = await props.params;
   noStore();
   const artwork = await getArtworkDetail(params.artworkId);
   if (!artwork) notFound();
@@ -36,7 +37,8 @@ export default async function ArtworkDetailsPage({ params }: Props) {
   );
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata(props: Props) {
+  const params = await props.params;
   const artwork = await getArtworkDetail(params.artworkId);
   if (!artwork) return {};
   const title = artwork.title ?? 'Artwork';

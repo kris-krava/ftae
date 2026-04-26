@@ -1,6 +1,6 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { headers, type UnsafeUnwrappedHeaders } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { isReservedEmail } from '@/lib/reserved-emails';
@@ -13,7 +13,7 @@ export type RequestMagicLinkResult =
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getClientIp(): string | null {
-  const h = headers();
+  const h = (headers() as unknown as UnsafeUnwrappedHeaders);
   const fwd = h.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();
   return h.get('x-real-ip');
@@ -50,7 +50,7 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   const next = safeNext(formData.get('next') as string | null);
   const remember = formData.get('remember') === '1';
 
-  const h = headers();
+  const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };

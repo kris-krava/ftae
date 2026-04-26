@@ -4,7 +4,7 @@ import { Wordmark } from '@/app/_components/Wordmark';
 import { ReauthForm } from './ReauthForm';
 
 interface ReauthPageProps {
-  searchParams: { next?: string };
+  searchParams: Promise<{ next?: string }>;
 }
 
 function safeNext(raw: string | undefined): string | null {
@@ -17,7 +17,8 @@ function safeNext(raw: string | undefined): string | null {
   return raw;
 }
 
-export default async function ReauthPage({ searchParams }: ReauthPageProps) {
+export default async function ReauthPage(props: ReauthPageProps) {
+  const searchParams = await props.searchParams;
   const supabase = createClient();
   const {
     data: { user },

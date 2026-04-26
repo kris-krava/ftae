@@ -6,10 +6,11 @@ import { fetchAdminUsersPage } from '@/app/_lib/admin';
 import { UserRow } from './UserRow';
 
 interface AdminPageProps {
-  searchParams: { cursor?: string; test?: string };
+  searchParams: Promise<{ cursor?: string; test?: string }>;
 }
 
-export default async function AdminPage({ searchParams }: AdminPageProps) {
+export default async function AdminPage(props: AdminPageProps) {
+  const searchParams = await props.searchParams;
   const supabase = createClient();
   const {
     data: { user },

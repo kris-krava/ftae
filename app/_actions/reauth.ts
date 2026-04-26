@@ -23,7 +23,7 @@ export async function requestReauth(formData: FormData): Promise<ReauthResult> {
 
   // Build the callback URL using the current request's origin so dev/preview
   // hosts work without env-var coupling.
-  const h = headers();
+  const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };

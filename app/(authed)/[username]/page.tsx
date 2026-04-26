@@ -15,10 +15,11 @@ import { FollowButton } from '@/components/profile/FollowButton';
 import { BackButton } from '@/components/profile/BackButton';
 
 interface ProfilePageProps {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default async function ProfilePage(props: ProfilePageProps) {
+  const params = await props.params;
   noStore();
   const username = params.username.toLowerCase();
   if (isReservedUsername(username)) notFound();
@@ -89,7 +90,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   );
 }
 
-export async function generateMetadata({ params }: ProfilePageProps) {
+export async function generateMetadata(props: ProfilePageProps) {
+  const params = await props.params;
   const username = params.username.toLowerCase();
   if (isReservedUsername(username)) return {};
   const user = await getUserByUsername(username);
