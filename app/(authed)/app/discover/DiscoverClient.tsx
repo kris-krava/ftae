@@ -7,11 +7,10 @@ import { ArtistCard } from '@/components/ArtistCard';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { ReferralCTA } from '@/components/ReferralCTA';
 import {
-  fetchArtworkModal,
   loadMoreArtworks,
   searchArtistsAction,
-  type ArtworkModalPayload,
 } from '@/app/_actions/discover';
+import { useArtworkModal } from '@/lib/use-artwork-modal';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
@@ -58,13 +57,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
   const [artistsLoadingMore, setArtistsLoadingMore] = useState(false);
   const [, startSearch] = useTransition();
 
-  const [modal, setModal] = useState<ArtworkModalPayload | null>(null);
-
-  const openArtwork = useCallback(async (artworkId: string) => {
-    const payload = await fetchArtworkModal(artworkId);
-    if (payload) setModal(payload);
-  }, []);
-  const closeModal = useCallback(() => setModal(null), []);
+  const { modal, openArtwork, closeModal } = useArtworkModal();
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

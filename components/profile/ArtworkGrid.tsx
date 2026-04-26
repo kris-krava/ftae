@@ -1,11 +1,10 @@
 'use client';
 
-import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlusSquare, Shuffle01 } from '@/components/icons';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
-import { fetchArtworkModal, type ArtworkModalPayload } from '@/app/_actions/discover';
+import { useArtworkModal } from '@/lib/use-artwork-modal';
 import type { ProfileArtwork } from '@/app/_lib/profile';
 
 function objectPositionStyle(focalX: number, focalY: number): { objectPosition: string } {
@@ -38,13 +37,7 @@ export function ArtworkGrid({
   showAddTile,
   addHref = '/app/add-art',
 }: ArtworkGridProps) {
-  const [modal, setModal] = useState<ArtworkModalPayload | null>(null);
-
-  const openArtwork = useCallback(async (artworkId: string) => {
-    const payload = await fetchArtworkModal(artworkId);
-    if (payload) setModal(payload);
-  }, []);
-  const closeModal = useCallback(() => setModal(null), []);
+  const { modal, openArtwork, closeModal } = useArtworkModal();
 
   return (
     <>

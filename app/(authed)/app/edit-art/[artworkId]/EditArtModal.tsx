@@ -2,6 +2,7 @@
 
 import { ArtForm, type ArtFormPayload } from '@/components/art-form/ArtForm';
 import { updateArtwork, softDeleteArtwork } from '@/app/_actions/artwork';
+import { emitArtworkUpdated, emitArtworkDeleted } from '@/lib/artwork-events';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 
 interface EditArtModalProps {
@@ -45,11 +46,15 @@ export function EditArtModal({ artwork, backHref, mode = 'standalone' }: EditArt
     }
     fd.set('photo_order', JSON.stringify(order));
 
-    return updateArtwork(fd);
+    const result = await updateArtwork(fd);
+    if (result.ok) emitArtworkUpdated(artwork.id);
+    return result;
   }
 
   async function handleDelete() {
-    return softDeleteArtwork(artwork.id);
+    const result = await softDeleteArtwork(artwork.id);
+    if (result.ok) emitArtworkDeleted(artwork.id);
+    return result;
   }
 
   return (

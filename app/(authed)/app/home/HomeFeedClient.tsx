@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiscoverArtworkTile } from '@/components/DiscoverArtworkTile';
 import { FollowCTA } from '@/components/FollowCTA';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
-import { fetchArtworkModal, type ArtworkModalPayload } from '@/app/_actions/discover';
 import { loadMoreHomeFeed } from '@/app/_actions/home';
+import { useArtworkModal } from '@/lib/use-artwork-modal';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
 const TILE_BASIS =
@@ -39,7 +39,7 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
   const [artworks, setArtworks] = useState(initialArtworks);
   const [cursor, setCursor] = useState(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [modal, setModal] = useState<ArtworkModalPayload | null>(null);
+  const { modal, openArtwork, closeModal } = useArtworkModal();
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -129,12 +129,6 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
     modalOpenRef.current = modal !== null;
     if (modal === null) startDwellRef.current();
   }, [modal]);
-
-  const openArtwork = useCallback(async (artworkId: string) => {
-    const payload = await fetchArtworkModal(artworkId);
-    if (payload) setModal(payload);
-  }, []);
-  const closeModal = useCallback(() => setModal(null), []);
 
   const fetchNext = useCallback(async () => {
     if (loadingMore || !cursor) return;
