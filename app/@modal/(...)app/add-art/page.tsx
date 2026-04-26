@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { AddArtModal } from '@/app/(authed)/app/add-art/AddArtModal';
+import { AddArtModal } from '@/app/(authed)/(chrome)/app/add-art/AddArtModal';
 
 // Root-level intercept (`(...)`) so navigation to /app/add-art from anywhere —
 // /app/* routes (Home, Discover, Trades, …) AND /[username] profile pages —
