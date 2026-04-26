@@ -47,26 +47,26 @@ export function Sidebar({
   return (
     <aside
       aria-label="Primary"
-      className={`group/sidebar fixed top-0 left-0 bottom-0 hidden tab:block bg-surface w-[60px] hover:w-[200px] overflow-hidden z-40 ${SIDEBAR_TRANSITION}`}
+      className={`group/sidebar fixed top-0 left-0 bottom-0 hidden tab:block bg-surface w-[60px] hover:w-[176px] overflow-hidden z-40 ${SIDEBAR_TRANSITION}`}
     >
       <span aria-hidden className="absolute right-0 top-0 bottom-0 w-px bg-divider/50" />
 
-      <div className="relative h-[80px]">
+      <div className="relative h-[100px]">
         <span
           aria-hidden
-          className={`absolute left-[18px] top-[32px] font-script text-ink text-[14px] tracking-[-0.5px] ${LABEL_TRANSITION} opacity-100 group-hover/sidebar:opacity-0`}
+          className={`absolute left-[19px] top-[32px] font-script text-ink text-[14px] leading-[18px] tracking-[-0.5px] ${LABEL_TRANSITION} opacity-100 group-hover/sidebar:opacity-0`}
         >
           FT
         </span>
         <span
           aria-hidden
-          className={`absolute left-[18px] top-[32px] font-script text-ink text-[14px] tracking-[-0.5px] ${LABEL_TRANSITION} opacity-0 group-hover/sidebar:opacity-100`}
+          className={`absolute left-[19px] top-[32px] font-script text-ink text-[14px] leading-[18px] tracking-[-0.5px] text-center whitespace-pre ${LABEL_TRANSITION} opacity-0 group-hover/sidebar:opacity-100`}
         >
-          FTAE
+          {'Free Trade Art\nExchange'}
         </span>
       </div>
 
-      <ul className="mt-[30px] flex flex-col gap-[6px]">
+      <ul className="flex flex-col gap-[6px]">
         <SidebarItem
           href="/app/home"
           label="Home"
