@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Edit05, Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
+import { PlatformBadge } from '@/components/PlatformBadge';
 import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
 import { deriveInitials } from '@/lib/initials';
-import { getPlatformLabel } from '@/lib/social-platform';
 
 interface ProfileHeaderProps {
   user: ProfileUser;
@@ -30,7 +30,6 @@ export function ProfileHeader({
   const handle = user.social_handle?.trim().replace(/^@+/, '') ?? null;
   const handleLabel = handle ? `@${handle}` : null;
   const handleHref = handle ? socialHandleUrl(user.social_platform, handle) : null;
-  const platformLabel = getPlatformLabel(user.social_platform);
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -117,8 +116,8 @@ export function ProfileHeader({
         </a>
       )}
       {handleLabel && (
-        <p className="font-sans text-[13px] text-center mt-[4px]">
-          {platformLabel && <span className="text-muted">{platformLabel}: </span>}
+        <p className="font-sans text-[13px] text-center mt-[4px] inline-flex items-center gap-[6px]">
+          {user.social_platform && <PlatformBadge platform={user.social_platform} />}
           {handleHref ? (
             <a
               href={handleHref}
