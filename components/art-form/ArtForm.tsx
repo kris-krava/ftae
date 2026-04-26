@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
+import * as Sentry from '@sentry/nextjs';
 import {
   DndContext,
   PointerSensor,
@@ -186,6 +187,9 @@ export function ArtForm({
       ]);
     } catch (err) {
       console.error(err);
+      Sentry.captureException(err, {
+        tags: { area: 'art-form', op: 'photo_compress' },
+      });
       setError('Could not process one or more photos.');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';

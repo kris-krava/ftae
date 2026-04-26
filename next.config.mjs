@@ -68,7 +68,6 @@ export default withSentryConfig(nextConfig, {
   // Hide source maps from public bundle URLs — Sentry still gets them via the
   // upload step.
   hideSourceMaps: true,
-  disableLogger: true,
   // Skip source-map upload entirely when no auth token (dev / CI without the
   // env var). Avoids noisy build output and broken `next build` runs.
   sourcemaps: {

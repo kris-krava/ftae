@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { scrubPii } from '@/lib/sentry-scrub';
 
 // Server-side (Node runtime) error tracking — server components, server
 // actions, route handlers. No-op without SENTRY_DSN so local dev runs clean.
@@ -9,5 +10,7 @@ if (dsn) {
     dsn,
     environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
     tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend: scrubPii,
   });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, type ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -20,7 +21,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error): void {
-    console.error(`[ErrorBoundary${this.props.label ? `:${this.props.label}` : ''}]`, error);
+    const label = this.props.label ?? 'unlabeled';
+    console.error(`[ErrorBoundary:${label}]`, error);
+    Sentry.captureException(error, {
+      tags: { area: 'error-boundary', boundary: label },
+    });
   }
 
   reset = (): void => {

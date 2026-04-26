@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
+import * as Sentry from '@sentry/nextjs';
 import { PlusSquare } from '@/components/icons';
 import { AvatarEditor, AvatarUploading } from '@/components/profile/AvatarEditor';
 import {
@@ -167,6 +168,9 @@ export function Step1Form({
       });
     } catch (err) {
       console.error(err);
+      Sentry.captureException(err, {
+        tags: { area: 'onboarding-step-1', op: 'avatar_compress_or_upload' },
+      });
       setError('Could not process image.');
       setIsUploadingAvatar(false);
     } finally {
