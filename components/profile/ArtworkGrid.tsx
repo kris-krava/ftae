@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PlusSquare, Shuffle01 } from '@/components/icons';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
+import { SkeletonFillTiles } from '@/components/SkeletonFillTiles';
 import { fetchArtworkModal, type ArtworkModalPayload } from '@/app/_actions/discover';
 import type { ProfileArtwork } from '@/app/_lib/profile';
 
@@ -61,6 +62,7 @@ export function ArtworkGrid({
         {artworks.map((art) => (
           <ArtworkTile key={art.id} artwork={art} onOpen={openArtwork} />
         ))}
+        <SkeletonFillTiles actualCount={artworks.length + (showAddTile ? 1 : 0)} />
       </div>
 
       {modal && (
