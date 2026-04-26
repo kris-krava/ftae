@@ -8,6 +8,13 @@ const nextConfig = {
     // default 30s client-side router cache masks those changes until it ages
     // out. Zero it so navigation always reflects current server state.
     staleTimes: { dynamic: 0 },
+    // ArtForm allows up to 8 photos compressed to 2 MB each, plus form fields.
+    // Default 1 MB rejects anything past one small photo. Direct-to-Storage
+    // uploads via signed URL would remove this ceiling entirely — pending
+    // refactor (bundle with save-art-to-trade work).
+    serverActions: {
+      bodySizeLimit: '20mb',
+    },
   },
   images: {
     remotePatterns: [
