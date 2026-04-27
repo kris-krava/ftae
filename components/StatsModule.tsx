@@ -33,9 +33,6 @@ export function StatsModule({
         Invite artists you know
       </p>
       <ReferralShare referralUrl={referralUrl} className="mt-[12px]" />
-      <p className="font-sans text-[11px] text-muted text-center mt-[12px]">
-        Earn 1 month free for each referral (3 max)
-      </p>
     </div>
   );
 }

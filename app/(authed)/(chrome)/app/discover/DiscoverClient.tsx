@@ -11,6 +11,7 @@ import {
   searchArtistsAction,
 } from '@/app/_actions/discover';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
+import { REFERRAL_CTA_DISMISSED_KEY } from '@/lib/referral';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
@@ -43,6 +44,9 @@ interface DiscoverClientProps {
   initialBookmarkedIds: string[];
   viewerId: string;
   isAuthenticated: boolean;
+  /** null when the viewer has no referral_code (shouldn't happen post-signup,
+   * but the schema allows it). The CTA panel is suppressed in that case. */
+  referralUrl: string | null;
 }
 
 export function DiscoverClient({
@@ -51,6 +55,7 @@ export function DiscoverClient({
   initialBookmarkedIds,
   viewerId,
   isAuthenticated,
+  referralUrl,
 }: DiscoverClientProps) {
   const [query, setQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
@@ -87,6 +92,17 @@ export function DiscoverClient({
   const [referralMounted, setReferralMounted] = useState(false);
   // Drives the opacity fade-in once the card is mounted; flipped on next frame.
   const [referralReady, setReferralReady] = useState(false);
+  // Per-login dismissal — set when the user clicks the close X. Cleared by
+  // the sign-out client handler so a fresh session restores the CTA.
+  const [referralDismissed, setReferralDismissed] = useState(false);
+  const referralDismissedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem(REFERRAL_CTA_DISMISSED_KEY) === '1') {
+      referralDismissedRef.current = true;
+      setReferralDismissed(true);
+    }
+  }, []);
   // Both the modal and the search-active state pause the dwell timer. When
   // either flips back to inactive AND the referral is still un-mounted, the
   // dwell restarts from zero.
@@ -133,6 +149,7 @@ export function DiscoverClient({
     // if it was scrolled away. fullReveal restores both (offset = 0) and is
     // used by the scroll-up snap-back.
     const dwellReveal = () => {
+      if (referralDismissedRef.current || !referralUrl) return;
       setReferralMounted(true);
       const target = Math.min(offset, searchRowHeightRef.current);
       if (offset === target) return;
@@ -151,15 +168,17 @@ export function DiscoverClient({
     snapPanelRef.current = snapPanelToTop;
 
     const fullReveal = () => {
-      setReferralMounted(true);
+      if (!referralDismissedRef.current && referralUrl) setReferralMounted(true);
       snapPanelToTop();
     };
 
     const startDwell = () => {
       if (dwellTimer) window.clearTimeout(dwellTimer);
       if (modalOpenRef.current || searchActiveRef.current) return;
+      if (referralDismissedRef.current || !referralUrl) return;
       dwellTimer = window.setTimeout(() => {
         if (modalOpenRef.current || searchActiveRef.current) return;
+        if (referralDismissedRef.current || !referralUrl) return;
         dwellReveal();
       }, REFERRAL_DWELL_MS);
     };
@@ -342,7 +361,7 @@ export function DiscoverClient({
           </div>
         </div>
 
-        {referralMounted && (
+        {referralMounted && referralUrl && !referralDismissed && (
           <div
             className="mt-[24px] flex justify-center"
             style={{
@@ -351,7 +370,18 @@ export function DiscoverClient({
               pointerEvents: referralVisible ? 'auto' : 'none',
             }}
           >
-            <ReferralCTA />
+            <ReferralCTA
+              referralUrl={referralUrl}
+              onClose={() => {
+                if (typeof window !== 'undefined') {
+                  window.localStorage.setItem(REFERRAL_CTA_DISMISSED_KEY, '1');
+                }
+                referralDismissedRef.current = true;
+                setReferralDismissed(true);
+                setReferralMounted(false);
+                setReferralReady(false);
+              }}
+            />
           </div>
         )}
       </div>

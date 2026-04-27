@@ -6,6 +6,7 @@ import { FollowCTA } from '@/components/FollowCTA';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { loadMoreHomeFeed } from '@/app/_actions/home';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
+import { FOLLOW_CTA_DISMISSED_KEY } from '@/lib/referral';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
 const TILE_BASIS =
@@ -60,6 +61,18 @@ export function HomeFeedClient({
   const modalOpenRef = useRef(false);
   const startDwellRef = useRef<() => void>(() => {});
 
+  // Per-login dismissal — set when the user clicks the close X. Cleared by
+  // the sign-out client handler so a fresh session restores the CTA.
+  const [dismissed, setDismissed] = useState(false);
+  const dismissedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem(FOLLOW_CTA_DISMISSED_KEY) === '1') {
+      dismissedRef.current = true;
+      setDismissed(true);
+    }
+  }, []);
+
   // After the card mounts (off-screen), wait one painted frame so the browser
   // commits the off-screen transform, THEN kick it to 0 — the CSS transition
   // sees the change and slides the card down into position. A single rAF
@@ -98,6 +111,7 @@ export function HomeFeedClient({
     };
 
     const reveal = () => {
+      if (dismissedRef.current) return;
       if (offset === 0) return;
       offset = 0;
       setMounted(true);
@@ -106,9 +120,9 @@ export function HomeFeedClient({
 
     const startDwell = () => {
       if (dwellTimer) window.clearTimeout(dwellTimer);
-      if (modalOpenRef.current) return;
+      if (modalOpenRef.current || dismissedRef.current) return;
       dwellTimer = window.setTimeout(() => {
-        if (modalOpenRef.current) return;
+        if (modalOpenRef.current || dismissedRef.current) return;
         reveal();
       }, FOLLOW_CTA_DWELL_MS);
     };
@@ -192,7 +206,7 @@ export function HomeFeedClient({
         </p>
       )}
 
-      {mounted && (
+      {mounted && !dismissed && (
         <div
           ref={cardRef}
           className="fixed top-[24px] left-1/2 z-10"
@@ -204,7 +218,16 @@ export function HomeFeedClient({
             transition: FOLLOW_CTA_TRANSITION,
           }}
         >
-          <FollowCTA />
+          <FollowCTA
+            onClose={() => {
+              if (typeof window !== 'undefined') {
+                window.localStorage.setItem(FOLLOW_CTA_DISMISSED_KEY, '1');
+              }
+              dismissedRef.current = true;
+              setDismissed(true);
+              setMounted(false);
+            }}
+          />
         </div>
       )}
 

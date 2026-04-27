@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { isReservedUsername } from '@/lib/username-rules';
 import {
   getUserByUsername,
@@ -46,6 +47,16 @@ export default async function ProfilePage(props: ProfilePageProps) {
   const bookmarkedIds = !isOwner
     ? await bookmarkedSet(authUser.id, artworks.map((a) => a.id))
     : new Set<string>();
+
+  let creditsEarned = 0;
+  if (isOwner) {
+    const { count } = await supabaseAdmin
+      .from('membership_credits')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', authUser.id)
+      .eq('credit_type', 'referral_bonus');
+    creditsEarned = count ?? 0;
+  }
 
   return (
     <main
@@ -93,7 +104,7 @@ export default async function ProfilePage(props: ProfilePageProps) {
       {isOwner && (
         <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
           <div className="w-full max-w-[326px] tab:max-w-[480px] desk:max-w-[580px]">
-            <AccountSection email={profileUser.email} />
+            <AccountSection email={profileUser.email} creditsEarned={creditsEarned} />
           </div>
         </section>
       )}

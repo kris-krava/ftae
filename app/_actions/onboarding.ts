@@ -532,8 +532,11 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
 
   if (newPct === 100) {
     await tryGrantFoundingMemberCredit(userId);
-    await tryIssueReferralBonus(userId);
   }
+  // Referral credit fires on the first artwork upload regardless of overall
+  // completion %. The helper is idempotent (gated by referrals.credit_issued),
+  // so subsequent uploads no-op.
+  await tryIssueReferralCreditOnArt(userId);
 
   const { data: userRow } = await supabaseAdmin
     .from('users')
@@ -586,52 +589,77 @@ async function tryGrantFoundingMemberCredit(userId: string): Promise<void> {
   }
 }
 
-async function tryIssueReferralBonus(referredUserId: string): Promise<void> {
+/**
+ * Fires on every artwork upload by `referredUserId`; idempotent — once the
+ * referral row's `credit_issued` flag flips true, subsequent calls no-op.
+ *
+ * If the referrer has fewer than 3 referral_bonus credits, issues a credit
+ * AND notifies them. If they're already at the 3-cap, sends a "joined and
+ * added art" notification with no credit clause but still flips
+ * `credit_issued` so the no-op gate engages.
+ */
+async function tryIssueReferralCreditOnArt(referredUserId: string): Promise<void> {
   const { data: referral } = await supabaseAdmin
     .from('referrals')
-    .select('id, referrer_user_id, profile_completed_at, credit_issued')
+    .select('id, referrer_user_id')
     .eq('referred_user_id', referredUserId)
-    .is('profile_completed_at', null)
+    .eq('credit_issued', false)
     .maybeSingle();
   if (!referral) return;
 
-  await supabaseAdmin
-    .from('referrals')
-    .update({ profile_completed_at: new Date().toISOString() })
-    .eq('id', referral.id);
+  const { data: refd } = await supabaseAdmin
+    .from('users')
+    .select('name, username')
+    .eq('id', referredUserId)
+    .single();
+  if (!refd?.username) return;
+  const displayName = refd.name?.trim() || refd.username;
+  const actionUrl = `/${refd.username}`;
 
   const { count: bonusCount } = await supabaseAdmin
     .from('membership_credits')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', referral.referrer_user_id)
     .eq('credit_type', 'referral_bonus');
+  const isCapped = (bonusCount ?? 0) >= 3;
 
-  if ((bonusCount ?? 0) >= 3) return;
-
-  const { error: creditErr } = await supabaseAdmin.from('membership_credits').insert({
-    user_id: referral.referrer_user_id,
-    credit_type: 'referral_bonus',
-    months_credited: 1,
-    source_referral_id: referral.id,
-    note: 'Referral bonus — referred artist completed profile',
-  });
-  if (creditErr) {
-    reportError({
-      area: 'onboarding',
-      op: 'referral_credit',
-      err: creditErr,
-      userId: referral.referrer_user_id,
-      extra: { referral_id: referral.id, referred_user_id: referredUserId },
+  if (!isCapped) {
+    const { error: creditErr } = await supabaseAdmin.from('membership_credits').insert({
+      user_id: referral.referrer_user_id,
+      credit_type: 'referral_bonus',
+      months_credited: 1,
+      source_referral_id: referral.id,
+      note: 'Referral bonus — referred artist added their first piece of art',
     });
-    return;
+    if (creditErr) {
+      reportError({
+        area: 'onboarding',
+        op: 'referral_credit',
+        err: creditErr,
+        userId: referral.referrer_user_id,
+        extra: { referral_id: referral.id, referred_user_id: referredUserId },
+      });
+      return;
+    }
   }
 
-  await supabaseAdmin.from('referrals').update({ credit_issued: true }).eq('id', referral.id);
+  await supabaseAdmin
+    .from('referrals')
+    .update({
+      credit_issued: true,
+      profile_completed_at: new Date().toISOString(),
+    })
+    .eq('id', referral.id);
+
+  const message = isCapped
+    ? `${displayName} has joined and added art!`
+    : `${displayName} has joined and added art. You've earned 1 credit!`;
 
   await supabaseAdmin.from('notifications').insert({
     user_id: referral.referrer_user_id,
     type: 'referral_completed',
-    message: 'A referred artist completed their profile — you earned a bonus month!',
+    message,
+    action_url: actionUrl,
     is_read: false,
   });
 }
