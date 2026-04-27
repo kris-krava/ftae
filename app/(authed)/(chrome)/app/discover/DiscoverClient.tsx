@@ -12,6 +12,7 @@ import {
 } from '@/app/_actions/discover';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
 import { REFERRAL_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
+import { SEARCH_MAX_QUERY_LENGTH, SEARCH_MIN_QUERY_LENGTH } from '@/lib/search-constants';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
@@ -237,13 +238,16 @@ export function DiscoverClient({
     };
   }, [searchActive]);
 
-  // Debounced search
+  // Debounced search — gated on the same min-length the server enforces so we
+  // don't fire wasted actions for sub-threshold input.
   useEffect(() => {
     if (!searchActive) return;
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    if (query.trim().length === 0) {
+    const trimmed = query.trim();
+    if (trimmed.length < SEARCH_MIN_QUERY_LENGTH) {
       setArtists([]);
       setArtistsCursor(null);
+      setArtistsLoading(false);
       return;
     }
     setArtistsLoading(true);
@@ -341,6 +345,7 @@ export function DiscoverClient({
             <input
               type="text"
               value={query}
+              maxLength={SEARCH_MAX_QUERY_LENGTH}
               onChange={(e) => {
                 setQuery(e.target.value);
                 if (!searchActive) setSearchActive(true);
@@ -512,7 +517,7 @@ function SearchResults({
   loadingMore: boolean;
   onLoadMore: () => void;
 }) {
-  if (query.trim().length === 0) {
+  if (query.trim().length < SEARCH_MIN_QUERY_LENGTH) {
     return (
       <div className="px-[32px] tab:px-[120px] desk:px-[320px] py-[64px] flex flex-col items-center text-center">
         <p className="font-sans text-muted text-[15px]">

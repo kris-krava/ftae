@@ -1,11 +1,13 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage, type DiscoverArtwork } from '@/app/_lib/artworks';
 import { searchArtists, followingSet, type DiscoverArtist } from '@/app/_lib/artists';
 import { getArtworkDetail, isFollowing, type ArtworkDetail } from '@/app/_lib/profile';
 import { bookmarkedSet, isBookmarked } from '@/app/_lib/bookmarks';
+import { rateLimit } from '@/lib/rate-limit';
 
 export interface ArtworkModalPayload {
   artwork: ArtworkDetail;
@@ -74,6 +76,19 @@ export async function searchArtistsAction(query: string, cursor: string | null):
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Rate-limit per viewer (or per IP if signed out) — 60 searches/min covers a
+  // very twitchy typist (~1/sec) without leaving room for scripted abuse.
+  let limitKey: string;
+  if (user) {
+    limitKey = `search:${user.id}`;
+  } else {
+    const h = await headers();
+    const ip = h.get('x-forwarded-for')?.split(',')[0].trim() ?? h.get('x-real-ip') ?? 'unknown';
+    limitKey = `search:ip:${ip}`;
+  }
+  const limit = await rateLimit(limitKey, 60, 60_000);
+  if (!limit.ok) return { items: [], nextCursor: null };
 
   const { items, nextCursor } = await searchArtists(query, cursor);
   if (!user) {

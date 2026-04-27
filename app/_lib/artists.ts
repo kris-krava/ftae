@@ -15,6 +15,8 @@ export interface DiscoverArtist {
   trades_count: number;
 }
 
+import { SEARCH_MAX_QUERY_LENGTH, SEARCH_MIN_QUERY_LENGTH } from '@/lib/search-constants';
+
 const PAGE_SIZE = 20;
 
 export async function searchArtists(
@@ -22,7 +24,8 @@ export async function searchArtists(
   cursor: string | null,
 ): Promise<{ items: DiscoverArtist[]; nextCursor: string | null }> {
   const trimmed = query.trim();
-  if (trimmed.length < 1) return { items: [], nextCursor: null };
+  if (trimmed.length < SEARCH_MIN_QUERY_LENGTH) return { items: [], nextCursor: null };
+  if (trimmed.length > SEARCH_MAX_QUERY_LENGTH) return { items: [], nextCursor: null };
   const safe = trimmed.replace(/[%_]/g, '\\$&');
 
   // Match users whose name or username contains the query, OR who have a medium matching it.
