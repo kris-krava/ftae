@@ -11,7 +11,7 @@ import {
   searchArtistsAction,
 } from '@/app/_actions/discover';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
-import { REFERRAL_CTA_DISMISSED_KEY } from '@/lib/referral';
+import { REFERRAL_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 import type { DiscoverArtist } from '@/app/_lib/artists';
 
@@ -98,6 +98,7 @@ export function DiscoverClient({
   const referralDismissedRef = useRef(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    consumeFreshSigninFlag();
     if (window.localStorage.getItem(REFERRAL_CTA_DISMISSED_KEY) === '1') {
       referralDismissedRef.current = true;
       setReferralDismissed(true);

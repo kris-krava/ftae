@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { FreshSigninConsumer } from './_components/FreshSigninConsumer';
 
 // Authed root: gates every nested route on a valid session. Chrome rendering
 // (Sidebar / MobileNav) lives in the (chrome) child group; takeover routes
@@ -17,5 +18,10 @@ export default async function AuthedLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/');
-  return <>{children}</>;
+  return (
+    <>
+      <FreshSigninConsumer />
+      {children}
+    </>
+  );
 }

@@ -3,7 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { generateUniqueUsername } from '@/lib/username';
-import { REFERRAL_COOKIE } from '@/lib/referral';
+import {
+  FRESH_SIGNIN_COOKIE,
+  FRESH_SIGNIN_COOKIE_MAX_AGE_SECONDS,
+  REFERRAL_COOKIE,
+} from '@/lib/referral';
 import {
   SESSION_TTL_COOKIE,
   resolveSessionTtl,
@@ -53,6 +57,16 @@ function buildResponse(
     });
   }
   if (clearReferral) response.cookies.delete(REFERRAL_COOKIE);
+  // Signal a fresh sign-in to chromed clients so CTA dismiss flags reset.
+  response.cookies.set({
+    name: FRESH_SIGNIN_COOKIE,
+    value: '1',
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: FRESH_SIGNIN_COOKIE_MAX_AGE_SECONDS,
+  });
   return response;
 }
 

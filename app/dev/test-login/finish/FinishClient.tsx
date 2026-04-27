@@ -27,6 +27,7 @@ export function FinishClient() {
           setStatus(`Auth error: ${error.message}`);
           return;
         }
+        document.cookie = 'ftae_fresh_signin=1; path=/; max-age=60; samesite=lax';
         window.location.href = next;
         return;
       }
@@ -55,6 +56,9 @@ export function FinishClient() {
         return;
       }
 
+      // Mirror the real /auth/callback signal so chromed clients clear any
+      // stale CTA dismiss flags on the next mount.
+      document.cookie = 'ftae_fresh_signin=1; path=/; max-age=60; samesite=lax';
       // Strip the hash so the eventual URL is clean.
       window.location.href = next;
     }

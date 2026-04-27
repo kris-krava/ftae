@@ -6,7 +6,7 @@ import { FollowCTA } from '@/components/FollowCTA';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { loadMoreHomeFeed } from '@/app/_actions/home';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
-import { FOLLOW_CTA_DISMISSED_KEY } from '@/lib/referral';
+import { FOLLOW_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
 const TILE_BASIS =
@@ -67,6 +67,7 @@ export function HomeFeedClient({
   const dismissedRef = useRef(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    consumeFreshSigninFlag();
     if (window.localStorage.getItem(FOLLOW_CTA_DISMISSED_KEY) === '1') {
       dismissedRef.current = true;
       setDismissed(true);
@@ -185,7 +186,7 @@ export function HomeFeedClient({
 
   return (
     <>
-      <div className="flex flex-wrap justify-center gap-[4px] pt-[16px] tab:pt-[26px]">
+      <div className="flex flex-wrap justify-center gap-[4px]">
         {artworks.map((art, i) => (
           <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
             <DiscoverArtworkTile
