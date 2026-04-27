@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
+import { SHOW_ADD_ART_NAV } from '@/lib/feature-toggles';
 
 interface SidebarProps {
   username: string;
@@ -89,12 +90,14 @@ export function Sidebar({
           active={isTrades}
           icon={<Shuffle01 className={`${ICON_BASE} ${isTrades ? 'text-accent' : 'text-ink'}`} />}
         />
-        <SidebarItem
-          href="/app/add-art"
-          label="Add Art"
-          active={false}
-          icon={<PlusSquare className={`${ICON_BASE} text-ink`} />}
-        />
+        {SHOW_ADD_ART_NAV && (
+          <SidebarItem
+            href="/app/add-art"
+            label="Add Art"
+            active={false}
+            icon={<PlusSquare className={`${ICON_BASE} text-ink`} />}
+          />
+        )}
         <SidebarItem
           href="/app/notifications"
           label="Notifications"

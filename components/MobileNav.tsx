@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Home02, Eye, PlusSquare, Shuffle01, Bell01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
+import { SHOW_ADD_ART_NAV } from '@/lib/feature-toggles';
 
 interface MobileNavProps {
   username: string;
@@ -68,7 +69,7 @@ export function MobileNav({
       className="fixed bottom-0 inset-x-0 h-[80px] bg-surface tab:hidden z-40"
     >
       <span aria-hidden className="absolute top-0 inset-x-0 h-px bg-divider/50" />
-      <ul className="grid grid-cols-6 h-full justify-items-center">
+      <ul className={`grid ${SHOW_ADD_ART_NAV ? 'grid-cols-6' : 'grid-cols-5'} h-full justify-items-center`}>
         <NavItem href="/app/home" label="Home" active={isHome}>
           <Home02
             className={`${ICON_BASE} ${isHome ? 'text-accent' : 'text-muted'}`}
@@ -81,9 +82,11 @@ export function MobileNav({
         <NavItem href="/app/trades" label="Trades" active={isTrades}>
           <Shuffle01 className={`${ICON_BASE} ${isTrades ? 'text-accent' : 'text-ink'}`} />
         </NavItem>
-        <NavItem href="/app/add-art" label="Add Art" active={false}>
-          <PlusSquare className={`${ICON_BASE} text-ink`} />
-        </NavItem>
+        {SHOW_ADD_ART_NAV && (
+          <NavItem href="/app/add-art" label="Add Art" active={false}>
+            <PlusSquare className={`${ICON_BASE} text-ink`} />
+          </NavItem>
+        )}
         <li className="contents">
           <Link
             href={`/${username}`}
