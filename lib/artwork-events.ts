@@ -8,6 +8,7 @@ declare global {
   interface WindowEventMap {
     'artwork:updated': CustomEvent<{ artworkId: string }>;
     'artwork:deleted': CustomEvent<{ artworkId: string }>;
+    'bookmark:toggled': CustomEvent<{ artworkId: string; bookmarked: boolean }>;
   }
 }
 
@@ -19,4 +20,11 @@ export function emitArtworkUpdated(artworkId: string): void {
 export function emitArtworkDeleted(artworkId: string): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('artwork:deleted', { detail: { artworkId } }));
+}
+
+export function emitBookmarkToggled(artworkId: string, bookmarked: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('bookmark:toggled', { detail: { artworkId, bookmarked } }),
+  );
 }

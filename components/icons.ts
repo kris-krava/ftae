@@ -3,6 +3,7 @@
 
 export { default as Mail01 } from '@untitled-ui/icons-react/build/esm/Mail01';
 export { default as Heart } from '@untitled-ui/icons-react/build/esm/Heart';
+export { default as Zap } from '@untitled-ui/icons-react/build/esm/Zap';
 export { default as Home02 } from '@untitled-ui/icons-react/build/esm/Home02';
 export { default as Eye } from '@untitled-ui/icons-react/build/esm/Eye';
 export { default as PlusSquare } from '@untitled-ui/icons-react/build/esm/PlusSquare';
@@ -24,3 +25,6 @@ export { default as SearchSm } from '@untitled-ui/icons-react/build/esm/SearchSm
 export { default as Copy01 } from '@untitled-ui/icons-react/build/esm/Copy01';
 export { default as XCircle } from '@untitled-ui/icons-react/build/esm/XCircle';
 export { default as Upload01 } from '@untitled-ui/icons-react/build/esm/Upload01';
+
+// Custom-inlined icons — see components/icons/*.tsx for why.
+export { Bookmark } from './icons/Bookmark';

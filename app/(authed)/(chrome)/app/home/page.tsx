@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage } from '@/app/_lib/artworks';
 import { followedUserIds } from '@/app/_lib/artists';
+import { bookmarkedSet } from '@/app/_lib/bookmarks';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Home02 } from '@/components/icons';
 import { HomeFeedClient } from './HomeFeedClient';
@@ -29,10 +30,19 @@ export default async function HomePage() {
     return <EmptyState followingNobody={userIds.length === 0} />;
   }
 
+  const initialBookmarkedIds = Array.from(
+    await bookmarkedSet(user.id, initial.items.map((a) => a.id)),
+  );
+
   return (
     <main className="bg-canvas flex-1 w-full">
       <ErrorBoundary label="home-feed">
-        <HomeFeedClient initialArtworks={initial.items} initialCursor={initial.nextCursor} />
+        <HomeFeedClient
+          initialArtworks={initial.items}
+          initialCursor={initial.nextCursor}
+          initialBookmarkedIds={initialBookmarkedIds}
+          viewerId={user.id}
+        />
       </ErrorBoundary>
     </main>
   );

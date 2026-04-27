@@ -7,12 +7,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { XClose, ChevronLeft, ChevronRight, Star01 } from '@/components/icons';
 import { FollowButton } from './FollowButton';
 import { Avatar } from './Avatar';
+import { BookmarkOverlay } from '@/components/BookmarkOverlay';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 
 interface ArtworkDetailsModalProps {
   artwork: ArtworkDetail;
   neighbors: { prev: string | null; next: string | null };
   initialFollowing: boolean;
+  initialBookmarked: boolean;
   isAuthenticated: boolean;
   isOwner: boolean;
   /** "overlay" dismisses via router.back(); "standalone" pushes to artist profile. */
@@ -36,6 +38,7 @@ export function ArtworkDetailsModal({
   artwork,
   neighbors,
   initialFollowing,
+  initialBookmarked,
   isAuthenticated,
   isOwner,
   mode,
@@ -254,10 +257,22 @@ export function ArtworkDetailsModal({
 
             {/* Body */}
             <div className="p-[16px] tab:p-[24px] flex flex-col gap-[14px] flex-1">
-              {artwork.title && (
-                <h2 className="font-serif font-bold text-[22px] tab:text-[24px] desk:text-[28px] leading-[1.2] text-ink">
-                  {artwork.title}
-                </h2>
+              {(artwork.title || !isOwner) && (
+                <div className="flex items-start justify-between gap-[12px]">
+                  {artwork.title && (
+                    <h2 className="font-serif font-bold text-[22px] tab:text-[24px] desk:text-[28px] leading-[1.2] text-ink flex-1 min-w-0">
+                      {artwork.title}
+                    </h2>
+                  )}
+                  {!isOwner && (
+                    <BookmarkOverlay
+                      artworkId={artwork.id}
+                      initialBookmarked={initialBookmarked}
+                      isAuthenticated={isAuthenticated}
+                      className="shrink-0 mt-[2px] ml-auto"
+                    />
+                  )}
+                </div>
               )}
               {(yearMedium || dimensions) && (
                 <div className="flex flex-col gap-[2px]">

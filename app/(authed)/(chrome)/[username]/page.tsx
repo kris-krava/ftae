@@ -8,6 +8,7 @@ import {
   getUserArtworks,
   isFollowing,
 } from '@/app/_lib/profile';
+import { bookmarkedSet } from '@/app/_lib/bookmarks';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ArtworkGrid } from '@/components/profile/ArtworkGrid';
 import { AccountSection } from '@/components/profile/AccountSection';
@@ -41,6 +42,10 @@ export default async function ProfilePage(props: ProfilePageProps) {
     getUserArtworks(profileUser.id),
     !isOwner ? isFollowing(authUser.id, profileUser.id) : Promise.resolve(false),
   ]);
+
+  const bookmarkedIds = !isOwner
+    ? await bookmarkedSet(authUser.id, artworks.map((a) => a.id))
+    : new Set<string>();
 
   return (
     <main
@@ -76,7 +81,13 @@ export default async function ProfilePage(props: ProfilePageProps) {
       </section>
 
       <section className="w-full mt-[14px]">
-        <ArtworkGrid artworks={artworks} showAddTile={isOwner} />
+        <ArtworkGrid
+          artworks={artworks}
+          showAddTile={isOwner}
+          isAuthenticated
+          showBookmarks={!isOwner}
+          bookmarkedIds={bookmarkedIds}
+        />
       </section>
 
       {isOwner && (

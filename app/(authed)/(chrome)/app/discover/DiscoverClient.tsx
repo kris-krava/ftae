@@ -40,16 +40,27 @@ function feedNeighbors(
 interface DiscoverClientProps {
   initialArtworks: DiscoverArtwork[];
   initialCursor: string | null;
+  initialBookmarkedIds: string[];
+  viewerId: string;
   isAuthenticated: boolean;
 }
 
-export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated }: DiscoverClientProps) {
+export function DiscoverClient({
+  initialArtworks,
+  initialCursor,
+  initialBookmarkedIds,
+  viewerId,
+  isAuthenticated,
+}: DiscoverClientProps) {
   const [query, setQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
 
   const [artworks, setArtworks] = useState(initialArtworks);
   const [artworksCursor, setArtworksCursor] = useState(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
+    () => new Set(initialBookmarkedIds),
+  );
 
   const [artists, setArtists] = useState<(DiscoverArtist & { is_following: boolean })[]>([]);
   const [artistsCursor, setArtistsCursor] = useState<string | null>(null);
@@ -245,6 +256,13 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
     const r = await loadMoreArtworks(artworksCursor);
     setArtworks((prev) => [...prev, ...r.items]);
     setArtworksCursor(r.nextCursor);
+    if (r.bookmarkedIds.length > 0) {
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of r.bookmarkedIds) next.add(id);
+        return next;
+      });
+    }
     setLoadingMore(false);
   }, [artworksCursor, loadingMore]);
 
@@ -350,6 +368,9 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           loadingMore={loadingMore}
           hasMore={Boolean(artworksCursor)}
           onOpen={openArtwork}
+          viewerId={viewerId}
+          isAuthenticated={isAuthenticated}
+          bookmarkedIds={bookmarkedIds}
         />
       </div>
 
@@ -378,6 +399,7 @@ export function DiscoverClient({ initialArtworks, initialCursor, isAuthenticated
           artwork={modal.artwork}
           neighbors={feedNeighbors(artworks, modal.artwork.id)}
           initialFollowing={modal.initialFollowing}
+          initialBookmarked={modal.initialBookmarked}
           isAuthenticated={modal.isAuthenticated}
           isOwner={modal.isOwner}
           onClose={closeModal}
@@ -394,12 +416,18 @@ function ArtworkGridSection({
   loadingMore,
   hasMore,
   onOpen,
+  viewerId,
+  isAuthenticated,
+  bookmarkedIds,
 }: {
   artworks: DiscoverArtwork[];
   sentinelRef: React.RefObject<HTMLDivElement>;
   loadingMore: boolean;
   hasMore: boolean;
   onOpen: (artworkId: string) => void;
+  viewerId: string | null;
+  isAuthenticated: boolean;
+  bookmarkedIds: Set<string>;
 }) {
   if (artworks.length === 0) {
     return (
@@ -415,7 +443,14 @@ function ArtworkGridSection({
       <div className="flex flex-wrap justify-center gap-[4px]">
         {artworks.map((art, i) => (
           <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile artwork={art} index={i} onOpen={onOpen} />
+            <DiscoverArtworkTile
+              artwork={art}
+              index={i}
+              onOpen={onOpen}
+              viewerId={viewerId}
+              isAuthenticated={isAuthenticated}
+              isBookmarked={bookmarkedIds.has(art.id)}
+            />
           </div>
         ))}
       </div>

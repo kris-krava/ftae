@@ -84,16 +84,16 @@ export function Sidebar({
           icon={<Eye className={`${ICON_BASE} ${isDiscover ? 'text-accent' : 'text-ink'}`} />}
         />
         <SidebarItem
-          href="/app/add-art"
-          label="Add Art"
-          active={false}
-          icon={<PlusSquare className={`${ICON_BASE} text-ink`} />}
-        />
-        <SidebarItem
           href="/app/trades"
           label="Trades"
           active={isTrades}
           icon={<Shuffle01 className={`${ICON_BASE} ${isTrades ? 'text-accent' : 'text-ink'}`} />}
+        />
+        <SidebarItem
+          href="/app/add-art"
+          label="Add Art"
+          active={false}
+          icon={<PlusSquare className={`${ICON_BASE} text-ink`} />}
         />
         <SidebarItem
           href="/app/notifications"

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage } from '@/app/_lib/artworks';
+import { bookmarkedSet } from '@/app/_lib/bookmarks';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DiscoverClient } from './DiscoverClient';
 
@@ -20,6 +21,9 @@ export default async function DiscoverPage() {
   const viewerIsTest = Boolean(viewer?.is_test_user);
 
   const initial = await fetchArtworksPage(null, { scope: viewerIsTest ? 'test' : 'real' });
+  const initialBookmarkedIds = Array.from(
+    await bookmarkedSet(user.id, initial.items.map((a) => a.id)),
+  );
 
   return (
     <main className="bg-canvas flex-1 w-full">
@@ -27,6 +31,8 @@ export default async function DiscoverPage() {
         <DiscoverClient
           initialArtworks={initial.items}
           initialCursor={initial.nextCursor}
+          initialBookmarkedIds={initialBookmarkedIds}
+          viewerId={user.id}
           isAuthenticated
         />
       </ErrorBoundary>

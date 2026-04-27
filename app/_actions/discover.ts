@@ -5,10 +5,12 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { fetchArtworksPage, type DiscoverArtwork } from '@/app/_lib/artworks';
 import { searchArtists, followingSet, type DiscoverArtist } from '@/app/_lib/artists';
 import { getArtworkDetail, isFollowing, type ArtworkDetail } from '@/app/_lib/profile';
+import { bookmarkedSet, isBookmarked } from '@/app/_lib/bookmarks';
 
 export interface ArtworkModalPayload {
   artwork: ArtworkDetail;
   initialFollowing: boolean;
+  initialBookmarked: boolean;
   isAuthenticated: boolean;
   isOwner: boolean;
 }
@@ -22,12 +24,15 @@ export async function fetchArtworkModal(artworkId: string): Promise<ArtworkModal
     data: { user: authUser },
   } = await supabase.auth.getUser();
   const isOwner = Boolean(authUser && authUser.id === artwork.user_id);
-  const initialFollowing =
-    !isOwner && authUser ? await isFollowing(authUser.id, artwork.user_id) : false;
+  const [initialFollowing, initialBookmarked] = await Promise.all([
+    !isOwner && authUser ? isFollowing(authUser.id, artwork.user_id) : Promise.resolve(false),
+    !isOwner && authUser ? isBookmarked(authUser.id, artwork.id) : Promise.resolve(false),
+  ]);
 
   return {
     artwork,
     initialFollowing,
+    initialBookmarked,
     isAuthenticated: Boolean(authUser),
     isOwner,
   };
@@ -36,6 +41,8 @@ export async function fetchArtworkModal(artworkId: string): Promise<ArtworkModal
 export interface ArtworksPageResult {
   items: DiscoverArtwork[];
   nextCursor: string | null;
+  /** Subset of items the viewer has bookmarked (empty for unauthenticated). */
+  bookmarkedIds: string[];
 }
 
 export async function loadMoreArtworks(cursor: string | null): Promise<ArtworksPageResult> {
@@ -52,7 +59,9 @@ export async function loadMoreArtworks(cursor: string | null): Promise<ArtworksP
       .single();
     viewerIsTest = Boolean(data?.is_test_user);
   }
-  return fetchArtworksPage(cursor, { scope: viewerIsTest ? 'test' : 'real' });
+  const page = await fetchArtworksPage(cursor, { scope: viewerIsTest ? 'test' : 'real' });
+  const ids = user ? Array.from(await bookmarkedSet(user.id, page.items.map((a) => a.id))) : [];
+  return { ...page, bookmarkedIds: ids };
 }
 
 export interface ArtistsSearchResult {

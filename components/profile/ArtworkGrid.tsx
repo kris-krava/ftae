@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PlusSquare, Shuffle01 } from '@/components/icons';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
+import { BookmarkOverlay } from '@/components/BookmarkOverlay';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
 import type { ProfileArtwork } from '@/app/_lib/profile';
 
@@ -27,6 +28,13 @@ interface ArtworkGridProps {
   artworks: ProfileArtwork[];
   showAddTile: boolean;
   addHref?: string;
+  isAuthenticated: boolean;
+  /** When true, render the bookmark overlay on each tile (other-user profile).
+   * Pass false on the viewer's own profile — every piece in the grid belongs
+   * to the same user, so the rule applies uniformly. */
+  showBookmarks: boolean;
+  /** Subset of artwork ids the viewer has already bookmarked. */
+  bookmarkedIds?: Set<string>;
 }
 
 const TILE_BASIS =
@@ -36,6 +44,9 @@ export function ArtworkGrid({
   artworks,
   showAddTile,
   addHref = '/app/add-art',
+  isAuthenticated,
+  showBookmarks,
+  bookmarkedIds,
 }: ArtworkGridProps) {
   const { modal, openArtwork, closeModal } = useArtworkModal();
 
@@ -52,7 +63,14 @@ export function ArtworkGrid({
           </Link>
         )}
         {artworks.map((art) => (
-          <ArtworkTile key={art.id} artwork={art} onOpen={openArtwork} />
+          <ArtworkTile
+            key={art.id}
+            artwork={art}
+            onOpen={openArtwork}
+            showBookmark={showBookmarks}
+            isAuthenticated={isAuthenticated}
+            isBookmarked={bookmarkedIds?.has(art.id) ?? false}
+          />
         ))}
       </div>
 
@@ -63,6 +81,7 @@ export function ArtworkGrid({
           artwork={modal.artwork}
           neighbors={feedNeighbors(artworks, modal.artwork.id)}
           initialFollowing={modal.initialFollowing}
+          initialBookmarked={modal.initialBookmarked}
           isAuthenticated={modal.isAuthenticated}
           isOwner={modal.isOwner}
           onClose={closeModal}
@@ -76,44 +95,62 @@ export function ArtworkGrid({
 function ArtworkTile({
   artwork,
   onOpen,
+  showBookmark,
+  isAuthenticated,
+  isBookmarked,
 }: {
   artwork: ProfileArtwork;
   onOpen: (artworkId: string) => void;
+  showBookmark: boolean;
+  isAuthenticated: boolean;
+  isBookmarked: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(artwork.id)}
-      aria-label={artwork.title ?? 'View artwork'}
+    <div
       className={`${TILE_BASIS} shrink-0 relative aspect-square bg-divider rounded-[2px] overflow-hidden`}
     >
-      {artwork.primary_photo_url && (
-        <Image
-          src={artwork.primary_photo_url}
-          alt={artwork.title ?? ''}
-          fill
-          sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
-          className="object-cover"
-          style={objectPositionStyle(artwork.primary_photo_focal_x, artwork.primary_photo_focal_y)}
+      <button
+        type="button"
+        onClick={() => onOpen(artwork.id)}
+        aria-label={artwork.title ?? 'View artwork'}
+        className="absolute inset-0"
+      >
+        {artwork.primary_photo_url && (
+          <Image
+            src={artwork.primary_photo_url}
+            alt={artwork.title ?? ''}
+            fill
+            sizes="(min-width: 1280px) 256px, (min-width: 768px) 256px, 50vw"
+            className="object-cover"
+            style={objectPositionStyle(artwork.primary_photo_focal_x, artwork.primary_photo_focal_y)}
+          />
+        )}
+        <span
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent via-[55%] to-black/70"
+        />
+        {artwork.title && (
+          <p className="absolute left-[8px] right-[8px] bottom-[8px] font-sans font-semibold text-[13px] text-surface truncate text-left">
+            {artwork.title}
+          </p>
+        )}
+        {artwork.proposal_count > 0 && (
+          <span className="absolute top-[12px] left-[12px] bg-black/35 rounded-[12px] pl-[8px] pr-[10px] py-[4px] flex items-center gap-[4px]">
+            <Shuffle01 className="w-[14px] h-[14px] text-surface" />
+            <span className="font-sans font-semibold text-[12px] text-surface">
+              {artwork.proposal_count}
+            </span>
+          </span>
+        )}
+      </button>
+      {showBookmark && (
+        <BookmarkOverlay
+          artworkId={artwork.id}
+          initialBookmarked={isBookmarked}
+          isAuthenticated={isAuthenticated}
+          className="absolute top-[12px] right-[12px] z-10"
         />
       )}
-      <span
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent via-[55%] to-black/70"
-      />
-      {artwork.title && (
-        <p className="absolute left-[8px] right-[8px] bottom-[8px] font-sans font-semibold text-[13px] text-surface truncate text-left">
-          {artwork.title}
-        </p>
-      )}
-      {artwork.proposal_count > 0 && (
-        <span className="absolute top-[12px] right-[12px] bg-black/35 rounded-[12px] pl-[8px] pr-[10px] py-[4px] flex items-center gap-[4px]">
-          <Shuffle01 className="w-[14px] h-[14px] text-surface" />
-          <span className="font-sans font-semibold text-[12px] text-surface">
-            {artwork.proposal_count}
-          </span>
-        </span>
-      )}
-    </button>
+    </div>
   );
 }

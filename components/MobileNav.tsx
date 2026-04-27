@@ -78,11 +78,11 @@ export function MobileNav({
         <NavItem href="/app/discover" label="Discover" active={isDiscover}>
           <Eye className={`${ICON_BASE} ${isDiscover ? 'text-accent' : 'text-ink'}`} />
         </NavItem>
-        <NavItem href="/app/add-art" label="Add Art" active={false}>
-          <PlusSquare className={`${ICON_BASE} text-ink`} />
-        </NavItem>
         <NavItem href="/app/trades" label="Trades" active={isTrades}>
           <Shuffle01 className={`${ICON_BASE} ${isTrades ? 'text-accent' : 'text-ink'}`} />
+        </NavItem>
+        <NavItem href="/app/add-art" label="Add Art" active={false}>
+          <PlusSquare className={`${ICON_BASE} text-ink`} />
         </NavItem>
         <li className="contents">
           <Link

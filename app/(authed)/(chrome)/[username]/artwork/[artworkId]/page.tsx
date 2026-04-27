@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { getArtworkDetail, getArtworkNeighbors, isFollowing } from '@/app/_lib/profile';
+import { isBookmarked } from '@/app/_lib/bookmarks';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 
 interface Props {
@@ -22,8 +23,10 @@ export default async function ArtworkDetailsPage(props: Props) {
     data: { user: authUser },
   } = await supabase.auth.getUser();
   const isOwner = Boolean(authUser && authUser.id === artwork.user_id);
-  const alreadyFollowing =
-    !isOwner && authUser ? await isFollowing(authUser.id, artwork.user_id) : false;
+  const [alreadyFollowing, alreadyBookmarked] = await Promise.all([
+    !isOwner && authUser ? isFollowing(authUser.id, artwork.user_id) : Promise.resolve(false),
+    !isOwner && authUser ? isBookmarked(authUser.id, artwork.id) : Promise.resolve(false),
+  ]);
 
   return (
     <ArtworkDetailsModal
@@ -31,6 +34,7 @@ export default async function ArtworkDetailsPage(props: Props) {
       artwork={artwork}
       neighbors={neighbors}
       initialFollowing={alreadyFollowing}
+      initialBookmarked={alreadyBookmarked}
       isAuthenticated={Boolean(authUser)}
       isOwner={isOwner}
     />

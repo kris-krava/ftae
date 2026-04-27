@@ -33,12 +33,22 @@ function feedNeighbors(
 interface HomeFeedClientProps {
   initialArtworks: DiscoverArtwork[];
   initialCursor: string | null;
+  initialBookmarkedIds: string[];
+  viewerId: string;
 }
 
-export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClientProps) {
+export function HomeFeedClient({
+  initialArtworks,
+  initialCursor,
+  initialBookmarkedIds,
+  viewerId,
+}: HomeFeedClientProps) {
   const [artworks, setArtworks] = useState(initialArtworks);
   const [cursor, setCursor] = useState(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
+    () => new Set(initialBookmarkedIds),
+  );
   const { modal, openArtwork, closeModal } = useArtworkModal();
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +146,13 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
     const r = await loadMoreHomeFeed(cursor);
     setArtworks((prev) => [...prev, ...r.items]);
     setCursor(r.nextCursor);
+    if (r.bookmarkedIds.length > 0) {
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of r.bookmarkedIds) next.add(id);
+        return next;
+      });
+    }
     setLoadingMore(false);
   }, [cursor, loadingMore]);
 
@@ -157,7 +174,14 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
       <div className="flex flex-wrap justify-center gap-[4px] pt-[16px] tab:pt-[26px]">
         {artworks.map((art, i) => (
           <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile artwork={art} index={i} onOpen={openArtwork} />
+            <DiscoverArtworkTile
+              artwork={art}
+              index={i}
+              onOpen={openArtwork}
+              viewerId={viewerId}
+              isAuthenticated
+              isBookmarked={bookmarkedIds.has(art.id)}
+            />
           </div>
         ))}
       </div>
@@ -191,6 +215,7 @@ export function HomeFeedClient({ initialArtworks, initialCursor }: HomeFeedClien
           artwork={modal.artwork}
           neighbors={feedNeighbors(artworks, modal.artwork.id)}
           initialFollowing={modal.initialFollowing}
+          initialBookmarked={modal.initialBookmarked}
           isAuthenticated={modal.isAuthenticated}
           isOwner={modal.isOwner}
           onClose={closeModal}
