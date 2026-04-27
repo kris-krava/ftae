@@ -37,9 +37,26 @@ const rockSalt = localFont({
   display: 'swap',
 });
 
+const SITE_URL = 'https://freetradeartexchange.com';
+const SITE_DESCRIPTION =
+  'An artist-only community, where we trade our original artwork with each other.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Free Trade Art Exchange',
-  description: 'An artist-only community, where we trade our original artwork with each other.',
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    siteName: 'Free Trade Art Exchange',
+    title: 'Free Trade Art Exchange',
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Free Trade Art Exchange',
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
