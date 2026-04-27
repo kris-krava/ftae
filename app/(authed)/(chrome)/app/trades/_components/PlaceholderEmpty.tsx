@@ -9,13 +9,13 @@ interface PlaceholderEmptyProps {
 
 /**
  * Mobile empty state used by the Draft / Active / Completed buckets while
- * trading is pre-launch. Mirrors the Home Following-empty state — content
- * vertically centered between the tab strip (80px) and mobile nav (80px),
- * same icon circle and Untitled-UI default stroke weight, no button.
+ * trading is pre-launch. Same icon circle and Untitled-UI default stroke
+ * weight as the Home Following-empty state, no button. Sits at its natural
+ * height — no min-h, so the page never grows past the visible viewport.
  */
 export function PlaceholderEmpty({ icon, title, subhead }: PlaceholderEmptyProps) {
   return (
-    <div className="flex flex-col items-center justify-center text-center px-[32px] min-h-[calc(100vh-160px)]">
+    <div className="flex flex-col items-center text-center px-[32px] pt-[48px]">
       <div className="bg-accent/10 rounded-full w-[96px] h-[96px] flex items-center justify-center">
         {icon}
       </div>

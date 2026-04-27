@@ -3,7 +3,7 @@ import { Bookmark } from '@/components/icons';
 
 export function BookmarkedEmpty() {
   return (
-    <div className="flex flex-col items-center justify-center text-center px-[32px] min-h-[calc(100vh-160px)] tab:min-h-0 tab:py-[48px]">
+    <div className="flex flex-col items-center text-center px-[32px] pt-[48px] tab:py-[48px]">
       <div className="bg-accent/10 rounded-full w-[96px] h-[96px] flex items-center justify-center">
         <Bookmark className="w-[48px] h-[48px] text-accent" />
       </div>

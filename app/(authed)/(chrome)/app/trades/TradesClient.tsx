@@ -80,9 +80,10 @@ export function TradesClient({ initialGroups }: TradesClientProps) {
     wasOpenRef.current = isOpen;
   }, [modal]);
 
-  // Mobile-only: tab strip translates up on scroll-down with the grid and
-  // snaps back on scroll-up. Mirrors the Discover search-bar behavior. Effect
-  // is no-op above the `tab` breakpoint (768px).
+  // Mobile-only: tab strip hides on scroll-down and reveals on scroll-up.
+  // Always animated — no scroll-tracking, so iOS rubber-band and small
+  // jitter dy values can't shove the strip off-screen. No-op above the
+  // `tab` breakpoint (768px).
   const panelRef = useRef<HTMLDivElement | null>(null);
   const panelHideRef = useRef<number>(80);
   useEffect(() => {
@@ -90,31 +91,43 @@ export function TradesClient({ initialGroups }: TradesClientProps) {
     const mql = window.matchMedia('(min-width: 768px)');
     if (mql.matches) return;
 
+    const SHOW_AT_TOP = 8;
+    const DY_THRESHOLD = 4;
+
     let lastY = window.scrollY;
-    let offset = 0;
+    let hidden = false;
 
     const measure = () => {
       if (panelRef.current) panelHideRef.current = panelRef.current.offsetHeight;
     };
     measure();
 
-    const apply = (animated: boolean) => {
+    const apply = () => {
       const panel = panelRef.current;
       if (!panel) return;
-      panel.style.transition = animated ? PANEL_TRANSITION : 'none';
-      panel.style.transform = `translateY(-${offset}px)`;
+      panel.style.transition = PANEL_TRANSITION;
+      panel.style.transform = hidden
+        ? `translateY(-${panelHideRef.current}px)`
+        : 'translateY(0)';
     };
 
     const onScroll = () => {
       const cur = window.scrollY;
       const dy = cur - lastY;
       lastY = cur;
-      if (dy > 0) {
-        offset = Math.min(offset + dy, panelHideRef.current);
-        apply(false);
-      } else if (dy < 0) {
-        offset = 0;
-        apply(true);
+      if (cur <= SHOW_AT_TOP) {
+        if (hidden) {
+          hidden = false;
+          apply();
+        }
+        return;
+      }
+      if (dy > DY_THRESHOLD && !hidden) {
+        hidden = true;
+        apply();
+      } else if (dy < -DY_THRESHOLD && hidden) {
+        hidden = false;
+        apply();
       }
     };
 
@@ -152,7 +165,7 @@ export function TradesClient({ initialGroups }: TradesClientProps) {
         <TradesTabStrip activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      <main className="bg-canvas min-h-screen w-full pb-[80px] tab:pb-[24px]">
+      <main className="bg-canvas flex-1 w-full tab:pb-[24px]">
         {/* Mobile content — only the active tab's bucket renders. The 80px top
             padding accounts for the fixed tab strip. */}
         <div className="tab:hidden pt-[80px]">
