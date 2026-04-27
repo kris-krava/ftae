@@ -98,6 +98,34 @@ export function Sidebar({
             icon={<PlusSquare className={`${ICON_BASE} text-ink`} />}
           />
         )}
+        <li>
+          <Link
+            href={`/${username}`}
+            aria-label="My profile"
+            aria-current={isProfile ? 'page' : undefined}
+            className={`${ITEM_BASE} ${isProfile ? ITEM_ACTIVE : ITEM_INACTIVE}`}
+          >
+            <span className={ICON_BASE}>
+              <Avatar
+                initials={initials}
+                avatarUrl={avatarUrl}
+                size={24}
+                active={isProfile}
+                textSize="text-[10px]"
+                focalX={avatarFocalX}
+                focalY={avatarFocalY}
+                aspectRatio={avatarAspectRatio}
+              />
+            </span>
+            <span
+              className={`${LABEL_BASE} ${
+                isProfile ? 'font-semibold text-accent' : 'font-medium text-ink'
+              }`}
+            >
+              My Profile
+            </span>
+          </Link>
+        </li>
         <SidebarItem
           href="/app/notifications"
           label="Notifications"
@@ -113,39 +141,6 @@ export function Sidebar({
           }
         />
       </ul>
-
-      <Link
-        href={`/${username}`}
-        aria-label="My profile"
-        aria-current={isProfile ? 'page' : undefined}
-        className="absolute bottom-[24px] left-0 right-0 h-[32px] flex items-center"
-      >
-        {isProfile && (
-          <span
-            aria-hidden
-            className="absolute left-[6px] right-[6px] inset-y-[-8px] rounded-[8px] bg-accent/10"
-          />
-        )}
-        <span className="absolute left-[14px] w-[32px] h-[32px]">
-          <Avatar
-            initials={initials}
-            avatarUrl={avatarUrl}
-            size={32}
-            active={isProfile}
-            textSize="text-[12px]"
-            focalX={avatarFocalX}
-            focalY={avatarFocalY}
-            aspectRatio={avatarAspectRatio}
-          />
-        </span>
-        <span
-          className={`absolute left-[60px] ${LABEL_BASE} ${
-            isProfile ? 'font-semibold text-accent' : 'font-medium text-ink'
-          }`}
-        >
-          My Profile
-        </span>
-      </Link>
     </aside>
   );
 }
