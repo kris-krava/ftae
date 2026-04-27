@@ -14,8 +14,8 @@ export function AccountSection({ email, creditsEarned }: AccountSectionProps) {
       <span aria-hidden className="block w-full h-px bg-muted/20" />
       <h2 className="font-sans font-medium text-[11px] tracking-[1px] text-muted">ACCOUNT</h2>
       <p className="font-sans text-[13px] text-ink text-center">Credits: {creditsEarned}</p>
-      <div className="w-full flex items-center gap-[5px] font-sans text-[13px]">
-        <span className="flex-1 min-w-0 text-ink truncate text-center">{email}</span>
+      <div className="w-full flex items-center justify-center gap-[5px] font-sans text-[13px]">
+        <span className="min-w-0 text-ink truncate">{email}</span>
         <Link href="/app/profile/edit-email" className="text-accent shrink-0">
           Edit
         </Link>
