@@ -165,10 +165,12 @@ export function TradesClient({ initialGroups }: TradesClientProps) {
         <TradesTabStrip activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      <main className="bg-canvas flex-1 w-full tab:pb-[24px]">
+      <main className="bg-canvas flex-1 w-full flex flex-col tab:pb-[24px]">
         {/* Mobile content — only the active tab's bucket renders. The 80px top
-            padding accounts for the fixed tab strip. */}
-        <div className="tab:hidden pt-[80px]">
+            padding accounts for the fixed tab strip. `flex-1 flex flex-col`
+            so empty-state children can stretch + center vertically inside the
+            visible area between the tab strip and the bottom mobile nav. */}
+        <div className="tab:hidden flex-1 flex flex-col pt-[80px]">
           <MobileBucketContent
             activeTab={activeTab}
             groups={groups}
