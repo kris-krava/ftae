@@ -541,12 +541,23 @@ export function DiscoverClient({
         />
       </div>
 
+      {/* Opaque backdrop sitting between the grid (z=auto) and the search
+          overlay (z=15). Keeps the underlying Discover content hidden during
+          overscroll/rubber-band even if the overlay momentarily drifts. */}
+      {searchActive && (
+        <div
+          aria-hidden
+          className="fixed top-0 left-0 tab:left-[60px] right-0 bottom-0 z-[14] bg-canvas pointer-events-none"
+        />
+      )}
+
       {/* Search results overlay — `tab:left-[60px]` keeps everything inside
-          this region centered within (viewport - sidebar). */}
+          this region centered within (viewport - sidebar). `overscroll-contain`
+          stops scroll chaining at the overlay's edges. */}
       {searchActive && (
         <div
           ref={searchOverlayRef}
-          className="fixed top-[76px] tab:top-[96px] left-0 tab:left-[60px] right-0 bottom-0 z-[15] bg-canvas overflow-y-auto pb-[80px] tab:pb-[24px]"
+          className="fixed top-[76px] tab:top-[96px] left-0 tab:left-[60px] right-0 bottom-0 z-[15] bg-canvas overflow-y-auto overscroll-contain pb-[80px] tab:pb-[24px]"
         >
           {mediumChips.length > 0 && (
             <div className="sticky top-0 z-10 bg-canvas pt-[8px] pb-[12px]">
