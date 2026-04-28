@@ -1,43 +1,34 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
-import { deriveInitials } from '@/lib/initials';
-import { toggleFollow } from '@/app/_actions/follow';
-import type { DiscoverArtist } from '@/app/_lib/artists';
+import type { SearchArtistResult } from '@/app/_lib/artists';
 
 interface ArtistCardProps {
-  artist: DiscoverArtist;
-  initialFollowing: boolean;
-  isAuthenticated: boolean;
+  artist: SearchArtistResult;
+  /** Active query — used to flag conditional rows (location, medium chips). */
+  query: string;
+  onOpenArtwork: (artworkId: string) => void;
 }
 
-export function ArtistCard({ artist, initialFollowing, isAuthenticated }: ArtistCardProps) {
-  const router = useRouter();
-  const [following, setFollowing] = useState(initialFollowing);
-  const [, start] = useTransition();
+/**
+ * Search-results variant of the artist card. Top-aligned avatar, conditional
+ * Location and Medium-chip rows, and up to 3 artwork thumbnails (matched-medium
+ * pieces sorted first). No Follow button and no piece/trade counts — see
+ * project_ftae_search memory for the locked spec.
+ */
+export function ArtistCard({ artist, query, onOpenArtwork }: ArtistCardProps) {
   const displayName = artist.name?.trim() || artist.username;
-  const initials = deriveInitials(artist.name, artist.email);
-  const piecesLabel = `${artist.pieces_count} ${artist.pieces_count === 1 ? 'Piece' : 'Pieces'}`;
-  const tradesLabel = `${artist.trades_count} ${artist.trades_count === 1 ? 'Trade' : 'Trades'}`;
-
-  function onToggle(event: React.MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!isAuthenticated) {
-      router.push('/');
-      return;
-    }
-    const next = !following;
-    setFollowing(next);
-    start(async () => {
-      const result = await toggleFollow(artist.id, artist.username);
-      if (!result.ok || result.following !== next) setFollowing((p) => !p);
-    });
-  }
+  const trimmedQuery = query.trim();
+  const needle = trimmedQuery.toLowerCase();
+  const showLocation = Boolean(
+    artist.location_city &&
+      needle.length > 0 &&
+      artist.location_city.toLowerCase().includes(needle),
+  );
+  const chips = artist.matched_mediums.slice(0, 3);
 
   return (
     <Link
@@ -47,7 +38,7 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
     >
       <div className="flex gap-[12px] items-start">
         <Avatar
-          initials={initials}
+          initials={artist.initial}
           avatarUrl={artist.avatar_url}
           size={48}
           textSize="text-[16px]"
@@ -55,7 +46,9 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
         />
         <div className="flex-1 min-w-0 flex flex-col gap-[4px]">
           <div className="flex items-center gap-[6px]">
-            <p className="font-sans font-semibold text-ink text-[15px] truncate">{displayName}</p>
+            <p className="font-sans font-semibold text-ink text-[14px] truncate">
+              {displayName}
+            </p>
             {artist.is_founding_member && (
               <Star01
                 className="w-[16px] h-[16px] text-accent shrink-0"
@@ -70,12 +63,13 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
               />
             )}
           </div>
-          {artist.location_city && (
+          <p className="font-sans text-muted text-[13px] truncate">@{artist.username}</p>
+          {showLocation && (
             <p className="font-sans text-muted text-[13px] truncate">{artist.location_city}</p>
           )}
-          {artist.mediums.length > 0 && (
+          {chips.length > 0 && (
             <div className="flex flex-wrap gap-[4px_6px]">
-              {artist.mediums.slice(0, 3).map((m) => (
+              {chips.map((m) => (
                 <span
                   key={m}
                   className="bg-accent/10 rounded-[20px] px-[8px] py-[3px] font-sans font-medium text-[11px] text-accent"
@@ -85,24 +79,41 @@ export function ArtistCard({ artist, initialFollowing, isAuthenticated }: Artist
               ))}
             </div>
           )}
-          <p className="font-sans text-[12px] text-muted/80">
-            {piecesLabel}  |  {tradesLabel}
-          </p>
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-pressed={following}
-          className={
-            'rounded-[20px] px-[14px] py-[8px] font-sans font-semibold text-[13px] shrink-0 ' +
-            (following
-              ? 'bg-accent/10 text-accent border border-accent/0 font-medium'
-              : 'bg-surface text-accent border-[1.5px] border-accent')
-          }
-        >
-          {following ? 'Following' : 'Follow'}
-        </button>
       </div>
+      {artist.artwork_previews.length > 0 && (
+        <div className="mt-[12px] flex gap-[8px]">
+          {artist.artwork_previews.map((preview) => (
+            <button
+              key={preview.id}
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onOpenArtwork(preview.id);
+              }}
+              aria-label="View artwork"
+              className="relative aspect-square overflow-hidden rounded-[6px] flex-1 min-w-0 bg-divider"
+            >
+              {preview.primary_photo_url && (
+                <Image
+                  src={preview.primary_photo_url}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1280px) 118px, (min-width: 768px) 101px, 95px"
+                  className="object-cover"
+                  style={{
+                    objectPosition: `${preview.primary_photo_focal_x * 100}% ${preview.primary_photo_focal_y * 100}%`,
+                  }}
+                />
+              )}
+            </button>
+          ))}
+          {Array.from({ length: 3 - artist.artwork_previews.length }).map((_, i) => (
+            <div key={`spacer-${i}`} aria-hidden className="flex-1 min-w-0" />
+          ))}
+        </div>
+      )}
     </Link>
   );
 }

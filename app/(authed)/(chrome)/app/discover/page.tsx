@@ -1,13 +1,17 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { fetchArtworksPage } from '@/app/_lib/artworks';
+import { fetchArtworksPage, fetchMediumsList } from '@/app/_lib/artworks';
 import { bookmarkedSet } from '@/app/_lib/bookmarks';
 import { getReferralUrl } from '@/lib/referral-server';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DiscoverClient } from './DiscoverClient';
 
-export default async function DiscoverPage() {
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,19 +25,27 @@ export default async function DiscoverPage() {
     .single();
   const viewerIsTest = Boolean(viewer?.is_test_user);
 
-  const initial = await fetchArtworksPage(null, { scope: viewerIsTest ? 'test' : 'real' });
+  const [{ items, nextCursor }, mediumsList, params] = await Promise.all([
+    fetchArtworksPage(null, { scope: viewerIsTest ? 'test' : 'real' }),
+    fetchMediumsList(),
+    searchParams,
+  ]);
+
   const initialBookmarkedIds = Array.from(
-    await bookmarkedSet(user.id, initial.items.map((a) => a.id)),
+    await bookmarkedSet(user.id, items.map((a) => a.id)),
   );
   const referralUrl = viewer?.referral_code ? await getReferralUrl(viewer.referral_code) : null;
+  const initialQuery = (params.q ?? '').slice(0, 80);
 
   return (
     <main className="bg-canvas flex-1 w-full">
       <ErrorBoundary label="discover">
         <DiscoverClient
-          initialArtworks={initial.items}
-          initialCursor={initial.nextCursor}
+          initialArtworks={items}
+          initialCursor={nextCursor}
           initialBookmarkedIds={initialBookmarkedIds}
+          mediumsList={mediumsList}
+          initialQuery={initialQuery}
           viewerId={user.id}
           isAuthenticated
           referralUrl={referralUrl}

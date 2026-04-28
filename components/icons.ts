@@ -25,6 +25,8 @@ export { default as SearchSm } from '@untitled-ui/icons-react/build/esm/SearchSm
 export { default as Copy01 } from '@untitled-ui/icons-react/build/esm/Copy01';
 export { default as XCircle } from '@untitled-ui/icons-react/build/esm/XCircle';
 export { default as Upload01 } from '@untitled-ui/icons-react/build/esm/Upload01';
+export { default as Users01 } from '@untitled-ui/icons-react/build/esm/Users01';
+export { default as Image01 } from '@untitled-ui/icons-react/build/esm/Image01';
 
 // Custom-inlined icons — see components/icons/*.tsx for why.
 export { Bookmark } from './icons/Bookmark';
