@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import imageCompression from 'browser-image-compression';
 import { XClose, PlusSquare } from '@/components/icons';
@@ -18,6 +17,7 @@ import type { FocalPoint } from '@/lib/focal-point';
 
 const SAVE_DEBOUNCE_MS = 500;
 const MAX_BIO = 160;
+const MAX_MEDIUMS = 5;
 const PLATFORMS = [
   { value: 'instagram', label: 'Instagram' },
   { value: 'facebook', label: 'Facebook' },
@@ -29,7 +29,6 @@ const PLATFORMS = [
 ];
 
 interface EditModalProps {
-  backHref: string;
   initial: {
     name: string;
     location: string;
@@ -43,15 +42,15 @@ interface EditModalProps {
     socialHandle: string;
   };
   mediums: { id: string; name: string }[];
+  onClose: () => void;
 }
 
-export function EditModal({ backHref, initial, mediums }: EditModalProps) {
-  const router = useRouter();
+export function EditModal({ initial, mediums, onClose }: EditModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string | null>(null);
 
   function close() {
-    router.push(backHref);
+    onClose();
   }
 
   return (
@@ -275,6 +274,7 @@ function Step1({
         <input
           id="edit-name"
           type="text"
+          required
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={80}
@@ -287,6 +287,7 @@ function Step1({
         <input
           id="edit-location"
           type="text"
+          required
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           maxLength={120}
@@ -296,8 +297,24 @@ function Step1({
       <span className="h-[32px] w-px shrink-0" />
       <button
         type="button"
-        onClick={onContinue}
-        className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px]"
+        onClick={() => {
+          onError(null);
+          if (!name.trim()) {
+            onError('Please add your display name.');
+            return;
+          }
+          if (!location.trim()) {
+            onError('Please add your location.');
+            return;
+          }
+          if (!avatarUrl) {
+            onError('Please add a profile photo.');
+            return;
+          }
+          onContinue();
+        }}
+        disabled={!name.trim() || !location.trim() || !avatarUrl || isUploadingAvatar}
+        className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Continue
       </button>
@@ -363,8 +380,11 @@ function Step2({
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < MAX_MEDIUMS) {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -378,17 +398,20 @@ function Step2({
       <div className="flex flex-wrap items-start gap-[8px] w-full">
         {mediums.map((m) => {
           const on = selected.has(m.id);
+          const isCapped = !on && selected.size >= MAX_MEDIUMS;
           return (
             <button
               key={m.id}
               type="button"
               onClick={() => toggle(m.id)}
               aria-pressed={on}
+              aria-disabled={isCapped || undefined}
               className={[
-                'rounded-full px-[12px] py-[8px] font-sans font-medium text-[14px] border',
+                'rounded-full px-[12px] py-[8px] font-sans font-medium text-[14px] border transition-opacity',
                 on
                   ? 'bg-accent/10 border-surface text-accent'
                   : 'bg-surface border-field text-muted',
+                isCapped ? 'opacity-40 cursor-not-allowed' : '',
               ].join(' ')}
             >
               {m.name}
@@ -396,7 +419,11 @@ function Step2({
           );
         })}
       </div>
-      <span className="h-[24px] w-px shrink-0" />
+      <span className="h-[8px] w-px shrink-0" />
+      <p className="font-sans text-[12px] text-muted text-right w-full">
+        {selected.size} / {MAX_MEDIUMS}
+      </p>
+      <span className="h-[16px] w-px shrink-0" />
       <label htmlFor="edit-bio" className="font-sans font-medium text-[13px] text-muted w-full">
         In one line, who are you as an artist?
       </label>
@@ -416,8 +443,20 @@ function Step2({
       <span className="h-[24px] w-px shrink-0" />
       <button
         type="button"
-        onClick={onContinue}
-        className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px]"
+        onClick={() => {
+          onError(null);
+          if (selected.size === 0) {
+            onError('Please select at least one medium.');
+            return;
+          }
+          if (!bio.trim()) {
+            onError('Please add a one-line bio.');
+            return;
+          }
+          onContinue();
+        }}
+        disabled={selected.size === 0 || !bio.trim()}
+        className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Continue
       </button>

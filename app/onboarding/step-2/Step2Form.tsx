@@ -12,6 +12,7 @@ interface Step2FormProps {
 
 const SAVE_DEBOUNCE_MS = 500;
 const MAX_BIO = 160;
+const MAX_MEDIUMS = 5;
 
 export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2FormProps) {
   const router = useRouter();
@@ -63,8 +64,11 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < MAX_MEDIUMS) {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -105,17 +109,22 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
       <div className="flex flex-wrap items-start gap-[8px] w-full">
         {mediums.map((m) => {
           const isOn = selected.has(m.id);
+          // Once 5 are selected, the remaining unselected chips become
+          // visually unavailable; clicking still no-ops via toggle().
+          const isCapped = !isOn && selected.size >= MAX_MEDIUMS;
           return (
             <button
               key={m.id}
               type="button"
               onClick={() => toggle(m.id)}
               aria-pressed={isOn}
+              aria-disabled={isCapped || undefined}
               className={[
-                'rounded-full px-[12px] py-[8px] font-sans font-medium text-[14px] leading-[20px] border',
+                'rounded-full px-[12px] py-[8px] font-sans font-medium text-[14px] leading-[20px] border transition-opacity',
                 isOn
                   ? 'bg-accent/10 border-surface text-accent'
                   : 'bg-surface border-field text-muted',
+                isCapped ? 'opacity-40 cursor-not-allowed' : '',
               ].join(' ')}
             >
               {m.name}
@@ -123,6 +132,10 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
           );
         })}
       </div>
+      <span aria-hidden className="h-[8px] w-px shrink-0" />
+      <p className="font-sans text-[12px] leading-[18px] text-muted text-right w-full">
+        {selected.size} / {MAX_MEDIUMS}
+      </p>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
       <div className="w-full max-w-[310px] flex flex-col items-center">
         <label htmlFor="bio" className="font-sans font-medium text-[13px] leading-[18px] text-muted w-full">

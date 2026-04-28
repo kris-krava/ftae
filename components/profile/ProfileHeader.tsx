@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Edit05, Star01, UserCheck01 } from '@/components/icons';
+import { Star01, UserCheck01 } from '@/components/icons';
 import { Avatar } from '@/components/profile/Avatar';
 import { PlatformBadge } from '@/components/PlatformBadge';
 import type { ProfileUser, ProfileMedium } from '@/app/_lib/profile';
@@ -8,7 +8,9 @@ import { deriveInitials } from '@/lib/initials';
 interface ProfileHeaderProps {
   user: ProfileUser;
   mediums: ProfileMedium[];
-  editHref?: string;
+  /** Edit Profile trigger rendered next to the avatar. The owner's profile
+   * page passes a client-side button that opens the EditModal in-place. */
+  editButton?: React.ReactNode;
   /** Whether to render the inline "Edit" link next to the @username row. */
   showUsernameEdit?: boolean;
 }
@@ -16,7 +18,7 @@ interface ProfileHeaderProps {
 export function ProfileHeader({
   user,
   mediums,
-  editHref,
+  editButton,
   showUsernameEdit = false,
 }: ProfileHeaderProps) {
   const displayName = user.name?.trim() || user.username;
@@ -44,15 +46,7 @@ export function ProfileHeader({
           focalY={user.avatar_focal_y}
           aspectRatio={user.avatar_aspect_ratio}
         />
-        {editHref && (
-          <Link
-            href={editHref}
-            aria-label="Edit Profile"
-            className="absolute top-[-10px] right-[-12px] w-[40px] h-[40px] flex items-center justify-center"
-          >
-            <Edit05 className="w-[20px] h-[20px] text-muted" />
-          </Link>
-        )}
+        {editButton}
       </div>
       <div className="flex items-center gap-[8px] mt-[10px]">
         <h1 className="font-serif font-bold text-ink text-[24px] tab:text-[28px] desk:text-[32px]">

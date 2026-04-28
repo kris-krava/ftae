@@ -280,9 +280,11 @@ export async function saveStep2Mediums(mediumIds: string[]): Promise<SaveResult>
   const limit = await rateLimit(`step2-mediums:${userId}`, 60, 60_000);
   if (!limit.ok) return { ok: false, error: 'Too many saves.' };
 
+  // Hard cap at 5 — the product limit. Client UI enforces this too, but the
+  // server clamps as defense (autosave races, multiple tabs, scripted abuse).
   const cleanIds = Array.from(new Set(mediumIds))
     .filter((id) => MediumIdSchema.safeParse(id).success)
-    .slice(0, 50);
+    .slice(0, 5);
 
   // Validate IDs exist in mediums table
   if (cleanIds.length > 0) {

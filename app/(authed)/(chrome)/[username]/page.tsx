@@ -10,11 +10,13 @@ import {
   isFollowing,
 } from '@/app/_lib/profile';
 import { bookmarkedSet } from '@/app/_lib/bookmarks';
+import { getMediums, getUserMediumIds } from '@/app/_lib/onboarding';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ArtworkGrid } from '@/components/profile/ArtworkGrid';
 import { AccountSection } from '@/components/profile/AccountSection';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { BackButton } from '@/components/profile/BackButton';
+import { EditProfileButton } from '@/components/profile/EditProfileButton';
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -38,10 +40,12 @@ export default async function ProfilePage(props: ProfilePageProps) {
 
   const isOwner = authUser.id === profileUser.id;
 
-  const [mediums, artworks, alreadyFollowing] = await Promise.all([
+  const [mediums, artworks, alreadyFollowing, allMediums, ownerMediumIds] = await Promise.all([
     getUserMediums(profileUser.id),
     getUserArtworks(profileUser.id),
     !isOwner ? isFollowing(authUser.id, profileUser.id) : Promise.resolve(false),
+    isOwner ? getMediums() : Promise.resolve([]),
+    isOwner ? getUserMediumIds(profileUser.id) : Promise.resolve([]),
   ]);
 
   const bookmarkedIds = !isOwner
@@ -72,7 +76,25 @@ export default async function ProfilePage(props: ProfilePageProps) {
           <ProfileHeader
             user={profileUser}
             mediums={mediums}
-            editHref={isOwner ? '/app/profile/edit' : undefined}
+            editButton={
+              isOwner ? (
+                <EditProfileButton
+                  initial={{
+                    name: profileUser.name ?? '',
+                    location: profileUser.location_city ?? '',
+                    avatarUrl: profileUser.avatar_url ?? null,
+                    avatarFocalX: profileUser.avatar_focal_x ?? 0.5,
+                    avatarFocalY: profileUser.avatar_focal_y ?? 0.5,
+                    mediumIds: ownerMediumIds,
+                    bio: profileUser.bio ?? '',
+                    website: profileUser.website_url ?? '',
+                    socialPlatform: profileUser.social_platform ?? '',
+                    socialHandle: profileUser.social_handle ?? '',
+                  }}
+                  mediums={allMediums}
+                />
+              ) : undefined
+            }
             showUsernameEdit={isOwner}
           />
 
