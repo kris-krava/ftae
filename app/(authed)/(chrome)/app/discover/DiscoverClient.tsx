@@ -176,7 +176,9 @@ export function DiscoverClient({
 
   useEffect(() => {
     let dwellTimer: number | null = null;
-    let lastY = window.scrollY;
+    // Clamp at 0 so iOS rubber-band overscroll (where window.scrollY briefly
+    // goes negative) doesn't poison the dy delta on the recovery frame.
+    let lastY = Math.max(0, window.scrollY);
     let offset = 0;
 
     const measure = () => {
@@ -214,11 +216,6 @@ export function DiscoverClient({
     };
     snapPanelRef.current = snapPanelToTop;
 
-    const fullReveal = () => {
-      if (!referralDismissedRef.current && referralUrl) setReferralMounted(true);
-      snapPanelToTop();
-    };
-
     const startDwell = () => {
       if (dwellTimer) window.clearTimeout(dwellTimer);
       if (modalOpenRef.current || searchActiveRef.current) return;
@@ -232,15 +229,27 @@ export function DiscoverClient({
     startDwellRef.current = startDwell;
 
     const onScroll = () => {
-      const cur = window.scrollY;
+      // Clamp negative scrollY to 0. iOS rubber-band at the top reports
+      // negative scrollY during the pull and snaps back through 0 on release;
+      // without the clamp, the recovery frame computes a positive dy that
+      // would push the panel up off-screen even though the user never
+      // scrolled down.
+      const cur = Math.max(0, window.scrollY);
       const dy = cur - lastY;
       lastY = cur;
       startDwell();
       if (dy > 0) {
+        // Scroll down: panel translates up with content, glued frame-by-frame.
         offset = Math.min(offset + dy, panelHideRef.current);
         apply(false);
       } else if (dy < 0) {
-        fullReveal();
+        // Scroll up: panel translates back down with content, glued. User
+        // doesn't have to return all the way to the top to see it again —
+        // it locks fully visible (offset=0) once the up-scroll consumes the
+        // hidden distance. Mount the referral as soon as we're revealing.
+        offset = Math.max(offset + dy, 0);
+        if (!referralDismissedRef.current && referralUrl) setReferralMounted(true);
+        apply(false);
       }
     };
 

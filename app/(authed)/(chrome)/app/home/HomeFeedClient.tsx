@@ -99,14 +99,16 @@ export function HomeFeedClient({
 
   useEffect(() => {
     let dwellTimer: number | null = null;
-    let lastY = window.scrollY;
+    // Clamp at 0 so iOS rubber-band overscroll (where window.scrollY briefly
+    // goes negative) doesn't poison the dy delta on the recovery frame.
+    let lastY = Math.max(0, window.scrollY);
     let offset = FOLLOW_CTA_HIDE;
 
     const apply = (animated: boolean) => {
       const card = cardRef.current;
       if (!card) return;
-      // Animated reveals get a CSS transition; scroll-down tracking is instant
-      // so the card stays glued to the grid frame-for-frame.
+      // Animated reveals get a CSS transition; scroll tracking is instant
+      // so the card stays glued to the grid frame-for-frame in both directions.
       card.style.transition = animated ? FOLLOW_CTA_TRANSITION : 'none';
       card.style.transform = `translate(-50%, -${offset}px)`;
     };
@@ -130,15 +132,23 @@ export function HomeFeedClient({
     startDwellRef.current = startDwell;
 
     const onScroll = () => {
-      const cur = window.scrollY;
+      // Clamp negative scrollY to 0 (see Discover for the full story).
+      const cur = Math.max(0, window.scrollY);
       const dy = cur - lastY;
       lastY = cur;
       startDwell();
       if (dy > 0) {
+        // Scroll down: card translates up, glued.
         offset = Math.min(offset + dy, FOLLOW_CTA_HIDE);
         apply(false);
       } else if (dy < 0) {
-        reveal();
+        // Scroll up: card translates back down, glued frame-by-frame.
+        // Don't snap to 0 — user shouldn't have to return all the way to
+        // the top to see the CTA again. Mount it as soon as we reveal so
+        // the slide-down is over real content.
+        offset = Math.max(offset + dy, 0);
+        if (!dismissedRef.current) setMounted(true);
+        apply(false);
       }
     };
 
