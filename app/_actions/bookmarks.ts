@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
+import { reportError } from '@/lib/observability';
 
 export type BookmarkResult =
   | { ok: true; bookmarked: boolean }
@@ -21,6 +22,15 @@ export async function toggleBookmark(artworkId: string): Promise<BookmarkResult>
     .select('user_id, is_active')
     .eq('id', artworkId)
     .maybeSingle();
+  if (artworkErr) {
+    reportError({
+      area: 'bookmark',
+      op: 'artwork_lookup',
+      err: artworkErr,
+      userId: user.id,
+      extra: { artwork_id: artworkId },
+    });
+  }
   if (artworkErr || !artwork || !artwork.is_active) {
     return { ok: false, error: 'Artwork not found.' };
   }
@@ -43,7 +53,16 @@ export async function toggleBookmark(artworkId: string): Promise<BookmarkResult>
       .from('artwork_bookmarks')
       .delete()
       .eq('id', existing.id);
-    if (error) return { ok: false, error: 'Could not remove bookmark.' };
+    if (error) {
+      reportError({
+        area: 'bookmark',
+        op: 'delete',
+        err: error,
+        userId: user.id,
+        extra: { artwork_id: artworkId },
+      });
+      return { ok: false, error: 'Could not remove bookmark.' };
+    }
     revalidatePath('/app/trades');
     return { ok: true, bookmarked: false };
   }
@@ -52,7 +71,16 @@ export async function toggleBookmark(artworkId: string): Promise<BookmarkResult>
     user_id: user.id,
     artwork_id: artworkId,
   });
-  if (error) return { ok: false, error: 'Could not save bookmark.' };
+  if (error) {
+    reportError({
+      area: 'bookmark',
+      op: 'insert',
+      err: error,
+      userId: user.id,
+      extra: { artwork_id: artworkId },
+    });
+    return { ok: false, error: 'Could not save bookmark.' };
+  }
   revalidatePath('/app/trades');
   return { ok: true, bookmarked: true };
 }

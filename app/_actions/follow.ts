@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
+import { reportError } from '@/lib/observability';
 
 export type FollowResult = { ok: true; following: boolean } | { ok: false; error: string };
 
@@ -27,7 +28,16 @@ export async function toggleFollow(targetUserId: string, targetUsername: string)
 
   if (existing) {
     const { error } = await supabaseAdmin.from('follows').delete().eq('id', existing.id);
-    if (error) return { ok: false, error: 'Could not unfollow.' };
+    if (error) {
+      reportError({
+        area: 'follow',
+        op: 'delete',
+        err: error,
+        userId: user.id,
+        extra: { target_user_id: targetUserId },
+      });
+      return { ok: false, error: 'Could not unfollow.' };
+    }
     revalidatePath(`/${targetUsername}`);
     return { ok: true, following: false };
   }
@@ -37,7 +47,16 @@ export async function toggleFollow(targetUserId: string, targetUsername: string)
     following_id: targetUserId,
     is_queued: true,
   });
-  if (error) return { ok: false, error: 'Could not follow.' };
+  if (error) {
+    reportError({
+      area: 'follow',
+      op: 'insert',
+      err: error,
+      userId: user.id,
+      extra: { target_user_id: targetUserId },
+    });
+    return { ok: false, error: 'Could not follow.' };
+  }
   revalidatePath(`/${targetUsername}`);
   return { ok: true, following: true };
 }
