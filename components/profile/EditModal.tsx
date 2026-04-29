@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 // browser-image-compression is dynamically imported on first compress call
 // so its ~50KB doesn't load until the user picks a new avatar.
 import { XClose, PlusSquare } from '@/components/icons';
@@ -18,7 +18,6 @@ import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { useFocusTrap } from '@/lib/use-focus-trap';
 import type { FocalPoint } from '@/lib/focal-point';
 
-const SAVE_DEBOUNCE_MS = 500;
 const MAX_BIO = 160;
 const MAX_MEDIUMS = 5;
 const PLATFORMS = [
@@ -166,30 +165,9 @@ function Step1({
   const [focal, setFocal] = useState<FocalPoint>({ x: initialAvatarFocalX, y: initialAvatarFocalY });
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialMount = useRef(true);
-  const [, start] = useTransition();
-
-  useEffect(() => {
-    if (initialMount.current) {
-      initialMount.current = false;
-      return;
-    }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const fd = new FormData();
-      fd.set('name', name);
-      fd.set('location_city', location);
-      start(async () => {
-        const r = await saveStep1Profile(fd);
-        if (!r.ok) onError(r.error);
-        else onError(null);
-      });
-    }, SAVE_DEBOUNCE_MS);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [name, location, onError]);
+  // Avatar upload + focal still persist immediately (separate server actions);
+  // the typed text fields buffer locally and only persist on Save & Continue.
+  const [pending, start] = useTransition();
 
   async function onAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -318,12 +296,22 @@ function Step1({
             onError('Please add a profile photo.');
             return;
           }
-          onContinue();
+          const fd = new FormData();
+          fd.set('name', name);
+          fd.set('location_city', location);
+          start(async () => {
+            const r = await saveStep1Profile(fd);
+            if (!r.ok) {
+              onError(r.error);
+              return;
+            }
+            onContinue();
+          });
         }}
-        disabled={!name.trim() || !location.trim() || !avatarUrl || isUploadingAvatar}
+        disabled={!name.trim() || !location.trim() || !avatarUrl || isUploadingAvatar || pending}
         className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        Continue
+        {pending ? 'Saving…' : 'Save & Continue'}
       </button>
     </>
   );
@@ -344,45 +332,9 @@ function Step2({
 }) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelectedIds));
   const [bio, setBio] = useState(initialBio);
-  const mediumDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bioDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mounted = useRef(false);
-  const [, start] = useTransition();
-
-  useEffect(() => {
-    if (!mounted.current) return;
-    if (mediumDebounce.current) clearTimeout(mediumDebounce.current);
-    mediumDebounce.current = setTimeout(() => {
-      const ids = Array.from(selected);
-      start(async () => {
-        const r = await saveStep2Mediums(ids);
-        if (!r.ok) onError(r.error);
-        else onError(null);
-      });
-    }, SAVE_DEBOUNCE_MS);
-    return () => {
-      if (mediumDebounce.current) clearTimeout(mediumDebounce.current);
-    };
-  }, [selected, onError]);
-
-  useEffect(() => {
-    if (!mounted.current) return;
-    if (bioDebounce.current) clearTimeout(bioDebounce.current);
-    bioDebounce.current = setTimeout(() => {
-      start(async () => {
-        const r = await saveStep2Bio(bio);
-        if (!r.ok) onError(r.error);
-        else onError(null);
-      });
-    }, SAVE_DEBOUNCE_MS);
-    return () => {
-      if (bioDebounce.current) clearTimeout(bioDebounce.current);
-    };
-  }, [bio, onError]);
-
-  useEffect(() => {
-    mounted.current = true;
-  }, []);
+  // Mediums + bio buffer locally and only persist on Save & Continue. The
+  // user can dismiss (X / click-outside) to cancel pending edits.
+  const [pending, start] = useTransition();
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -460,12 +412,27 @@ function Step2({
             onError('Please add a one-line bio.');
             return;
           }
-          onContinue();
+          start(async () => {
+            const ids = Array.from(selected);
+            const [mediumsRes, bioRes] = await Promise.all([
+              saveStep2Mediums(ids),
+              saveStep2Bio(bio),
+            ]);
+            if (!mediumsRes.ok) {
+              onError(mediumsRes.error);
+              return;
+            }
+            if (!bioRes.ok) {
+              onError(bioRes.error);
+              return;
+            }
+            onContinue();
+          });
         }}
-        disabled={selected.size === 0 || !bio.trim()}
+        disabled={selected.size === 0 || !bio.trim() || pending}
         className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        Continue
+        {pending ? 'Saving…' : 'Save & Continue'}
       </button>
     </>
   );
@@ -561,7 +528,7 @@ function Step3({
         disabled={pending}
         className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-60"
       >
-        {pending ? 'Saving…' : 'Save Changes'}
+        {pending ? 'Saving…' : 'Save'}
       </button>
     </form>
   );
