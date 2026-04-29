@@ -138,9 +138,11 @@ export async function requestEmailChange(formData: FormData): Promise<EditEmailR
       op: 'resend_send',
       err: oldRes.error ?? newRes.error,
       userId: user.id,
+      // Resend error names are safe; messages can echo the recipient email,
+      // which is PII. Names + codes are enough for triage.
       extra: {
-        oldErr: oldRes.error?.message,
-        newErr: newRes.error?.message,
+        oldErrName: oldRes.error?.name,
+        newErrName: newRes.error?.name,
       },
     });
     // Roll back the pending row so the user can retry without the rate

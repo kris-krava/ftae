@@ -129,12 +129,13 @@ export async function handleEmailChangeConfirm(
       email_confirm: true,
     });
     if (applyErr) {
+      // Don't pass `newEmail` here — it's PII and the userId already groups
+      // the issue. The scrubber would redact it anyway, but defense-in-depth.
       reportError({
         area: 'confirm-email-change',
         op: 'apply_auth_email_update',
         err: applyErr,
         userId: user.id,
-        extra: { newEmail },
       });
       return NextResponse.redirect(`${origin}/app/profile/edit-email?error=save`);
     }
