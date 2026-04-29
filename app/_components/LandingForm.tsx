@@ -7,17 +7,11 @@ import { requestMagicLink } from '@/app/_actions/sign-in';
 interface LandingFormProps {
   /** Optional same-origin path to land on after auth (deep-link funnel). */
   next?: string | null;
-  /**
-   * `'center'` (landing) horizontally centers the checkbox row inside the
-   * form column; `'start'` (sign-in) left-aligns it with the input/button.
-   */
-  checkboxAlign?: 'center' | 'start';
 }
 
-export function LandingForm({ next = null, checkboxAlign = 'center' }: LandingFormProps) {
+export function LandingForm({ next = null }: LandingFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [remember, setRemember] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +31,6 @@ export function LandingForm({ next = null, checkboxAlign = 'center' }: LandingFo
     const fd = new FormData();
     fd.set('email', trimmed);
     if (next) fd.set('next', next);
-    if (remember) fd.set('remember', '1');
     const result = await requestMagicLink(fd);
     if (!result.ok) {
       setPending(false);
@@ -69,25 +62,6 @@ export function LandingForm({ next = null, checkboxAlign = 'center' }: LandingFo
             'focus:border-accent focus:outline-none focus:ring-0'
           }
         />
-
-        {/* Mobile auto-persists; tablet/desktop opt-in via this checkbox. */}
-        <label
-          className={
-            'hidden tab:flex items-center gap-[12px] cursor-pointer select-none ' +
-            (checkboxAlign === 'center' ? 'self-center' : 'self-start')
-          }
-        >
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            disabled={pending}
-            className="w-[20px] h-[20px] rounded-[6px] border-[1.5px] border-field text-accent accent-accent focus:ring-0 focus:ring-offset-0"
-          />
-          <span className="font-sans text-ink text-[14px] leading-[20px]">
-            Keep me logged in for 30 days
-          </span>
-        </label>
 
         <button
           type="submit"

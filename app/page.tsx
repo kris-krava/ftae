@@ -188,7 +188,7 @@ function CTASection() {
           >
             Become a founding artist, add your art, and see what others want to trade!
           </p>
-          <LandingForm checkboxAlign="center" />
+          <LandingForm />
           <p className="font-sans text-[13px] leading-[20px] text-muted tab:text-[14px] tab:leading-[22px]">
             I&rsquo;ll send you a magic link &mdash; no password needed.
           </p>

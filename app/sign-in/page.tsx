@@ -43,7 +43,7 @@ export default async function SignInPage(props: SignInPageProps) {
       </p>
 
       <div className="mt-[16px]">
-        <LandingForm next={next} checkboxAlign="start" />
+        <LandingForm next={next} />
       </div>
 
       <p className="mt-[16px] font-sans text-[13px] leading-[20px] text-muted tab:text-[14px] tab:leading-[22px]">

@@ -1,10 +1,14 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { isReservedEmail } from '@/lib/reserved-emails';
 import { safeNext } from '@/lib/safe-next';
+import {
+  PENDING_NEXT_COOKIE,
+  PENDING_COOKIE_MAX_AGE_SECONDS,
+} from '@/lib/auth-pending-cookies';
 
 export type RequestMagicLinkResult =
   | { ok: true }
@@ -48,7 +52,6 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   }
 
   const next = safeNext(formData.get('next') as string | null);
-  const remember = formData.get('remember') === '1';
 
   const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
@@ -56,11 +59,27 @@ export async function requestMagicLink(formData: FormData): Promise<RequestMagic
   if (!host) return { ok: false, error: 'Could not determine request origin.' };
   const origin = `${proto}://${host}`;
 
-  const callbackParams = new URLSearchParams();
-  if (next) callbackParams.set('next', next);
-  if (remember) callbackParams.set('remember', '1');
-  const callbackQs = callbackParams.toString();
-  const callbackUrl = `${origin}/auth/callback` + (callbackQs ? `?${callbackQs}` : '');
+  // The magic-link email points at /auth/confirm (Supabase template),
+  // independent of `emailRedirectTo`. We use Supabase's own redirect for the
+  // legacy /auth/callback fallback only, in case any old-template email is
+  // still in an inbox. Deep-link `next` rides via a short-lived cookie so the
+  // template URL stays simple.
+  const cookieStore = await cookies();
+  if (next) {
+    cookieStore.set({
+      name: PENDING_NEXT_COOKIE,
+      value: next,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: PENDING_COOKIE_MAX_AGE_SECONDS,
+    });
+  } else {
+    cookieStore.delete(PENDING_NEXT_COOKIE);
+  }
+
+  const callbackUrl = `${origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({

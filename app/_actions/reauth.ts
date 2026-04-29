@@ -1,9 +1,14 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { safeNext } from '@/lib/safe-next';
+import {
+  PENDING_REAUTH_COOKIE,
+  PENDING_NEXT_COOKIE,
+  PENDING_COOKIE_MAX_AGE_SECONDS,
+} from '@/lib/auth-pending-cookies';
 
 export type ReauthResult =
   | { ok: true; sentTo: string }
@@ -28,6 +33,30 @@ export async function requestReauth(formData: FormData): Promise<ReauthResult> {
   const host = h.get('host');
   if (!host) return { ok: false, error: 'Could not determine request origin.' };
   const origin = `${proto}://${host}`;
+
+  // The magic-link email points at /auth/confirm — same template as regular
+  // sign-in. We mark this confirmation as a reauth via short-lived cookies so
+  // /auth/confirm can branch on flow context without relying on URL params
+  // that would survive the email round-trip in plaintext.
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: PENDING_REAUTH_COOKIE,
+    value: user.id,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: PENDING_COOKIE_MAX_AGE_SECONDS,
+  });
+  cookieStore.set({
+    name: PENDING_NEXT_COOKIE,
+    value: next,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: PENDING_COOKIE_MAX_AGE_SECONDS,
+  });
 
   const callbackParams = new URLSearchParams({ type: 'reauth', next });
   const redirectTo = `${origin}/auth/callback?${callbackParams.toString()}`;
