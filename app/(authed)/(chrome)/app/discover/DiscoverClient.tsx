@@ -88,6 +88,8 @@ export function DiscoverClient({
 
   // Default Discover state — full artwork feed.
   const [artworks, setArtworks] = useState(initialArtworks);
+  // Cascade only the initial batch — see HomeFeedClient for the rationale.
+  const initialArtworksCountRef = useRef(initialArtworks.length);
   const [artworksCursor, setArtworksCursor] = useState(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
@@ -481,6 +483,7 @@ export function DiscoverClient({
       <div className="pt-[76px] tab:pt-[96px]">
         <ArtworkGridSection
           artworks={artworks}
+          cascadeUntil={initialArtworksCountRef.current}
           sentinelRef={sentinelRef}
           loadingMore={loadingMore}
           hasMore={Boolean(artworksCursor)}
@@ -573,6 +576,7 @@ export function DiscoverClient({
 
 function ArtworkGridSection({
   artworks,
+  cascadeUntil,
   sentinelRef,
   loadingMore,
   hasMore,
@@ -582,6 +586,9 @@ function ArtworkGridSection({
   bookmarkedIds,
 }: {
   artworks: DiscoverArtwork[];
+  /** Tile indices < this animate with the cascade-in stagger; later
+   *  tiles (loaded via infinite scroll) appear instantly. */
+  cascadeUntil: number;
   sentinelRef: React.RefObject<HTMLDivElement>;
   loadingMore: boolean;
   hasMore: boolean;
@@ -602,18 +609,25 @@ function ArtworkGridSection({
   return (
     <>
       <div className="flex flex-wrap justify-center gap-[4px]">
-        {artworks.map((art, i) => (
-          <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile
-              artwork={art}
-              index={i}
-              onOpen={onOpen}
-              viewerId={viewerId}
-              isAuthenticated={isAuthenticated}
-              isBookmarked={bookmarkedIds.has(art.id)}
-            />
-          </div>
-        ))}
+        {artworks.map((art, i) => {
+          const animate = i < cascadeUntil;
+          return (
+            <div
+              key={art.id}
+              className={`${TILE_BASIS} shrink-0${animate ? ' cascade-in' : ''}`}
+              style={animate ? ({ '--i': i } as React.CSSProperties) : undefined}
+            >
+              <DiscoverArtworkTile
+                artwork={art}
+                index={i}
+                onOpen={onOpen}
+                viewerId={viewerId}
+                isAuthenticated={isAuthenticated}
+                isBookmarked={bookmarkedIds.has(art.id)}
+              />
+            </div>
+          );
+        })}
       </div>
       <div ref={sentinelRef} aria-hidden className="h-[1px]" />
       {hasMore && (

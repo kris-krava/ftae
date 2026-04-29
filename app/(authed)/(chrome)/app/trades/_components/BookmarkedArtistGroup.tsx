@@ -79,13 +79,14 @@ export function BookmarkedArtistGroup({
       </div>
 
       <div className="flex flex-wrap gap-[4px_5px] w-full">
-        {visiblePieces.map((piece) => (
+        {visiblePieces.map((piece, i) => (
           <button
             key={piece.id}
             type="button"
             onClick={() => onOpenArtwork(piece.id)}
             aria-label={piece.title ?? 'View artwork'}
-            className="basis-[calc((100%-20px)/5)] aspect-square rounded-[2px] overflow-hidden bg-divider relative shrink-0"
+            style={{ '--i': i } as React.CSSProperties}
+            className="basis-[calc((100%-20px)/5)] aspect-square rounded-[2px] overflow-hidden bg-divider relative shrink-0 cascade-in"
           >
             {piece.photo_url && (
               <Image

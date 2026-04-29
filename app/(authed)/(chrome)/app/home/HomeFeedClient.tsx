@@ -46,6 +46,9 @@ export function HomeFeedClient({
   viewerId,
 }: HomeFeedClientProps) {
   const [artworks, setArtworks] = useState(initialArtworks);
+  // Only cascade the first batch — infinite-scroll appends shouldn't
+  // re-animate, otherwise tiles loaded mid-scroll appear with stale delays.
+  const initialCountRef = useRef(initialArtworks.length);
   const [cursor, setCursor] = useState(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
@@ -151,18 +154,25 @@ export function HomeFeedClient({
   return (
     <>
       <div className="flex flex-wrap justify-center gap-[4px]">
-        {artworks.map((art, i) => (
-          <div key={art.id} className={`${TILE_BASIS} shrink-0`}>
-            <DiscoverArtworkTile
-              artwork={art}
-              index={i}
-              onOpen={openArtwork}
-              viewerId={viewerId}
-              isAuthenticated
-              isBookmarked={bookmarkedIds.has(art.id)}
-            />
-          </div>
-        ))}
+        {artworks.map((art, i) => {
+          const animate = i < initialCountRef.current;
+          return (
+            <div
+              key={art.id}
+              className={`${TILE_BASIS} shrink-0${animate ? ' cascade-in' : ''}`}
+              style={animate ? ({ '--i': i } as React.CSSProperties) : undefined}
+            >
+              <DiscoverArtworkTile
+                artwork={art}
+                index={i}
+                onOpen={openArtwork}
+                viewerId={viewerId}
+                isAuthenticated
+                isBookmarked={bookmarkedIds.has(art.id)}
+              />
+            </div>
+          );
+        })}
       </div>
       <div ref={sentinelRef} aria-hidden className="h-[1px]" />
       {cursor && (

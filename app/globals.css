@@ -61,8 +61,9 @@
 
   /* Stagger-cascade fade + slide-up. Apply with `cascade-in` and set the
    * stagger index via `style={{ '--i': i }}`. 60ms between rows, 320ms
-   * total per row. Used on the notifications list to give the page life
-   * on first render. */
+   * total per row. Stagger caps at 12 (720ms max delay) so very large
+   * grids don't leave tiles invisible for several seconds — anything
+   * past the 12th still cascades, just synchronized at the cap. */
   @keyframes cascade-in {
     0%   { transform: translateY(8px); opacity: 0; }
     100% { transform: translateY(0);   opacity: 1; }
@@ -70,6 +71,6 @@
 
   .cascade-in {
     animation: cascade-in 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-    animation-delay: calc(var(--i, 0) * 60ms);
+    animation-delay: calc(min(var(--i, 0), 12) * 60ms);
   }
 }
