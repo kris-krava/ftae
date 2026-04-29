@@ -6,6 +6,7 @@ import { FollowCTA } from '@/components/FollowCTA';
 import { ArtworkDetailsModal } from '@/components/profile/ArtworkDetailsModal';
 import { loadMoreHomeFeed } from '@/app/_actions/home';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
+import { useReverseScrollReveal } from '@/lib/use-reverse-scroll-reveal';
 import { FOLLOW_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
 
@@ -59,7 +60,6 @@ export function HomeFeedClient({
   // doesn't slide in behind it. Modal effect (below) flips the ref and kicks
   // the dwell back on close.
   const modalOpenRef = useRef(false);
-  const startDwellRef = useRef<() => void>(() => {});
 
   // Per-login dismissal — set when the user clicks the close X. Cleared by
   // the sign-out client handler so a fresh session restores the CTA.
@@ -97,73 +97,27 @@ export function HomeFeedClient({
     };
   }, [mounted]);
 
-  useEffect(() => {
-    let dwellTimer: number | null = null;
-    // Clamp at 0 so iOS rubber-band overscroll (where window.scrollY briefly
-    // goes negative) doesn't poison the dy delta on the recovery frame.
-    let lastY = Math.max(0, window.scrollY);
-    let offset = FOLLOW_CTA_HIDE;
-
-    const apply = (animated: boolean) => {
+  const scrollHandle = useReverseScrollReveal({
+    initialOffset: FOLLOW_CTA_HIDE,
+    dwellMs: FOLLOW_CTA_DWELL_MS,
+    hideDistance: () => FOLLOW_CTA_HIDE,
+    isPaused: () => modalOpenRef.current,
+    isDismissed: () => dismissedRef.current,
+    apply: (offset, animated) => {
       const card = cardRef.current;
       if (!card) return;
-      // Animated reveals get a CSS transition; scroll tracking is instant
-      // so the card stays glued to the grid frame-for-frame in both directions.
       card.style.transition = animated ? FOLLOW_CTA_TRANSITION : 'none';
       card.style.transform = `translate(-50%, -${offset}px)`;
-    };
-
-    const reveal = () => {
-      if (dismissedRef.current) return;
-      if (offset === 0) return;
-      offset = 0;
-      setMounted(true);
-      apply(true);
-    };
-
-    const startDwell = () => {
-      if (dwellTimer) window.clearTimeout(dwellTimer);
-      if (modalOpenRef.current || dismissedRef.current) return;
-      dwellTimer = window.setTimeout(() => {
-        if (modalOpenRef.current || dismissedRef.current) return;
-        reveal();
-      }, FOLLOW_CTA_DWELL_MS);
-    };
-    startDwellRef.current = startDwell;
-
-    const onScroll = () => {
-      // Clamp negative scrollY to 0 (see Discover for the full story).
-      const cur = Math.max(0, window.scrollY);
-      const dy = cur - lastY;
-      lastY = cur;
-      startDwell();
-      if (dy > 0) {
-        // Scroll down: card translates up, glued.
-        offset = Math.min(offset + dy, FOLLOW_CTA_HIDE);
-        apply(false);
-      } else if (dy < 0) {
-        // Scroll up: card translates back down, glued frame-by-frame.
-        // Don't snap to 0 — user shouldn't have to return all the way to
-        // the top to see the CTA again. Mount it as soon as we reveal so
-        // the slide-down is over real content.
-        offset = Math.max(offset + dy, 0);
-        if (!dismissedRef.current) setMounted(true);
-        apply(false);
-      }
-    };
-
-    startDwell();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      if (dwellTimer) window.clearTimeout(dwellTimer);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
+    },
+    onReveal: () => {
+      if (!dismissedRef.current) setMounted(true);
+    },
+  });
 
   useEffect(() => {
     modalOpenRef.current = modal !== null;
-    if (modal === null) startDwellRef.current();
-  }, [modal]);
+    if (modal === null) scrollHandle.current.triggerDwell();
+  }, [modal, scrollHandle]);
 
   const fetchNext = useCallback(async () => {
     if (loadingMore || !cursor) return;

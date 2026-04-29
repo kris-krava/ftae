@@ -25,6 +25,7 @@ import {
 } from '@/app/_actions/discover';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { useReverseScrollReveal } from '@/lib/use-reverse-scroll-reveal';
 import { REFERRAL_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
 import { SEARCH_MAX_QUERY_LENGTH, SEARCH_MIN_QUERY_LENGTH } from '@/lib/search-constants';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
@@ -148,8 +149,6 @@ export function DiscoverClient({
   }, []);
   const modalOpenRef = useRef(false);
   const searchActiveRef = useRef(false);
-  const startDwellRef = useRef<() => void>(() => {});
-  const snapPanelRef = useRef<() => void>(() => {});
 
   // Breakpoint detection — drives the per-breakpoint default visible count
   // for the artists section. Re-runs on viewport resize so a rotation on
@@ -174,107 +173,56 @@ export function DiscoverClient({
     return () => cancelAnimationFrame(id);
   }, [referralMounted]);
 
+  // Keep panel + search-row heights live so dwell partial-reveals and the
+  // hideDistance cap reflect the current panel chrome (referral mounting
+  // changes the panel height).
   useEffect(() => {
-    let dwellTimer: number | null = null;
-    // Clamp at 0 so iOS rubber-band overscroll (where window.scrollY briefly
-    // goes negative) doesn't poison the dy delta on the recovery frame.
-    let lastY = Math.max(0, window.scrollY);
-    let offset = 0;
-
     const measure = () => {
       if (panelRef.current) panelHideRef.current = panelRef.current.offsetHeight;
       if (searchRowRef.current) searchRowHeightRef.current = searchRowRef.current.offsetHeight;
     };
     measure();
-    let resizeObs: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObs = new ResizeObserver(measure);
-      if (panelRef.current) resizeObs.observe(panelRef.current);
-      if (searchRowRef.current) resizeObs.observe(searchRowRef.current);
-    }
+    if (typeof ResizeObserver === 'undefined') return;
+    const obs = new ResizeObserver(measure);
+    if (panelRef.current) obs.observe(panelRef.current);
+    if (searchRowRef.current) obs.observe(searchRowRef.current);
+    return () => obs.disconnect();
+  }, []);
 
-    const apply = (animated: boolean) => {
+  const scrollHandle = useReverseScrollReveal({
+    initialOffset: 0,
+    dwellMs: REFERRAL_DWELL_MS,
+    hideDistance: () => panelHideRef.current,
+    isPaused: () => modalOpenRef.current || searchActiveRef.current,
+    isDismissed: () => referralDismissedRef.current || !referralUrl,
+    apply: (offset, animated) => {
       const panel = panelRef.current;
       if (!panel) return;
       panel.style.transition = animated ? PANEL_TRANSITION : 'none';
       panel.style.transform = `translateY(-${offset}px)`;
-    };
-
-    const dwellReveal = () => {
-      if (referralDismissedRef.current || !referralUrl) return;
-      setReferralMounted(true);
-      const target = Math.min(offset, searchRowHeightRef.current);
-      if (offset === target) return;
-      offset = target;
-      apply(true);
-    };
-
-    const snapPanelToTop = () => {
-      if (offset === 0) return;
-      offset = 0;
-      apply(true);
-    };
-    snapPanelRef.current = snapPanelToTop;
-
-    const startDwell = () => {
-      if (dwellTimer) window.clearTimeout(dwellTimer);
-      if (modalOpenRef.current || searchActiveRef.current) return;
-      if (referralDismissedRef.current || !referralUrl) return;
-      dwellTimer = window.setTimeout(() => {
-        if (modalOpenRef.current || searchActiveRef.current) return;
-        if (referralDismissedRef.current || !referralUrl) return;
-        dwellReveal();
-      }, REFERRAL_DWELL_MS);
-    };
-    startDwellRef.current = startDwell;
-
-    const onScroll = () => {
-      // Clamp negative scrollY to 0. iOS rubber-band at the top reports
-      // negative scrollY during the pull and snaps back through 0 on release;
-      // without the clamp, the recovery frame computes a positive dy that
-      // would push the panel up off-screen even though the user never
-      // scrolled down.
-      const cur = Math.max(0, window.scrollY);
-      const dy = cur - lastY;
-      lastY = cur;
-      startDwell();
-      if (dy > 0) {
-        // Scroll down: panel translates up with content, glued frame-by-frame.
-        offset = Math.min(offset + dy, panelHideRef.current);
-        apply(false);
-      } else if (dy < 0) {
-        // Scroll up: panel translates back down with content, glued. User
-        // doesn't have to return all the way to the top to see it again —
-        // it locks fully visible (offset=0) once the up-scroll consumes the
-        // hidden distance. Mount the referral as soon as we're revealing.
-        offset = Math.max(offset + dy, 0);
-        if (!referralDismissedRef.current && referralUrl) setReferralMounted(true);
-        apply(false);
-      }
-    };
-
-    startDwell();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      if (dwellTimer) window.clearTimeout(dwellTimer);
-      if (resizeObs) resizeObs.disconnect();
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, [referralUrl]);
+    },
+    onReveal: () => {
+      if (!referralDismissedRef.current && referralUrl) setReferralMounted(true);
+    },
+    // Discover's dwell-reveal partially reveals — show just the search bar,
+    // not the full panel-with-referral.
+    dwellRevealTarget: (currentOffset) =>
+      Math.min(currentOffset, searchRowHeightRef.current),
+  });
 
   useEffect(() => {
     modalOpenRef.current = modal !== null;
-    if (modal === null && !referralMounted) startDwellRef.current();
-  }, [modal, referralMounted]);
+    if (modal === null && !referralMounted) scrollHandle.current.triggerDwell();
+  }, [modal, referralMounted, scrollHandle]);
 
   useEffect(() => {
     searchActiveRef.current = searchActive;
     if (searchActive) {
-      snapPanelRef.current();
+      scrollHandle.current.snapToZero();
     } else if (!referralMounted) {
-      startDwellRef.current();
+      scrollHandle.current.triggerDwell();
     }
-  }, [searchActive, referralMounted]);
+  }, [searchActive, referralMounted, scrollHandle]);
 
   // Halt page scroll while the search overlay is open so the grid behind
   // doesn't drift when the user touches/wheels.
