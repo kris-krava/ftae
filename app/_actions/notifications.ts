@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { rateLimit } from '@/lib/rate-limit';
 import { reportError } from '@/lib/observability';
 
 export async function markAllNotificationsRead(): Promise<{ ok: boolean }> {
@@ -11,6 +12,11 @@ export async function markAllNotificationsRead(): Promise<{ ok: boolean }> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false };
+
+  // Idempotent write but still rate-limited so a runaway client (or a bad
+  // actor scripting the action) can't pound the row repeatedly.
+  const limit = await rateLimit(`notif-mark-read:${user.id}`, 30, 60_000);
+  if (!limit.ok) return { ok: false };
 
   const { error } = await supabaseAdmin
     .from('notifications')
