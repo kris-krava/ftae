@@ -136,7 +136,7 @@ export function Sidebar({
                 className={`${ICON_BASE} ${isNotifications ? 'text-accent' : 'text-muted'}`}
                 fill="none"
               />
-              {unreadCount > 0 && <BadgeBubble count={unreadCount} />}
+              {unreadCount > 0 && <BadgeBubble count={unreadCount} active={isNotifications} />}
             </span>
           }
         />
@@ -173,12 +173,15 @@ function SidebarItem({
   );
 }
 
-function BadgeBubble({ count }: { count: number }) {
+function BadgeBubble({ count, active }: { count: number; active: boolean }) {
   const display = count > 99 ? '99+' : String(count);
+  // Stroke matches what sits behind the badge: surface (white) on an inactive
+  // row, canvas (#f2d2c8) on the active row's accent/10 tint.
+  const border = active ? 'border-canvas' : 'border-surface';
   return (
     <span
       aria-label={`${count} unread`}
-      className="absolute -top-[2px] -right-[6px] min-w-[18px] h-[18px] px-[4px] rounded-full bg-accent border-[1.5px] border-canvas text-surface text-[11px] font-semibold flex items-center justify-center"
+      className={`absolute -top-[8px] -right-[6px] min-w-[18px] h-[18px] px-[4px] rounded-full bg-accent border-[1.5px] ${border} text-surface text-[11px] font-semibold flex items-center justify-center`}
     >
       {display}
     </span>

@@ -162,8 +162,10 @@ function NavItem({
 }
 
 function Badge({ count }: { count: number }) {
+  // Mobile bar background is always surface (white), regardless of active
+  // state — so stroke is always surface.
   return (
-    <span className="absolute -top-[2px] -right-[6px] min-w-[18px] h-[18px] px-[4px] rounded-full bg-accent border-[1.5px] border-canvas text-surface text-[11px] font-semibold flex items-center justify-center">
+    <span className="absolute -top-[8px] -right-[6px] min-w-[18px] h-[18px] px-[4px] rounded-full bg-accent border-[1.5px] border-surface text-surface text-[11px] font-semibold flex items-center justify-center">
       {count > 99 ? '99+' : count}
     </span>
   );
