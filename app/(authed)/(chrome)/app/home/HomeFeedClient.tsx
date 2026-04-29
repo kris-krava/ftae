@@ -184,7 +184,11 @@ export function HomeFeedClient({
       {mounted && !dismissed && (
         <div
           ref={cardRef}
-          className="fixed top-[24px] left-1/2 z-10"
+          // On mobile no sidebar, so left:50% centers on viewport. On tab+
+          // the 60px sidebar sits to the left of the grid, so shift the
+          // centering point right by 30px (half the sidebar width) so the
+          // card centers over the grid rather than the viewport.
+          className="fixed top-[24px] left-1/2 tab:left-[calc(50%+30px)] z-10"
           style={{
             // Start off-screen so the slide-in animation has somewhere to come from.
             // The effect below kicks the transform to 0 on the next frame, letting
