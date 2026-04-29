@@ -9,6 +9,7 @@ import { FollowButton } from './FollowButton';
 import { Avatar } from './Avatar';
 import { BookmarkOverlay } from '@/components/BookmarkOverlay';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { useFocusTrap } from '@/lib/use-focus-trap';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 
 interface ArtworkDetailsModalProps {
@@ -48,9 +49,20 @@ export function ArtworkDetailsModal({
 }: ArtworkDetailsModalProps) {
   const router = useRouter();
   const [imageIdx, setImageIdx] = useState(0);
+  const [imageLoading, setImageLoading] = useState(true);
   const photos = artwork.photos;
   const hasMultiple = photos.length > 1;
   const currentPhoto = photos[imageIdx];
+
+  const trapRef = useFocusTrap<HTMLDivElement>();
+
+  // Reset to "loading" whenever the displayed photo URL changes — covers
+  // both the inline carousel (within a single artwork) and prev/next
+  // navigation between artworks (which remounts the modal with a new
+  // initial photo). The Image's onLoad handler clears the flag.
+  useEffect(() => {
+    setImageLoading(true);
+  }, [currentPhoto?.url, artwork.id]);
 
   const close = useCallback(() => {
     if (onClose) onClose();
@@ -83,6 +95,7 @@ export function ArtworkDetailsModal({
 
   return (
     <div
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-label={artwork.title ?? 'Artwork details'}
@@ -146,18 +159,28 @@ export function ArtworkDetailsModal({
           if (e.currentTarget === e.target) close();
         }}
       >
-        <div className="bg-surface rounded-[12px] shadow-modal overflow-hidden w-full h-[calc(100vh-96px)] tab:h-[calc(100vh-120px)] desk:h-[calc(100vh-144px)] flex flex-col desk:flex-row">
+        <div className="bg-surface rounded-[12px] shadow-modal overflow-hidden w-full h-[calc(100dvh-96px)] tab:h-[calc(100dvh-120px)] desk:h-[calc(100dvh-144px)] flex flex-col desk:flex-row">
           {/* Image — fills available space at every breakpoint, object-contain so art is never cropped */}
           <div className="relative w-full flex-1 min-h-0 bg-ink">
             {currentPhoto?.url && (
               <Image
+                key={currentPhoto.url}
                 src={currentPhoto.url}
                 alt={artwork.title ?? ''}
                 fill
                 sizes="(min-width: 1280px) calc(100vw - 454px), (min-width: 768px) 560px, 342px"
                 className="object-contain"
                 priority
+                onLoad={() => setImageLoading(false)}
               />
+            )}
+            {imageLoading && (
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <span className="block w-[32px] h-[32px] rounded-full border-[3px] border-divider/40 border-t-accent animate-[spin_800ms_linear_infinite]" />
+              </div>
             )}
 
             {hasMultiple && (

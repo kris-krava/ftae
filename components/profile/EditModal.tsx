@@ -14,6 +14,7 @@ import {
   saveStep3Links,
 } from '@/app/_actions/onboarding';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { useFocusTrap } from '@/lib/use-focus-trap';
 import type { FocalPoint } from '@/lib/focal-point';
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -51,13 +52,14 @@ export function EditModal({ initial, mediums, onClose }: EditModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   useBodyScrollLock();
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   function close() {
     onClose();
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Edit profile" className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
       <div
         className="min-h-full flex items-center justify-center px-[16px] py-[29px] tab:py-[60px] desk:py-[67px]"
         onClick={(e) => {

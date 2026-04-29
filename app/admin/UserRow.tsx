@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toggleUserActive, deleteUser } from '@/app/_actions/admin';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { useFocusTrap } from '@/lib/use-focus-trap';
 import type { AdminUserRow } from '@/app/_lib/admin';
 
 interface UserRowProps {
@@ -133,9 +134,11 @@ function ConfirmDeleteModal({
   onConfirm,
 }: ConfirmDeleteModalProps) {
   useBodyScrollLock();
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   return (
     <div
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-label="Confirm delete user"

@@ -23,6 +23,7 @@ import {
 import { XClose, CheckCircle, XCircle, Upload01 } from '@/components/icons';
 import { SortablePhoto, PHOTO_TILE_BASIS as TILE_BASIS } from './SortablePhoto';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { useFocusTrap } from '@/lib/use-focus-trap';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 import type { FocalPoint } from '@/lib/focal-point';
 
@@ -122,6 +123,7 @@ export function ArtForm({
 }: ArtFormProps) {
   const router = useRouter();
   useBodyScrollLock();
+  const trapRef = useFocusTrap<HTMLDivElement>();
   const [photos, setPhotos] = useState<PhotoEntry[]>(() => seedPhotos(artwork));
 
   const [title, setTitle] = useState<string>(artwork?.title ?? '');
@@ -135,6 +137,7 @@ export function ArtForm({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ResultMode | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const confirmTrapRef = useFocusTrap<HTMLDivElement>(confirmOpen);
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -326,7 +329,7 @@ export function ArtForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label={headerTitle} className="fixed inset-0 z-50 bg-black/45 overflow-y-auto">
       <div
         className="min-h-full flex items-center justify-center px-[16px] py-[24px]"
         onClick={(e) => {
@@ -546,6 +549,7 @@ export function ArtForm({
 
       {confirmOpen && onDelete && (
         <div
+          ref={confirmTrapRef}
           role="dialog"
           aria-modal="true"
           aria-label="Confirm delete"
