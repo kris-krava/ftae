@@ -19,9 +19,11 @@ interface SortablePhotoProps {
   focal: FocalPoint;
   onRemove: () => void;
   onSetFocal: (f: FocalPoint) => void;
+  /** While true, dim the photo and show a spinner overlay; ignore taps. */
+  processing?: boolean;
 }
 
-export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal }: SortablePhotoProps) {
+export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, processing = false }: SortablePhotoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [dot, setDot] = useState<{ x: number; y: number } | null>(null);
@@ -52,6 +54,7 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal }: S
   const panAvailable = natural ? natural.w !== natural.h : false;
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (processing) return;
     if (!natural || !panAvailable) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const tx = e.clientX - rect.left;
@@ -113,11 +116,20 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal }: S
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()}
+        disabled={processing}
         aria-label={`Remove photo ${index + 1}`}
-        className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center"
+        className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <XClose className="w-[14px] h-[14px] text-surface" strokeWidth={1.25} />
       </button>
+      {processing && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-ink/40 flex items-center justify-center pointer-events-none"
+        >
+          <span className="block w-[24px] h-[24px] rounded-full border-[2.5px] border-surface/40 border-t-surface animate-[spin_800ms_linear_infinite]" />
+        </div>
+      )}
     </div>
   );
 }

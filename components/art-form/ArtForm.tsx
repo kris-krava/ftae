@@ -137,6 +137,7 @@ export function ArtForm({
 
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ResultMode | null>(null);
+  const [savedToast, setSavedToast] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmTrapRef = useFocusTrap<HTMLDivElement>(confirmOpen);
   const [saving, startSaving] = useTransition();
@@ -259,19 +260,12 @@ export function ArtForm({
         setError(res.error ?? 'Something went wrong.');
         return;
       }
-      setResult('saved');
-      setTimeout(() => {
-        // No router.refresh() — the server actions already revalidatePath()
-        // /<username> + /app/home, and next.config staleTimes.dynamic=0 means
-        // the client Router Cache is stale on navigation. Refresh would force
-        // a re-fetch of the CURRENT route — fine for save, but in delete the
-        // artwork is gone and the route's getArtworkDetail() returns null, so
-        // the @modal slot's intercept calls notFound() which bubbles up to
-        // the root not-found page and takes over the viewport. Skipping the
-        // refresh avoids that 404 flash AND saves a redundant fetch.
-        if (mode === 'overlay') router.back();
-        else router.push(backHref);
-      }, SUCCESS_DISPLAY_MS);
+      // Success: don't auto-close. The user may still be editing copy
+      // (the upload could have happened while they kept typing) and they
+      // explicitly want to control when the modal closes. Show a toast
+      // for a few seconds as the visible "saved" signal.
+      setSavedToast(true);
+      window.setTimeout(() => setSavedToast(false), 3000);
     });
   }
 
@@ -339,14 +333,16 @@ export function ArtForm({
         }}
       >
         <div className="bg-surface rounded-[16px] shadow-modal w-full max-w-[358px] tab:max-w-[440px] desk:max-w-[580px] relative">
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close"
-            className="absolute top-[32px] right-[32px] flex items-center justify-center w-[24px] h-[24px] z-10"
-          >
-            <XClose className="w-[24px] h-[24px] text-ink" strokeWidth={1.25} />
-          </button>
+          {!saving && (
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              className="absolute top-[32px] right-[32px] flex items-center justify-center w-[24px] h-[24px] z-10"
+            >
+              <XClose className="w-[24px] h-[24px] text-ink" strokeWidth={1.25} />
+            </button>
+          )}
 
           <h2 className="font-sans font-semibold text-[18px] text-ink pt-[32px] px-[32px]">
             {headerTitle}
@@ -368,6 +364,7 @@ export function ArtForm({
                       focal={p.focal}
                       onRemove={() => removePhoto(p.id)}
                       onSetFocal={(f) => setFocal(p.id, f)}
+                      processing={saving}
                     />
                   ))}
                 </SortableContext>
@@ -542,6 +539,15 @@ export function ArtForm({
               {error && (
                 <p role="alert" className="text-accent text-[13px] text-center">
                   {error}
+                </p>
+              )}
+              {savedToast && !error && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="font-sans font-medium text-[13px] text-accent text-center"
+                >
+                  Saved.
                 </p>
               )}
             </div>
