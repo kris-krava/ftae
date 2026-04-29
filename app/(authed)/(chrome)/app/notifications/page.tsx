@@ -24,8 +24,12 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <ul className="px-[32px] tab:px-[120px] desk:px-[320px] flex flex-col gap-[4px]">
-          {items.map((n) => (
-            <li key={n.id} className="contents">
+          {items.map((n, i) => (
+            <li
+              key={n.id}
+              className="cascade-in"
+              style={{ '--i': i } as React.CSSProperties}
+            >
               <NotificationItem
                 type={n.type}
                 message={n.message}
