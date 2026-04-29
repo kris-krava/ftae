@@ -237,7 +237,7 @@ export const SCENARIOS: Scenario[] = [
     followersCount: 2,
     notifications: [
       { type: 'referral_joined', message: 'Someone just signed up with your link.', is_read: false },
-      { type: 'profile_nudge', message: 'Your profile is looking good\nAdd more work you\u2019d love to trade.', is_read: true },
+      { type: 'profile_nudge', message: 'Welcome to Free Trade Art Exchange!\nAdd your first piece of art to officially become a founding artist.', is_read: true },
     ],
   },
   {

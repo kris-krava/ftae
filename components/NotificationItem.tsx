@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell01, Heart, Shuffle01, MessageSquare01, ChevronRight } from '@/components/icons';
+import { Bell01, Heart, Shuffle01, MessageSquare01, ChevronRight, Star01 } from '@/components/icons';
 import type { NotificationType } from '@/app/_lib/notifications';
 
 interface NotificationItemProps {
@@ -27,8 +27,11 @@ function iconFor(type: NotificationType): React.ReactNode {
 
 export function NotificationItem({ type, message, isRead, actionUrl }: NotificationItemProps) {
   const [title, body] = message.includes('\n') ? message.split('\n', 2) : [message, ''];
+  // items-start keeps the leading icon pinned to the top when the text column
+  // wraps to multiple lines. py-[18px] centers the 36px icon at single-line
+  // height so short notifications still look like the original 72px row.
   const containerClass =
-    'flex items-center gap-[12px] h-[72px] px-[14px] w-full ' +
+    'flex items-start gap-[12px] min-h-[72px] px-[14px] py-[18px] w-full ' +
     (isRead ? 'bg-accent/10' : 'bg-surface');
 
   const inner = (
@@ -37,9 +40,21 @@ export function NotificationItem({ type, message, isRead, actionUrl }: Notificat
         {iconFor(type)}
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
-        <p className="font-sans font-semibold text-[14px] text-ink truncate">{title}</p>
+        <p className="font-sans font-semibold text-[14px] leading-[20px] text-ink">{title}</p>
         {body && (
-          <p className="font-sans text-[13px] text-muted truncate">{body}</p>
+          <p className="font-sans text-[13px] leading-[18px] text-muted">
+            {body}
+            {type === 'profile_nudge' && (
+              <>
+                {' '}
+                <Star01
+                  className="inline-block align-middle w-[14px] h-[14px] text-accent"
+                  fill="currentColor"
+                  aria-label="Founding Member"
+                />
+              </>
+            )}
+          </p>
         )}
       </div>
       {actionUrl && <ChevronRight className="w-[20px] h-[20px] text-ink shrink-0" />}

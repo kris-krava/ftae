@@ -7,8 +7,10 @@ import { reportError } from '@/lib/observability';
 import { REFERRAL_COOKIE } from '@/lib/referral';
 
 // Title and body separated by \n — rendered split in the Notification Item.
+// The trailing founding-member star is appended inline by the renderer when
+// type === 'profile_nudge'; not a token in the text.
 const PROFILE_NUDGE_MESSAGE =
-  "Your profile is looking good\nAdd more work you’d love to trade.";
+  "Welcome to Free Trade Art Exchange!\nAdd your first piece of art to officially become a founding artist.";
 
 export type ProvisionOutcome =
   | { ok: true; isNewUser: boolean }

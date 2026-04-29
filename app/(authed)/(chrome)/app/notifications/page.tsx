@@ -23,25 +23,17 @@ export default async function NotificationsPage() {
           <p className="font-sans text-[15px] text-muted">No notifications yet.</p>
         </div>
       ) : (
-        <ul className="px-[32px] tab:px-[120px] desk:px-[320px] flex flex-col">
-          {items.map((n, i) => {
-            const showDivider = i > 0 && items[i - 1].is_read && n.is_read;
-            return (
-              <li key={n.id} className="contents">
-                {showDivider && (
-                  <span aria-hidden className="block h-px w-full bg-divider/50 my-[8px]" />
-                )}
-                <span className={i === 0 ? '' : (showDivider ? '' : 'mt-[8px]')}>
-                  <NotificationItem
-                    type={n.type}
-                    message={n.message}
-                    isRead={n.is_read}
-                    actionUrl={n.action_url}
-                  />
-                </span>
-              </li>
-            );
-          })}
+        <ul className="px-[32px] tab:px-[120px] desk:px-[320px] flex flex-col gap-[4px]">
+          {items.map((n) => (
+            <li key={n.id} className="contents">
+              <NotificationItem
+                type={n.type}
+                message={n.message}
+                isRead={n.is_read}
+                actionUrl={n.action_url}
+              />
+            </li>
+          ))}
         </ul>
       )}
     </main>
