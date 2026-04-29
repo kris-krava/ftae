@@ -24,6 +24,7 @@ import {
   searchArtworksAction,
 } from '@/app/_actions/discover';
 import { useArtworkModal } from '@/lib/use-artwork-modal';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { REFERRAL_CTA_DISMISSED_KEY, consumeFreshSigninFlag } from '@/lib/referral';
 import { SEARCH_MAX_QUERY_LENGTH, SEARCH_MIN_QUERY_LENGTH } from '@/lib/search-constants';
 import type { DiscoverArtwork } from '@/app/_lib/artworks';
@@ -268,15 +269,7 @@ export function DiscoverClient({
 
   // Halt page scroll while the search overlay is open so the grid behind
   // doesn't drift when the user touches/wheels.
-  useEffect(() => {
-    if (!searchActive) return;
-    const root = document.documentElement;
-    const prev = root.style.overflow;
-    root.style.overflow = 'hidden';
-    return () => {
-      root.style.overflow = prev;
-    };
-  }, [searchActive]);
+  useBodyScrollLock(searchActive);
 
   // URL sync — `?q=foo` on `/app/discover`. Refresh-resilient and back/forward
   // friendly. We replace rather than push so typing doesn't pile up history

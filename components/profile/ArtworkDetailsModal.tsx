@@ -8,6 +8,7 @@ import { XClose, ChevronLeft, ChevronRight, Star01 } from '@/components/icons';
 import { FollowButton } from './FollowButton';
 import { Avatar } from './Avatar';
 import { BookmarkOverlay } from '@/components/BookmarkOverlay';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 
 interface ArtworkDetailsModalProps {
@@ -74,14 +75,7 @@ export function ArtworkDetailsModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [close]);
 
-  // Lock body scroll while modal is open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  useBodyScrollLock();
 
   const yearMedium = [artwork.year, artwork.medium].filter(Boolean).join(' · ');
   const dimensions = formatDimensions(artwork.width, artwork.height, artwork.depth);

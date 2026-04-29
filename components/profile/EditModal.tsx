@@ -13,6 +13,7 @@ import {
   saveStep2Bio,
   saveStep3Links,
 } from '@/app/_actions/onboarding';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { FocalPoint } from '@/lib/focal-point';
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -48,6 +49,8 @@ interface EditModalProps {
 export function EditModal({ initial, mediums, onClose }: EditModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string | null>(null);
+
+  useBodyScrollLock();
 
   function close() {
     onClose();

@@ -22,6 +22,7 @@ import {
 } from '@dnd-kit/sortable';
 import { XClose, CheckCircle, XCircle, Upload01 } from '@/components/icons';
 import { SortablePhoto, PHOTO_TILE_BASIS as TILE_BASIS } from './SortablePhoto';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 import type { FocalPoint } from '@/lib/focal-point';
 
@@ -120,6 +121,7 @@ export function ArtForm({
   mode,
 }: ArtFormProps) {
   const router = useRouter();
+  useBodyScrollLock();
   const [photos, setPhotos] = useState<PhotoEntry[]>(() => seedPhotos(artwork));
 
   const [title, setTitle] = useState<string>(artwork?.title ?? '');

@@ -28,6 +28,19 @@
   }
 }
 
+/* Mobile Safari and iOS Chrome auto-zoom into form fields whose font-size
+ * is < 16px. Designs use 15px; on touch devices we promote to 16px so the
+ * viewport doesn't pan/zoom on focus. !important is required to override
+ * Tailwind text-size utilities (class > tag selector specificity); the
+ * media-query scope keeps the rule narrowly bounded. */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @layer utilities {
   @keyframes paint-burst-in {
     0% { transform: scale(0.3) rotate(-30deg); opacity: 0; }
