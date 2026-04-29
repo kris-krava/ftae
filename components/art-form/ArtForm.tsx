@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
-import imageCompression from 'browser-image-compression';
+// browser-image-compression is dynamically imported on first compress call
+// (see onPhotosChange) so its ~50KB doesn't ship with every page.
 import * as Sentry from '@sentry/nextjs';
 import {
   DndContext,
@@ -171,6 +172,7 @@ export function ArtForm({
     if (incoming.length > remaining) setError(`Up to ${MAX_PHOTOS} photos.`);
 
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await Promise.all(
         toProcess.map((f) =>
           imageCompression(f, {

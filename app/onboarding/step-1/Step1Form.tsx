@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import imageCompression from 'browser-image-compression';
+// browser-image-compression is dynamically imported on first compress call
+// so its ~50KB doesn't ship in the initial onboarding bundle.
 import * as Sentry from '@sentry/nextjs';
 import { PlusSquare } from '@/components/icons';
 import { AvatarEditor, AvatarUploading } from '@/components/profile/AvatarEditor';
@@ -138,6 +139,7 @@ export function Step1Form({
     setError(null);
     setIsUploadingAvatar(true);
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1024,

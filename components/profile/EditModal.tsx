@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import imageCompression from 'browser-image-compression';
+// browser-image-compression is dynamically imported on first compress call
+// so its ~50KB doesn't load until the user picks a new avatar.
 import { XClose, PlusSquare } from '@/components/icons';
 import { PlatformBadge } from '@/components/PlatformBadge';
 import { AvatarEditor, AvatarUploading } from '@/components/profile/AvatarEditor';
@@ -196,6 +197,7 @@ function Step1({
     onError(null);
     setIsUploadingAvatar(true);
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1024,
