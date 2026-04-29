@@ -500,35 +500,50 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     .single();
   if (artErr || !artwork) return { ok: false, error: 'Could not save artwork.' };
 
-  for (let i = 0; i < photos.length; i += 1) {
-    const photo = photos[i];
-    const ext = photo.type === 'image/png' ? 'png' : photo.type === 'image/webp' ? 'webp' : 'jpg';
-    const path = `${userId}/${artwork.id}/${i}.${ext}`;
+  // Run all uploads + inserts in parallel; track failures so we don't
+  // silently ship a 0-photo artwork to the home feed.
+  const photoResults = await Promise.all(
+    photos.map(async (photo, i) => {
+      const ext = photo.type === 'image/png' ? 'png' : photo.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${userId}/${artwork.id}/${i}.${ext}`;
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('artwork-photos')
-      .upload(path, photo, { contentType: photo.type, upsert: true, cacheControl: '300' });
-    if (uploadError) {
-      reportError({
-        area: 'onboarding',
-        op: 'photo_upload',
-        err: uploadError,
-        userId,
-        extra: { artwork_id: artwork.id, photo_index: i, path },
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('artwork-photos')
+        .upload(path, photo, { contentType: photo.type, upsert: true, cacheControl: '300' });
+      if (uploadError) {
+        reportError({
+          area: 'onboarding',
+          op: 'photo_upload',
+          err: uploadError,
+          userId,
+          extra: { artwork_id: artwork.id, photo_index: i, path },
+        });
+        return { ok: false as const, index: i };
+      }
+
+      const { data: pub } = supabaseAdmin.storage.from('artwork-photos').getPublicUrl(path);
+
+      const { error: insertError } = await supabaseAdmin.from('artwork_photos').insert({
+        artwork_id: artwork.id,
+        url: pub.publicUrl,
+        sort_order: i,
+        focal_x: focals[i].x,
+        focal_y: focals[i].y,
       });
-      continue;
-    }
-
-    const { data: pub } = supabaseAdmin.storage.from('artwork-photos').getPublicUrl(path);
-
-    await supabaseAdmin.from('artwork_photos').insert({
-      artwork_id: artwork.id,
-      url: pub.publicUrl,
-      sort_order: i,
-      focal_x: focals[i].x,
-      focal_y: focals[i].y,
-    });
-  }
+      if (insertError) {
+        reportError({
+          area: 'onboarding',
+          op: 'photo_insert',
+          err: insertError,
+          userId,
+          extra: { artwork_id: artwork.id, photo_index: i },
+        });
+        return { ok: false as const, index: i };
+      }
+      return { ok: true as const };
+    }),
+  );
+  const failedPhotoIndices = photoResults.flatMap((r, i) => (r.ok ? [] : [i]));
 
   const newPct = await recalculateCompletion(userId);
 
@@ -547,6 +562,20 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
     .single();
   if (userRow?.username) revalidatePath(`/${userRow.username as string}`);
   revalidatePath('/app/home');
+
+  // Surface partial-failure honestly. The artwork row exists with whatever
+  // photos succeeded; user can re-add the rest via Edit Art on their profile.
+  if (failedPhotoIndices.length > 0) {
+    const positions = failedPhotoIndices.map((i) => i + 1).join(', ');
+    return {
+      ok: false,
+      error:
+        failedPhotoIndices.length === photos.length
+          ? 'No photos uploaded. Please try again.'
+          : `Saved ${photos.length - failedPhotoIndices.length} of ${photos.length} photos. Photo ${positions} couldn’t upload — open the piece on your profile and re-add them.`,
+    };
+  }
+
   return { ok: true };
 }
 

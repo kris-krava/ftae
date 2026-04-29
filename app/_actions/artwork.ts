@@ -164,21 +164,28 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
       );
   }
 
-  for (let i = 0; i < order.length; i += 1) {
-    const entry = order[i];
-    if (entry.kind === 'existing') {
-      await supabaseAdmin
-        .from('artwork_photos')
-        .update({
-          sort_order: i,
-          focal_x: entry.focal[0],
-          focal_y: entry.focal[1],
-        })
-        .eq('id', entry.id)
-        .eq('artwork_id', artworkId);
-    } else {
+  // Run all photo operations in parallel and track failures so the user
+  // gets honest feedback instead of a silent "everything saved" lie when
+  // a subset of uploads/updates fail.
+  const photoResults = await Promise.all(
+    order.map(async (entry, i) => {
+      if (entry.kind === 'existing') {
+        const { error } = await supabaseAdmin
+          .from('artwork_photos')
+          .update({
+            sort_order: i,
+            focal_x: entry.focal[0],
+            focal_y: entry.focal[1],
+          })
+          .eq('id', entry.id)
+          .eq('artwork_id', artworkId);
+        if (error) {
+          return { ok: false as const, index: i, kind: 'update' as const };
+        }
+        return { ok: true as const };
+      }
       const file = files[entry.new_index];
-      if (!file) continue;
+      if (!file) return { ok: false as const, index: i, kind: 'missing' as const };
       const ext =
         file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
       const path = `${userId}/${artworkId}/${i}-${Date.now()}.${ext}`;
@@ -189,19 +196,22 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
           upsert: true,
           cacheControl: '300',
         });
-      if (uploadErr) continue;
+      if (uploadErr) return { ok: false as const, index: i, kind: 'upload' as const };
       const { data: pub } = supabaseAdmin.storage
         .from('artwork-photos')
         .getPublicUrl(path);
-      await supabaseAdmin.from('artwork_photos').insert({
+      const { error: insertErr } = await supabaseAdmin.from('artwork_photos').insert({
         artwork_id: artworkId,
         url: pub.publicUrl,
         sort_order: i,
         focal_x: entry.focal[0],
         focal_y: entry.focal[1],
       });
-    }
-  }
+      if (insertErr) return { ok: false as const, index: i, kind: 'upload' as const };
+      return { ok: true as const };
+    }),
+  );
+  const failed = photoResults.filter((r): r is Extract<typeof r, { ok: false }> => !r.ok);
 
   await supabaseAdmin
     .from('artworks')
@@ -227,6 +237,19 @@ export async function updateArtwork(formData: FormData): Promise<ArtworkActionRe
     revalidatePath(`/${username}/artwork/${artworkId}`);
   }
   revalidatePath('/app/home');
+
+  // Surface partial failures honestly. The metadata + successful photos
+  // already persisted; the user can re-add the missing ones via Edit Art.
+  if (failed.length > 0) {
+    const positions = failed.map((f) => f.index + 1).join(', ');
+    return {
+      ok: false,
+      error:
+        failed.length === order.length
+          ? 'No photos saved. Please try again.'
+          : `Saved metadata + ${order.length - failed.length} of ${order.length} photos. Photo ${positions} couldn’t save — please re-add and save again.`,
+    };
+  }
 
   return { ok: true };
 }
