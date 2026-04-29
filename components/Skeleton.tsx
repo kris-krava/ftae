@@ -45,21 +45,26 @@ export function StatsModuleSkeleton() {
   );
 }
 
-// Square artwork tiles in the same flex layout as DiscoverArtworkTile usage
-// in HomeFeedClient/DiscoverClient. Sized to match TILE_BASIS so the
-// skeleton lays out exactly like the real grid.
+// Square artwork tiles laid out exactly like the live home/discover grid
+// in HomeFeedClient/DiscoverClient: edge-to-edge, `flex flex-wrap
+// justify-center gap-[4px]`, with TILE_BASIS computing per-breakpoint
+// widths. No horizontal padding on the skeleton — the live grid doesn't
+// have any either, so adding it would mismatch.
 const ARTWORK_TILE_BASIS =
   'basis-[calc((100%-4px)/2)] tab:basis-[calc((100%-8px)/3)] desk:basis-[calc((100%-16px)/5)]';
 
-export function ArtworkGridSkeleton({ rows = 12 }: { rows?: number }) {
+// Default count is generous enough to overflow the largest desktop
+// viewport (1440x900 → 5×4 = 20 visible tiles minimum at this size). 30
+// tiles guarantees viewport-fill across mobile/tablet/desktop.
+export function ArtworkGridSkeleton({ tiles = 30 }: { tiles?: number }) {
   return (
-    <ul className="flex flex-wrap gap-[4px] tab:gap-[4px] desk:gap-[4px] w-full">
-      {Array.from({ length: rows }).map((_, i) => (
-        <li key={i} className={`${ARTWORK_TILE_BASIS} aspect-square shrink-0`}>
+    <div className="flex flex-wrap justify-center gap-[4px]">
+      {Array.from({ length: tiles }).map((_, i) => (
+        <div key={i} className={`${ARTWORK_TILE_BASIS} shrink-0 aspect-square`}>
           <Skeleton className="w-full h-full rounded-[2px]" />
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
