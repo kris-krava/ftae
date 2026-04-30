@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell01, Heart, Shuffle01, MessageSquare01, ChevronRight, Star01 } from '@/components/icons';
+import { Heart, Shuffle01, MessageSquare01, ChevronRight, Star01 } from '@/components/icons';
 import type { NotificationType } from '@/app/_lib/notifications';
 
 interface NotificationItemProps {
@@ -21,7 +21,7 @@ function iconFor(type: NotificationType): React.ReactNode {
       return <MessageSquare01 className="w-[18px] h-[18px] text-accent" />;
     case 'profile_nudge':
     default:
-      return <Bell01 className="w-[18px] h-[18px] text-accent" />;
+      return <Star01 className="w-[18px] h-[18px] text-accent" fill="currentColor" />;
   }
 }
 
@@ -42,19 +42,7 @@ export function NotificationItem({ type, message, isRead, actionUrl }: Notificat
       <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
         <p className="font-sans font-semibold text-[14px] leading-[20px] text-ink">{title}</p>
         {body && (
-          <p className="font-sans text-[13px] leading-[18px] text-muted">
-            {body}
-            {type === 'profile_nudge' && (
-              <>
-                {' '}
-                <Star01
-                  className="inline-block align-middle w-[14px] h-[14px] text-accent"
-                  fill="currentColor"
-                  aria-label="Founding Member"
-                />
-              </>
-            )}
-          </p>
+          <p className="font-sans text-[13px] leading-[18px] text-muted">{body}</p>
         )}
       </div>
       {actionUrl && <ChevronRight className="w-[20px] h-[20px] text-ink shrink-0" />}
