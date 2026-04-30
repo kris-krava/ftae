@@ -1,12 +1,45 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/rate-limit';
 import { reportError } from '@/lib/observability';
+
+// Tokens vouching that an artworkId was minted by us for this user.
+// Subsequent mints in the same multi-pick session present the token instead
+// of forcing a DB lookup (the artworks row is only inserted at commit).
+// Without this, the second mint after a pick would fail with "Artwork not
+// found." because the row hasn't been written yet.
+const ARTWORK_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+function artworkTokenSecret(): string {
+  const k = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!k) throw new Error('SUPABASE_SERVICE_ROLE_KEY missing');
+  return k;
+}
+function signArtworkId(userId: string, artworkId: string, expiresAtMs: number): string {
+  const data = `${userId}.${artworkId}.${expiresAtMs}`;
+  const sig = createHmac('sha256', artworkTokenSecret()).update(data).digest('hex');
+  return `${expiresAtMs}.${sig}`;
+}
+function mintArtworkToken(userId: string, artworkId: string): string {
+  return signArtworkId(userId, artworkId, Date.now() + ARTWORK_TOKEN_TTL_MS);
+}
+function verifyArtworkToken(userId: string, artworkId: string, token: string): boolean {
+  const dot = token.indexOf('.');
+  if (dot < 1) return false;
+  const expiresAtMs = Number(token.slice(0, dot));
+  if (!Number.isFinite(expiresAtMs) || Date.now() >= expiresAtMs) return false;
+  const expected = signArtworkId(userId, artworkId, expiresAtMs);
+  if (expected.length !== token.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+  } catch {
+    return false;
+  }
+}
 
 // Max file size accepted by the signed-URL minter. Mirrors the bucket's
 // own file_size_limit (set in 20260430000000_artwork_storage_constraints.sql)
@@ -48,7 +81,12 @@ const FilesSchema = z
 export async function getArtworkUploadUrls(input: {
   files: { mime: string; size: number }[];
   artworkId?: string;
-}): Promise<Result<{ artworkId: string; uploads: UploadSlot[] }>> {
+  /** Returned by a prior mint in this session. When present and valid for
+   *  this userId+artworkId, we skip the DB lookup — the artworks row only
+   *  gets inserted at commit time, so a second mint with the same id
+   *  would otherwise hit "Artwork not found." */
+  artworkToken?: string;
+}): Promise<Result<{ artworkId: string; artworkToken: string; uploads: UploadSlot[] }>> {
   let userId: string;
   try {
     userId = await requireUserId();
@@ -73,46 +111,60 @@ export async function getArtworkUploadUrls(input: {
   }
 
   // For edit mode the caller hands us the existing artwork id; verify
-  // ownership before minting URLs scoped to that path.
+  // ownership before minting URLs scoped to that path. For new-artwork
+  // multi-pick sessions the caller hands us back our own artworkId + the
+  // token we issued on the first mint — we trust those without a DB
+  // lookup (the artworks row doesn't exist yet, by design).
   let artworkId = input.artworkId;
   if (artworkId) {
     if (!UUID_RE.test(artworkId)) return { ok: false, error: 'Invalid artwork id.' };
-    const { data: art } = await supabaseAdmin
-      .from('artworks')
-      .select('id, user_id, is_active')
-      .eq('id', artworkId)
-      .maybeSingle();
-    if (!art) return { ok: false, error: 'Artwork not found.' };
-    if (art.user_id !== userId) return { ok: false, error: 'Not authorized.' };
-    if (!art.is_active) return { ok: false, error: 'Artwork is deleted.' };
+    const tokenValid =
+      input.artworkToken != null && verifyArtworkToken(userId, artworkId, input.artworkToken);
+    if (!tokenValid) {
+      const { data: art } = await supabaseAdmin
+        .from('artworks')
+        .select('id, user_id, is_active')
+        .eq('id', artworkId)
+        .maybeSingle();
+      if (!art) return { ok: false, error: 'Artwork not found.' };
+      if (art.user_id !== userId) return { ok: false, error: 'Not authorized.' };
+      if (!art.is_active) return { ok: false, error: 'Artwork is deleted.' };
+    }
   } else {
     artworkId = randomUUID();
   }
 
-  // Mint signed PUT URLs in parallel. Path prefix is server-controlled —
-  // a client can't request a URL for another user's folder because we
-  // build the path from the authenticated userId.
+  // Mint signed PUT URLs in parallel. Each file is independent — running
+  // them sequentially in a for-await loop hit the Vercel 10s function
+  // timeout when a 6-file batch coincided with slow Storage round-trips.
+  // Path prefix is server-controlled — a client can't request a URL for
+  // another user's folder because we build the path from the
+  // authenticated userId.
+  const paths = parsed.data.map(
+    (file) => `${userId}/${artworkId}/${randomUUID()}.${extFor(file.mime)}`,
+  );
+  const mintResults = await Promise.all(
+    paths.map((path) =>
+      supabaseAdmin.storage.from('artwork-photos').createSignedUploadUrl(path),
+    ),
+  );
   const uploads: UploadSlot[] = [];
-  for (let i = 0; i < parsed.data.length; i += 1) {
-    const file = parsed.data[i];
-    const path = `${userId}/${artworkId}/${randomUUID()}.${extFor(file.mime)}`;
-    const { data, error } = await supabaseAdmin.storage
-      .from('artwork-photos')
-      .createSignedUploadUrl(path);
+  for (let i = 0; i < mintResults.length; i += 1) {
+    const { data, error } = mintResults[i];
     if (error || !data) {
       reportError({
         area: 'artwork-upload',
         op: 'mint_signed_url',
         err: error,
         userId,
-        extra: { artworkId, photo_index: i, path },
+        extra: { artworkId, photo_index: i, path: paths[i] },
       });
       return { ok: false, error: 'Could not prepare upload.' };
     }
-    uploads.push({ index: i, path, signedUrl: data.signedUrl, token: data.token });
+    uploads.push({ index: i, path: paths[i], signedUrl: data.signedUrl, token: data.token });
   }
 
-  return { ok: true, artworkId, uploads };
+  return { ok: true, artworkId, artworkToken: mintArtworkToken(userId, artworkId), uploads };
 }
 
 // ---------- Commit actions (no binary data passes through these) ----------

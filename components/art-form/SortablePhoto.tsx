@@ -13,6 +13,8 @@ const FOCAL_TRANSITION_MS = 300;
 export const PHOTO_TILE_BASIS =
   'basis-[calc((100%-8px)/2)] tab:basis-[calc((100%-16px)/3)]';
 
+export type PhotoTileState = 'ready' | 'uploading' | 'failed' | 'committing';
+
 interface SortablePhotoProps {
   id: string;
   src: string;
@@ -20,11 +22,25 @@ interface SortablePhotoProps {
   focal: FocalPoint;
   onRemove: () => void;
   onSetFocal: (f: FocalPoint) => void;
-  /** While true, dim the photo and show a spinner overlay; ignore taps. */
-  processing?: boolean;
+  /** Visual state. `ready` = no overlay, normal interactions.
+   *  `uploading` = ArcSpinner overlay, focal taps disabled, remove enabled (will abort).
+   *  `failed` = error overlay; remove always shown; retry shown only when onRetry is given.
+   *  `committing` = ArcSpinner overlay, all interactions disabled (parent is mid-save). */
+  state?: PhotoTileState;
+  /** When state='failed' and a retry is possible, parent provides this. */
+  onRetry?: () => void;
 }
 
-export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, processing = false }: SortablePhotoProps) {
+export function SortablePhoto({
+  id,
+  src,
+  index,
+  focal,
+  onRemove,
+  onSetFocal,
+  state = 'ready',
+  onRetry,
+}: SortablePhotoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [dot, setDot] = useState<{ x: number; y: number } | null>(null);
@@ -53,9 +69,10 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
     : { x: 50, y: 50 };
 
   const panAvailable = natural ? natural.w !== natural.h : false;
+  const interactive = state === 'ready';
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (processing) return;
+    if (!interactive) return;
     if (!natural || !panAvailable) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const tx = e.clientX - rect.left;
@@ -83,6 +100,10 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
     zIndex: isDragging ? 50 : undefined,
   };
 
+  const removeDisabled = state === 'committing';
+  const showSpinner = state === 'uploading' || state === 'committing';
+  const showFailed = state === 'failed';
+
   return (
     <div
       ref={setNodeRef}
@@ -90,7 +111,7 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className={`${PHOTO_TILE_BASIS} shrink-0 relative aspect-square rounded-[8px] overflow-hidden bg-divider touch-none ${panAvailable ? 'cursor-pointer' : ''} ${isDragging ? 'opacity-80 shadow-modal' : ''}`}
+      className={`${PHOTO_TILE_BASIS} shrink-0 relative aspect-square rounded-[8px] overflow-hidden bg-divider touch-none ${interactive && panAvailable ? 'cursor-pointer' : ''} ${isDragging ? 'opacity-80 shadow-modal' : ''}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -103,7 +124,7 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
         }}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
       />
-      {panAvailable && (
+      {interactive && panAvailable && (
         <span
           aria-hidden
           style={dotStyle}
@@ -117,18 +138,54 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        disabled={processing}
+        disabled={removeDisabled}
         aria-label={`Remove photo ${index + 1}`}
-        className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+        className="absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full bg-ink/60 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed z-10"
       >
         <XClose className="w-[14px] h-[14px] text-surface" strokeWidth={1.25} />
       </button>
-      {processing && (
+      {showSpinner && (
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-ink/40 flex items-center justify-center pointer-events-none"
         >
           <ArcSpinner size={24} className="text-accent" />
+        </div>
+      )}
+      {showFailed && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-ink/55 flex items-center justify-center"
+        >
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRetry();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label={`Retry upload for photo ${index + 1}`}
+              className="w-[40px] h-[40px] rounded-full bg-surface flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.3)]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="w-[20px] h-[20px] text-accent"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.75}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+                <path d="M21 4v5h-5" />
+              </svg>
+            </button>
+          ) : (
+            <span className="font-sans text-[12px] leading-[16px] text-surface text-center px-[8px]">
+              Couldn&apos;t process
+            </span>
+          )}
         </div>
       )}
     </div>
