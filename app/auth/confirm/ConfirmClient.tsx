@@ -38,9 +38,7 @@ export function ConfirmClient({ tokenHash, type }: ConfirmClientProps) {
     <main
       className={
         'flex flex-col items-center justify-center text-center w-full min-h-dvh bg-canvas ' +
-        'px-[32px] py-[88px] ' +
-        'tab:px-[120px] tab:py-[100px] ' +
-        'desk:px-[320px] desk:py-[120px]'
+        'px-[32px] tab:px-[120px] desk:px-[320px]'
       }
     >
       <Wordmark variant="full" />
