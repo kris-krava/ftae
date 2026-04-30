@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { ArcSpinner } from '@/components/ArcSpinner';
 import { focalToObjectPosition, tapToFocal, type FocalPoint } from '@/lib/focal-point';
 
 // Circular focal-point picker for avatars. Reuses the same math and
@@ -116,15 +117,7 @@ export function AvatarUploading({ size = 120 }: { size?: number }) {
       style={{ width: size, height: size }}
       className="rounded-full bg-divider flex items-center justify-center"
     >
-      <svg
-        className="animate-spin text-accent"
-        style={{ width: spinSize, height: spinSize }}
-        viewBox="0 0 24 24"
-        fill="none"
-      >
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
-        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      </svg>
+      <ArcSpinner size={spinSize} />
     </div>
   );
 }

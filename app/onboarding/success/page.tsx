@@ -39,7 +39,7 @@ export default async function SuccessPage() {
           'desk:text-[56px] desk:leading-[68px]'
         }
       >
-        Glad you&rsquo;ve joined us!
+        You&rsquo;re a founding artist!
       </h1>
       <SuccessTransition delayMs={REDIRECT_DELAY_MS} target="/app/home" />
     </main>

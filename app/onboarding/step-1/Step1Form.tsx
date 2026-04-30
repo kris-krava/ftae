@@ -240,7 +240,7 @@ export function Step1Form({
     usernameStatus.kind === 'checking';
 
   return (
-    <div className="w-full max-w-[310px] flex flex-col items-center">
+    <div className="w-full flex flex-col items-center">
       {isUploadingAvatar ? (
         <AvatarUploading size={120} />
       ) : avatarUrl ? (

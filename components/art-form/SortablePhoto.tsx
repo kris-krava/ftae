@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { XClose } from '@/components/icons';
+import { ArcSpinner } from '@/components/ArcSpinner';
 import { focalToObjectPosition, tapToFocal, type FocalPoint } from '@/lib/focal-point';
 
 const FOCAL_SETTLE_MS = 250;
@@ -127,7 +128,7 @@ export function SortablePhoto({ id, src, index, focal, onRemove, onSetFocal, pro
           aria-hidden="true"
           className="absolute inset-0 bg-ink/40 flex items-center justify-center pointer-events-none"
         >
-          <span className="block w-[24px] h-[24px] rounded-full border-[2.5px] border-surface/40 border-t-surface animate-[spin_800ms_linear_infinite]" />
+          <ArcSpinner size={24} className="text-accent" />
         </div>
       )}
     </div>

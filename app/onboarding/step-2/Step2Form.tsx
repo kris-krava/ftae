@@ -103,9 +103,6 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Medium tags fill the full content area — they pre-date the 310px
-          form-column rule, and their wrapping makes the wider canvas feel
-          intentional. */}
       <div className="flex flex-wrap items-start gap-[8px] w-full">
         {mediums.map((m) => {
           const isOn = selected.has(m.id);
@@ -132,12 +129,8 @@ export function Step2Form({ mediums, initialSelectedIds, initialBio }: Step2Form
           );
         })}
       </div>
-      <span aria-hidden className="h-[8px] w-px shrink-0" />
-      <p className="font-sans text-[12px] leading-[18px] text-muted text-right w-full">
-        {selected.size} / {MAX_MEDIUMS}
-      </p>
       <span aria-hidden className="h-[32px] w-px shrink-0" />
-      <div className="w-full max-w-[310px] flex flex-col items-center">
+      <div className="w-full flex flex-col items-center">
         <label htmlFor="bio" className="font-sans font-medium text-[13px] leading-[18px] text-muted w-full">
           In one line, who are you as an artist?
         </label>

@@ -43,7 +43,7 @@ interface ArtFormProps {
 export function ArtForm({
   artwork,
   headerTitle,
-  headerSubtitle = "One piece you made, and would love another artist to have.",
+  headerSubtitle = "Add one piece you've made, that you'd happily trade for art you love. You'll choose the trade that's right for you.",
   submitLabel,
   submittingLabel,
   onCommit,

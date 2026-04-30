@@ -125,7 +125,7 @@ export const SCENARIOS: Scenario[] = [
       location_city: 'Athens, GA',
       bio: 'Landscapes and graphite studies from rural Georgia.',
       avatar_url: SAMPLE_AVATAR('partial-profile'),
-      profile_completion_pct: 50,
+      profile_completion_pct: 80,
     },
     mediums: ['Drawing', 'Oil'],
   },

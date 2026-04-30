@@ -21,6 +21,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { Upload01 } from '@/components/icons';
+import { ArcSpinner } from '@/components/ArcSpinner';
 import { SortablePhoto, PHOTO_TILE_BASIS as TILE_BASIS } from './SortablePhoto';
 import { getArtworkUploadUrls } from '@/app/_actions/artwork-upload';
 import { uploadFilesInParallel, UploadError } from '@/lib/artwork-upload-client';
@@ -90,10 +91,6 @@ interface ArtFormBodyProps {
   /** When true, hide Dimensions and Description fields and skip their validation. Used by
    *  onboarding step-3 where the simplified form only collects photos+title+year+medium. */
   lite?: boolean;
-  /** When true, the submit button is disabled until all required fields are filled. Used by
-   *  onboarding step-3 to surface progress; Add Art / Edit Art keep the always-enabled button
-   *  with click-time validation messaging so users aren't blocked by an opaque disabled state. */
-  gateSubmit?: boolean;
 }
 
 function makePhotoId(): string {
@@ -125,7 +122,6 @@ export function ArtFormBody({
   onDeleteClick,
   deleting = false,
   lite = false,
-  gateSubmit = false,
 }: ArtFormBodyProps) {
   const [photos, setPhotos] = useState<PhotoEntry[]>(() => seedPhotos(artwork));
 
@@ -140,6 +136,12 @@ export function ArtFormBody({
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<SavePhase>({ kind: 'idle' });
   const [saving, startSaving] = useTransition();
+  // Prevents the over-selection race: while a batch of files is being
+  // compressed, photos.length is still stale (entries don't appear until
+  // compression completes). A second click on the Upload tile during this
+  // window would queue another full batch. Three independent guards close
+  // that gap: tile disabled, openPicker no-op, remaining<=0 early return.
+  const [compressing, setCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const previews = useMemo(
@@ -154,6 +156,7 @@ export function ArtFormBody({
   );
 
   function openPicker() {
+    if (compressing) return;
     fileInputRef.current?.click();
   }
 
@@ -162,9 +165,13 @@ export function ArtFormBody({
     if (incoming.length === 0) return;
     setError(null);
     const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     const toProcess = incoming.slice(0, remaining);
-    if (incoming.length > remaining) setError(`Up to ${MAX_PHOTOS} photos.`);
 
+    setCompressing(true);
     try {
       const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await Promise.all(
@@ -193,6 +200,7 @@ export function ArtFormBody({
       });
       setError('Could not process one or more photos.');
     } finally {
+      setCompressing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
@@ -352,13 +360,6 @@ export function ArtFormBody({
     startSaving(executeSave);
   }
 
-  const canSubmit =
-    photos.length > 0 &&
-    title.trim().length > 0 &&
-    year.trim().length > 0 &&
-    medium.trim().length > 0 &&
-    (lite || (width.trim().length > 0 && height.trim().length > 0));
-
   const buttonLabel = (() => {
     if (!saving) return submitLabel;
     if (phase.kind === 'uploading') {
@@ -390,12 +391,23 @@ export function ArtFormBody({
             <button
               type="button"
               onClick={openPicker}
-              aria-label={photos.length === 0 ? 'Upload images' : 'Add more photos'}
-              className={`${TILE_BASIS} shrink-0 aspect-square rounded-[8px] ${lite ? 'bg-surface' : 'bg-canvas/40'} border-[1.5px] border-divider flex flex-col items-center justify-center gap-[6px]`}
+              disabled={compressing}
+              aria-label={
+                compressing
+                  ? 'Processing photos'
+                  : photos.length === 0
+                    ? 'Upload images'
+                    : 'Add more photos'
+              }
+              className={`${TILE_BASIS} shrink-0 aspect-square rounded-[8px] ${lite ? 'bg-surface' : 'bg-canvas/40'} border-[1.5px] border-divider flex flex-col items-center justify-center gap-[6px] disabled:cursor-wait`}
             >
-              <Upload01 className="w-[24px] h-[24px] text-accent" strokeWidth={1.25} />
+              {compressing ? (
+                <ArcSpinner size={24} className="text-accent" />
+              ) : (
+                <Upload01 className="w-[24px] h-[24px] text-accent" strokeWidth={1.25} />
+              )}
               <span className="font-sans font-medium text-[12px] leading-[16px] text-muted text-center whitespace-pre-line">
-                {'Upload\nImages'}
+                {compressing ? 'Processing…' : 'Upload\nImages'}
               </span>
             </button>
           )}
@@ -413,6 +425,15 @@ export function ArtFormBody({
       <p className="font-sans text-[12px] text-ink/70 leading-[16px] mt-[12px] text-center">
         Up to 6 photos · JPG or PNG
       </p>
+
+      {error && (
+        <p
+          role="alert"
+          className="font-sans text-[13px] leading-[18px] text-accent text-center mt-[16px]"
+        >
+          {error}
+        </p>
+      )}
 
       <div className="mt-[32px] flex flex-col gap-[16px]">
         <Field label="Title" htmlFor="art-title">
@@ -543,7 +564,7 @@ export function ArtFormBody({
             </button>
             <button
               type="submit"
-              disabled={saving || deleting || (gateSubmit && !canSubmit)}
+              disabled={saving || deleting}
               className="flex-1 h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {buttonLabel}
@@ -552,16 +573,11 @@ export function ArtFormBody({
         ) : (
           <button
             type="submit"
-            disabled={saving || (gateSubmit && !canSubmit)}
+            disabled={saving}
             className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {buttonLabel}
           </button>
-        )}
-        {error && (
-          <p role="alert" className="text-accent text-[13px] text-center">
-            {error}
-          </p>
         )}
       </div>
     </form>
