@@ -64,6 +64,16 @@ export function ArtworkDetailsModal({
     setImageLoading(true);
   }, [currentPhoto?.url, artwork.id]);
 
+  // Clamp imageIdx when the photos array shrinks — happens when the user
+  // opens Edit Art and deletes the photo they were viewing. Without this
+  // the index points past the new end, currentPhoto is undefined, the
+  // <Image> never mounts, and the loading spinner spins forever.
+  useEffect(() => {
+    if (photos.length > 0 && imageIdx >= photos.length) {
+      setImageIdx(photos.length - 1);
+    }
+  }, [photos.length, imageIdx]);
+
   const close = useCallback(() => {
     if (onClose) onClose();
     else if (mode === 'overlay') router.back();
