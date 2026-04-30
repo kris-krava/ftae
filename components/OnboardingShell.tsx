@@ -16,7 +16,7 @@ export function OnboardingShell({ step, children }: OnboardingShellProps) {
         'desk:px-[350px] desk:py-[50px]'
       }
     >
-      <Wordmark variant="short" size="compact" />
+      <Wordmark variant="full" size="compact" />
       <span aria-hidden className="h-[24px] w-px shrink-0" />
       <ProgressBar step={step} total={3} />
       <span aria-hidden className="h-[32px] w-px shrink-0" />
