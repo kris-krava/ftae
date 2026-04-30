@@ -163,6 +163,7 @@ async function seedScenario(scenario: Scenario, userId: string, email: string): 
       type: n.type,
       message: n.message,
       is_read: n.is_read ?? false,
+      action_url: n.action_url ?? null,
     }));
     await supabaseAdmin.from('notifications').insert(notifs);
   }

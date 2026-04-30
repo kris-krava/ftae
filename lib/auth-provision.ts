@@ -10,7 +10,8 @@ import { REFERRAL_COOKIE } from '@/lib/referral';
 // The trailing founding-member star is appended inline by the renderer when
 // type === 'profile_nudge'; not a token in the text.
 const PROFILE_NUDGE_MESSAGE =
-  "Welcome to Free Trade Art Exchange!\nAdd your first piece of art to officially become a founding artist.";
+  "Welcome to Free Trade Art Exchange!\nThank you for being a founding artist! Click to discover artwork you'll love.";
+const PROFILE_NUDGE_ACTION_URL = '/app/discover';
 
 export type ProvisionOutcome =
   | { ok: true; isNewUser: boolean }
@@ -139,6 +140,7 @@ export async function provisionPostAuth(ctx: ProvisionContext): Promise<Provisio
     user_id: userId,
     type: 'profile_nudge',
     message: PROFILE_NUDGE_MESSAGE,
+    action_url: PROFILE_NUDGE_ACTION_URL,
     is_read: false,
   });
   if (notifError) {
