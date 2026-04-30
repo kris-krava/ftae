@@ -60,6 +60,7 @@ export function UserRow({ user, rowNumber, disableSelf }: UserRowProps) {
         <Td className="font-mono text-[12px]">{user.username}</Td>
         <Td className="text-right tabular-nums">{user.profile_completion_pct}</Td>
         <Td className="text-center">{user.is_founding_member ? '✓' : ''}</Td>
+        <Td className="text-right tabular-nums">{user.art_count}</Td>
         <Td className="text-center">{isActive ? 'on' : 'off'}</Td>
         <Td className="text-right tabular-nums">{user.referral_count}</Td>
         <Td className="text-right tabular-nums">{user.credits_count}</Td>

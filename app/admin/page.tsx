@@ -58,7 +58,7 @@ export default async function AdminPage(props: AdminPageProps) {
   const order = parseOrder(searchParams.order);
   const includeTestUsers = searchParams.test === '1';
 
-  const { items, totalCount, totalPages } = await fetchAdminUsersPage({
+  const { items, totalCount, totalPages, totalArtCount } = await fetchAdminUsersPage({
     page,
     sort,
     order,
@@ -72,7 +72,7 @@ export default async function AdminPage(props: AdminPageProps) {
       <header className="mb-[16px] flex items-end justify-between gap-[12px] flex-wrap">
         <div>
           <h1 className="font-sans font-semibold text-[20px] text-ink">
-            Admin · Users ({totalCount})
+            Admin · Users ({totalCount}) · {totalArtCount} art
           </h1>
           <p className="font-sans text-[13px] text-muted mt-[4px]">
             Signed in as {user.email} ({caller.role})
@@ -128,6 +128,14 @@ export default async function AdminPage(props: AdminPageProps) {
                 align="right"
               />
               <Th align="center">FM</Th>
+              <SortableTh
+                column="art_count"
+                label="Art"
+                currentSort={sort}
+                currentOrder={order}
+                includeTestUsers={includeTestUsers}
+                align="right"
+              />
               <Th align="center">Active</Th>
               <Th align="right">Refs</Th>
               <Th align="right">Credits</Th>
@@ -138,7 +146,7 @@ export default async function AdminPage(props: AdminPageProps) {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-[12px] py-[24px] text-center text-muted">
+                <td colSpan={13} className="px-[12px] py-[24px] text-center text-muted">
                   No users to show.
                 </td>
               </tr>
