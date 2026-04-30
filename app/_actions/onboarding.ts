@@ -34,7 +34,7 @@ async function recalculateCompletion(userId: string): Promise<number> {
   const [{ data: u }, { count: mediumCount }, { count: artworkCount }] = await Promise.all([
     supabaseAdmin
       .from('users')
-      .select('avatar_url, name, location_city, bio, website_url, social_handle')
+      .select('avatar_url, name, location_city, bio')
       .eq('id', userId)
       .single(),
     supabaseAdmin.from('user_mediums').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -53,7 +53,6 @@ async function recalculateCompletion(userId: string): Promise<number> {
     hasLocation: Boolean(u.location_city?.trim()),
     mediumCount: mediumCount ?? 0,
     hasBio: Boolean(u.bio?.trim()),
-    hasLinks: Boolean(u.website_url?.trim() || u.social_handle?.trim()),
     artworkCount: artworkCount ?? 0,
   });
 
