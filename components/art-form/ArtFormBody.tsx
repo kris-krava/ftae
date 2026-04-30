@@ -234,31 +234,19 @@ export function ArtFormBody({
 
     const payload = buildPayload();
     startSaving(async () => {
-      // Catch here so a thrown server-action rejection (timeout, body-size
-      // limit, network blip) surfaces as an inline error instead of escaping
-      // the transition and tripping the parent ErrorBoundary — which would
-      // wipe the user's photos + copy and leave them with a useless retry.
-      try {
-        const res = await onSubmit(payload);
-        if (!res.ok) {
-          setError(res.error ?? 'Something went wrong.');
-          return;
-        }
-        // Success: don't auto-close. The user may still be editing copy
-        // (the upload could have happened while they kept typing) and they
-        // explicitly want to control when the modal closes. Show a toast
-        // for a few seconds as the visible "saved" signal. In inline use
-        // (onboarding step-3) the parent's onSubmit navigates away before
-        // the toast finishes — which is fine.
-        setSavedToast(true);
-        window.setTimeout(() => setSavedToast(false), 3000);
-      } catch (err) {
-        Sentry.captureException(err, {
-          tags: { area: 'art-form', op: 'submit' },
-          extra: { photo_count: payload.photos.length },
-        });
-        setError('Upload failed. Try again — if it keeps happening, try fewer or smaller photos.');
+      const res = await onSubmit(payload);
+      if (!res.ok) {
+        setError(res.error ?? 'Something went wrong.');
+        return;
       }
+      // Success: don't auto-close. The user may still be editing copy
+      // (the upload could have happened while they kept typing) and they
+      // explicitly want to control when the modal closes. Show a toast
+      // for a few seconds as the visible "saved" signal. In inline use
+      // (onboarding step-3) the parent's onSubmit navigates away before
+      // the toast finishes — which is fine.
+      setSavedToast(true);
+      window.setTimeout(() => setSavedToast(false), 3000);
     });
   }
 
