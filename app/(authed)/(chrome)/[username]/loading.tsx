@@ -10,7 +10,7 @@ export default function Loading() {
       aria-busy
       className={
         'bg-canvas min-h-screen w-full flex flex-col items-center ' +
-        'pt-[32px] pb-[96px] tab:pb-[24px] tab:pl-[60px] desk:pl-[60px]'
+        'pt-[32px] pb-[96px] tab:pb-[24px]'
       }
     >
       <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
