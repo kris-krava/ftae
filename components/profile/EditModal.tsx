@@ -350,10 +350,6 @@ function Step2({
 
   return (
     <>
-      <h2 className="font-serif font-bold text-ink text-[24px] text-center w-full">
-        What&rsquo;s your medium?
-      </h2>
-      <span className="h-[24px] w-px shrink-0" />
       <div className="flex flex-wrap items-start gap-[8px] w-full">
         {mediums.map((m) => {
           const on = selected.has(m.id);
@@ -469,10 +465,6 @@ function Step3({
 
   return (
     <form onSubmit={onSave} className="contents">
-      <h2 className="font-serif font-bold text-ink text-[24px] text-center w-full">
-        Add your links?
-      </h2>
-      <span className="h-[24px] w-px shrink-0" />
       <Field label="Your website" htmlFor="edit-website">
         <input
           id="edit-website"

@@ -15,7 +15,7 @@ export default function Loading() {
     >
       <section className="w-full flex flex-col items-center px-[32px] tab:px-[40px] desk:px-[80px]">
         <div className="w-full max-w-[326px] tab:max-w-[480px] desk:max-w-[580px] flex flex-col items-center">
-          <Skeleton className="w-[96px] h-[96px] rounded-full" />
+          <Skeleton className="w-[180px] h-[180px] rounded-full" />
           <div className="h-[10px]" />
           <Skeleton className="w-[180px] h-[24px] tab:h-[28px] desk:h-[32px]" />
           <div className="h-[8px]" />

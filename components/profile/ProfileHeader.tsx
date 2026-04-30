@@ -39,8 +39,8 @@ export function ProfileHeader({
         <Avatar
           initials={initials}
           avatarUrl={user.avatar_url}
-          size={96}
-          textSize="text-[28px]"
+          size={180}
+          textSize="text-[52px]"
           priority
           focalX={user.avatar_focal_x}
           focalY={user.avatar_focal_y}
