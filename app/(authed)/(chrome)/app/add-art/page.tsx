@@ -4,6 +4,11 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AddArtModal } from './AddArtModal';
 
+// Allow up to 60s for saveStep4Artwork — six photos uploaded sequentially-in-
+// parallel to Supabase Storage from a Vercel function can exceed the default
+// 15s window on slower uplinks.
+export const maxDuration = 60;
+
 export default async function AddArtPage() {
   const supabase = await createClient();
   const {

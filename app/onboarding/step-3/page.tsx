@@ -3,6 +3,12 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { requireOnboardingUser } from '@/app/_lib/onboarding';
 import { Step3Form } from './Step3Form';
 
+// Allow up to 60s for saveStep4Artwork — six photos uploaded sequentially-in-
+// parallel to Supabase Storage from a Vercel function can exceed the default
+// 15s window on slower uplinks or when the function lands in a region distant
+// from the Storage bucket.
+export const maxDuration = 60;
+
 export default async function Step3Page() {
   await requireOnboardingUser();
 

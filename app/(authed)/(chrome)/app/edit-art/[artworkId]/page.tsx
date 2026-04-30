@@ -6,6 +6,11 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getArtworkDetail } from '@/app/_lib/profile';
 import { EditArtModal } from './EditArtModal';
 
+// Allow up to 60s for updateArtwork — newly added photos upload to Supabase
+// Storage from a Vercel function and can exceed the default 15s window when
+// the user replaces multiple photos at once.
+export const maxDuration = 60;
+
 interface Props {
   params: Promise<{ artworkId: string }>;
 }

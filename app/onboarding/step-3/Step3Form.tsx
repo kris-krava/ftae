@@ -26,9 +26,19 @@ export function Step3Form() {
       'photo_focals',
       JSON.stringify(payload.photos.map((p) => [p.focal.x, p.focal.y])),
     );
-    const result = await saveStep4Artwork(fd);
-    if (result.ok) router.push('/onboarding/success');
-    return result;
+    // Wrap so a server-action rejection (timeout, body-size limit, network blip)
+    // becomes an inline error in the form instead of an unhandled rejection that
+    // would trip the route's ErrorBoundary and wipe the user's input.
+    try {
+      const result = await saveStep4Artwork(fd);
+      if (result.ok) router.push('/onboarding/success');
+      return result;
+    } catch {
+      return {
+        ok: false as const,
+        error: 'Upload failed. Try again — if it keeps happening, try fewer or smaller photos.',
+      };
+    }
   }
 
   // Width 294/456/516 mirrors Add Art Modal's interior so the photo cell
