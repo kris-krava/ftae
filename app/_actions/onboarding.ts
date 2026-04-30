@@ -57,6 +57,15 @@ async function recalculateCompletion(userId: string): Promise<number> {
   });
 
   await supabaseAdmin.from('users').update({ profile_completion_pct: pct }).eq('id', userId);
+
+  // Whichever action bumped the user to 100% (art upload, bio save, medium
+  // toggle, etc.) is the right moment to grant founding-member status. This
+  // helper is idempotent (gated by an existing-credit check), so calling it
+  // on every recalculate is safe.
+  if (pct === 100) {
+    await tryGrantFoundingMemberCredit(userId);
+  }
+
   return pct;
 }
 
@@ -544,11 +553,10 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
   );
   const failedPhotoIndices = photoResults.flatMap((r, i) => (r.ok ? [] : [i]));
 
-  const newPct = await recalculateCompletion(userId);
+  await recalculateCompletion(userId);
+  // Founding-member grant moved into recalculateCompletion so it fires for
+  // any 100%-completing action, not just the first art upload.
 
-  if (newPct === 100) {
-    await tryGrantFoundingMemberCredit(userId);
-  }
   // Referral credit fires on the first artwork upload regardless of overall
   // completion %. The helper is idempotent (gated by referrals.credit_issued),
   // so subsequent uploads no-op.
