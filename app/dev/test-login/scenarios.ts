@@ -118,14 +118,16 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'partial-profile',
     name: 'Partial profile',
-    description: 'Steps 1 + 2 complete. Lands on Step 3.',
+    description: 'Steps 1 + 2 complete; no art yet. Lands on Step 3 (Add Art lite).',
     redirect: STEP3,
     profile: {
       name: 'Test Partial',
       location_city: 'Athens, GA',
       bio: 'Landscapes and graphite studies from rural Georgia.',
       avatar_url: SAMPLE_AVATAR('partial-profile'),
-      profile_completion_pct: 50,
+      // 80% under current weights (avatar 20 + name 15 + location 15 + mediums 15 + bio 15);
+      // missing only the artwork 20pt that step-3 now collects.
+      profile_completion_pct: 80,
     },
     mediums: ['Drawing', 'Oil'],
   },
