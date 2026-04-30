@@ -9,10 +9,11 @@ import type { AdminUserRow } from '@/app/_lib/admin';
 
 interface UserRowProps {
   user: AdminUserRow;
+  rowNumber: number;
   disableSelf: boolean;
 }
 
-export function UserRow({ user, disableSelf }: UserRowProps) {
+export function UserRow({ user, rowNumber, disableSelf }: UserRowProps) {
   const router = useRouter();
   const [isActive, setIsActive] = useState(user.is_active);
   const [error, setError] = useState<string | null>(null);
@@ -52,14 +53,16 @@ export function UserRow({ user, disableSelf }: UserRowProps) {
   return (
     <>
       <tr className={`border-b border-divider/30 ${isActive ? '' : 'bg-canvas/40 text-muted'}`}>
+        <Td className="text-right tabular-nums text-muted">{rowNumber}</Td>
+        <Td className="font-mono text-[12px]">{joined}</Td>
         <Td>{user.name ?? '—'}</Td>
         <Td className="font-mono text-[12px]">{user.email}</Td>
         <Td className="font-mono text-[12px]">{user.username}</Td>
-        <Td className="font-mono text-[12px]">{joined}</Td>
         <Td className="text-right tabular-nums">{user.profile_completion_pct}</Td>
         <Td className="text-center">{user.is_founding_member ? '✓' : ''}</Td>
         <Td className="text-center">{isActive ? 'on' : 'off'}</Td>
         <Td className="text-right tabular-nums">{user.referral_count}</Td>
+        <Td className="text-right tabular-nums">{user.credits_count}</Td>
         <Td className="font-mono text-[11px] text-muted">
           {user.recent_ips.length === 0 ? '—' : user.recent_ips.join(', ')}
         </Td>

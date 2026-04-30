@@ -13,39 +13,72 @@ export interface AdminUserRow {
   role: string;
   is_test_user: boolean;
   referral_count: number;
+  credits_count: number;
   recent_ips: string[];
 }
 
-const PAGE_SIZE = 50;
+export const ADMIN_PAGE_SIZE = 50;
+
+export const ADMIN_SORT_COLUMNS = [
+  'created_at',
+  'name',
+  'email',
+  'username',
+  'profile_completion_pct',
+] as const;
+export type AdminSortColumn = (typeof ADMIN_SORT_COLUMNS)[number];
+export type AdminSortOrder = 'asc' | 'desc';
+
+export interface AdminFetchOptions {
+  page: number; // 1-indexed
+  sort: AdminSortColumn;
+  order: AdminSortOrder;
+  includeTestUsers?: boolean;
+}
 
 export async function fetchAdminUsersPage(
-  cursor: string | null,
-  options: { includeTestUsers?: boolean } = {},
+  options: AdminFetchOptions,
 ): Promise<{
   items: AdminUserRow[];
-  nextCursor: string | null;
+  totalCount: number;
+  totalPages: number;
 }> {
+  const page = Math.max(1, options.page);
+  const offset = (page - 1) * ADMIN_PAGE_SIZE;
+  const ascending = options.order === 'asc';
+
   let query = supabaseAdmin
     .from('users')
     .select(
       'id, name, email, username, created_at, profile_completion_pct, is_founding_member, is_active, role, is_test_user',
+      { count: 'exact' },
     )
-    .order('created_at', { ascending: false })
-    .limit(PAGE_SIZE + 1);
+    .order(options.sort, { ascending, nullsFirst: false })
+    .range(offset, offset + ADMIN_PAGE_SIZE - 1);
 
   if (!options.includeTestUsers) query = query.eq('is_test_user', false);
-  if (cursor) query = query.lt('created_at', cursor);
 
-  const { data: users } = await query;
-  if (!users || users.length === 0) return { items: [], nextCursor: null };
+  const { data: users, count } = await query;
+  if (!users || users.length === 0) {
+    return {
+      items: [],
+      totalCount: count ?? 0,
+      totalPages: count ? Math.max(1, Math.ceil(count / ADMIN_PAGE_SIZE)) : 1,
+    };
+  }
 
-  const userIds = users.slice(0, PAGE_SIZE).map((u) => u.id as string);
+  const userIds = users.map((u) => u.id as string);
 
-  const [referralsRes, ipsRes] = await Promise.all([
+  const [referralsRes, creditsRes, ipsRes] = await Promise.all([
     supabaseAdmin
       .from('referrals')
       .select('referrer_user_id')
       .in('referrer_user_id', userIds),
+    supabaseAdmin
+      .from('membership_credits')
+      .select('user_id')
+      .in('user_id', userIds)
+      .eq('credit_type', 'referral_bonus'),
     supabaseAdmin
       .from('user_ips')
       .select('user_id, ip_address, created_at')
@@ -59,6 +92,12 @@ export async function fetchAdminUsersPage(
     referralCount.set(id, (referralCount.get(id) ?? 0) + 1);
   }
 
+  const creditsCount = new Map<string, number>();
+  for (const row of creditsRes.data ?? []) {
+    const id = (row as { user_id: string }).user_id;
+    creditsCount.set(id, (creditsCount.get(id) ?? 0) + 1);
+  }
+
   const ipsByUser = new Map<string, string[]>();
   for (const row of ipsRes.data ?? []) {
     const r = row as { user_id: string; ip_address: string };
@@ -67,7 +106,7 @@ export async function fetchAdminUsersPage(
     ipsByUser.set(r.user_id, arr);
   }
 
-  const items: AdminUserRow[] = users.slice(0, PAGE_SIZE).map((u) => ({
+  const items: AdminUserRow[] = users.map((u) => ({
     id: u.id as string,
     name: u.name as string | null,
     email: u.email as string,
@@ -79,9 +118,12 @@ export async function fetchAdminUsersPage(
     role: u.role as string,
     is_test_user: (u as { is_test_user?: boolean }).is_test_user ?? false,
     referral_count: referralCount.get(u.id as string) ?? 0,
+    credits_count: creditsCount.get(u.id as string) ?? 0,
     recent_ips: ipsByUser.get(u.id as string) ?? [],
   }));
 
-  const nextCursor = users.length > PAGE_SIZE ? items[items.length - 1].created_at : null;
-  return { items, nextCursor };
+  const totalCount = count ?? 0;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / ADMIN_PAGE_SIZE) : 1;
+
+  return { items, totalCount, totalPages };
 }
