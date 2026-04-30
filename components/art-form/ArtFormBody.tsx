@@ -22,6 +22,8 @@ import {
 } from '@dnd-kit/sortable';
 import { Upload01 } from '@/components/icons';
 import { SortablePhoto, PHOTO_TILE_BASIS as TILE_BASIS } from './SortablePhoto';
+import { getArtworkUploadUrls } from '@/app/_actions/artwork-upload';
+import { uploadFilesInParallel, UploadError } from '@/lib/artwork-upload-client';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 import type { FocalPoint } from '@/lib/focal-point';
 
@@ -43,11 +45,13 @@ interface NewPhotoEntry {
 }
 type PhotoEntry = ExistingPhotoEntry | NewPhotoEntry;
 
-export type ArtFormPhoto =
+export type ArtFormCommitPhoto =
   | { kind: 'existing'; id: string; focal: FocalPoint }
-  | { kind: 'new'; file: File; focal: FocalPoint };
+  | { kind: 'new'; path: string; focal: FocalPoint };
 
-export interface ArtFormPayload {
+export interface ArtFormCommitPayload {
+  /** Always present: server-minted UUID for new artworks, or existing id for edits. */
+  artworkId: string;
   title: string;
   year: string;
   medium: string;
@@ -55,7 +59,7 @@ export interface ArtFormPayload {
   height: string;
   depth: string;
   description: string;
-  photos: ArtFormPhoto[];
+  photos: ArtFormCommitPhoto[];
 }
 
 export interface ArtFormResult {
@@ -68,10 +72,16 @@ interface ArtFormBodyProps {
   artwork: ArtworkDetail | null;
   /** Submit button label (e.g. "Add Art" / "Save Art" / "Complete Profile"). */
   submitLabel: string;
-  /** Submit label while pending (e.g. "Uploading…" / "Saving…"). */
+  /** Submit label while finalizing the metadata commit (e.g. "Saving…"). */
   submittingLabel: string;
-  /** Called with assembled payload; consumer builds its own FormData and calls server action. */
-  onSubmit: (payload: ArtFormPayload) => Promise<ArtFormResult>;
+  /** Called after all new photos have been uploaded to Storage. The payload
+   *  includes the server-assigned artworkId and storage paths instead of File
+   *  objects. Consumer dispatches commitNewArtwork or commitArtworkUpdate. */
+  onCommit: (payload: ArtFormCommitPayload) => Promise<ArtFormResult>;
+  /** Fires after a successful commit, after a brief "Saved" beat. Modal
+   *  wrappers use this to dismiss themselves; inline consumers (like the
+   *  onboarding step) instead navigate forward in their own onCommit. */
+  onSaved?: () => void;
   /** When provided, renders the "Delete Art" button next to submit. Click triggers this callback —
    *  the parent owns the confirmation modal and the actual delete server action. */
   onDeleteClick?: () => void;
@@ -101,11 +111,17 @@ function seedPhotos(artwork: ArtworkDetail | null): PhotoEntry[] {
   }));
 }
 
+type SavePhase =
+  | { kind: 'idle' }
+  | { kind: 'uploading'; loaded: number; total: number }
+  | { kind: 'committing' };
+
 export function ArtFormBody({
   artwork,
   submitLabel,
   submittingLabel,
-  onSubmit,
+  onCommit,
+  onSaved,
   onDeleteClick,
   deleting = false,
   lite = false,
@@ -122,7 +138,7 @@ export function ArtFormBody({
   const [description, setDescription] = useState<string>(artwork?.description ?? '');
 
   const [error, setError] = useState<string | null>(null);
-  const [savedToast, setSavedToast] = useState(false);
+  const [phase, setPhase] = useState<SavePhase>({ kind: 'idle' });
   const [saving, startSaving] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -200,25 +216,7 @@ export function ArtFormBody({
     });
   }
 
-  function buildPayload(): ArtFormPayload {
-    return {
-      title: title.trim(),
-      year: year.trim(),
-      medium: medium.trim(),
-      width: lite ? '' : width.trim(),
-      height: lite ? '' : height.trim(),
-      depth: lite ? '' : depth.trim(),
-      description: lite ? '' : description,
-      photos: photos.map<ArtFormPhoto>((p) =>
-        p.kind === 'existing'
-          ? { kind: 'existing', id: p.id, focal: p.focal }
-          : { kind: 'new', file: p.file, focal: p.focal },
-      ),
-    };
-  }
-
-  function onFormSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function executeSave() {
     setError(null);
     if (photos.length === 0) {
       setError('Please add at least one photo.');
@@ -232,22 +230,126 @@ export function ArtFormBody({
       if (!height.trim()) { setError('Please add a height.'); return; }
     }
 
-    const payload = buildPayload();
-    startSaving(async () => {
-      const res = await onSubmit(payload);
-      if (!res.ok) {
-        setError(res.error ?? 'Something went wrong.');
+    const newEntries = photos
+      .map((p, idx) => ({ entry: p, formIndex: idx }))
+      .filter((e): e is { entry: NewPhotoEntry; formIndex: number } => e.entry.kind === 'new');
+
+    let assignedArtworkId = artwork?.id ?? '';
+    let pathByFormIndex = new Map<number, string>();
+
+    // Mint signed URLs for the new photos (skip if edit-only with no
+    // additions). The server returns an artworkId — for new artworks it's
+    // a fresh UUID; for edits we pass our id back and get it echoed.
+    if (newEntries.length > 0) {
+      const totalBytes = newEntries.reduce((sum, e) => sum + e.entry.file.size, 0);
+      setPhase({ kind: 'uploading', loaded: 0, total: totalBytes });
+
+      const filesMeta = newEntries.map((e) => ({
+        mime: e.entry.file.type,
+        size: e.entry.file.size,
+      }));
+
+      const slotsResp = await getArtworkUploadUrls({
+        files: filesMeta,
+        artworkId: artwork?.id,
+      });
+      if (!slotsResp.ok) {
+        setPhase({ kind: 'idle' });
+        setError(slotsResp.error ?? 'Could not prepare upload.');
         return;
       }
-      // Success: don't auto-close. The user may still be editing copy
-      // (the upload could have happened while they kept typing) and they
-      // explicitly want to control when the modal closes. Show a toast
-      // for a few seconds as the visible "saved" signal. In inline use
-      // (onboarding step-3) the parent's onSubmit navigates away before
-      // the toast finishes — which is fine.
-      setSavedToast(true);
-      window.setTimeout(() => setSavedToast(false), 3000);
-    });
+      assignedArtworkId = slotsResp.artworkId;
+
+      // The server returns slots in the same order we sent files. Build a
+      // {formIndex → path} map so we can stitch paths back into the final
+      // photos array (which mixes existing + new).
+      const slotProgress = new Map<number, { loaded: number; total: number }>();
+      newEntries.forEach((e) => slotProgress.set(e.formIndex, { loaded: 0, total: e.entry.file.size }));
+
+      function recomputeProgress() {
+        let loaded = 0;
+        for (const v of slotProgress.values()) loaded += v.loaded;
+        setPhase({ kind: 'uploading', loaded, total: totalBytes });
+      }
+
+      try {
+        await uploadFilesInParallel(
+          slotsResp.uploads.map((slot) => ({
+            file: newEntries[slot.index].entry.file,
+            signedUrl: slot.signedUrl,
+            index: newEntries[slot.index].formIndex,
+            contentType: newEntries[slot.index].entry.file.type,
+          })),
+          {
+            concurrency: 3,
+            onProgress: (p) => {
+              const cur = slotProgress.get(p.index);
+              if (!cur) return;
+              cur.loaded = p.loaded;
+              cur.total = p.total;
+              recomputeProgress();
+            },
+          },
+        );
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { area: 'art-form', op: 'upload_put' },
+          extra: {
+            photo_count: newEntries.length,
+            total_bytes: totalBytes,
+            status: err instanceof UploadError ? err.status : null,
+          },
+        });
+        setPhase({ kind: 'idle' });
+        setError('Upload failed. Check your connection and try again.');
+        return;
+      }
+
+      slotsResp.uploads.forEach((slot) => {
+        const formIndex = newEntries[slot.index].formIndex;
+        pathByFormIndex.set(formIndex, slot.path);
+      });
+    } else if (!assignedArtworkId) {
+      // Pure-existing edit case is impossible (we got here from edit mode
+      // with at least one existing photo), so this branch is just a guard.
+      setError('Nothing to save.');
+      return;
+    }
+
+    setPhase({ kind: 'committing' });
+
+    const commitPayload: ArtFormCommitPayload = {
+      artworkId: assignedArtworkId,
+      title: title.trim(),
+      year: year.trim(),
+      medium: medium.trim(),
+      width: lite ? '' : width.trim(),
+      height: lite ? '' : height.trim(),
+      depth: lite ? '' : depth.trim(),
+      description: lite ? '' : description,
+      photos: photos.map<ArtFormCommitPhoto>((p, idx) => {
+        if (p.kind === 'existing') return { kind: 'existing', id: p.id, focal: p.focal };
+        const path = pathByFormIndex.get(idx);
+        if (!path) throw new Error('Missing upload path for new photo');
+        return { kind: 'new', path, focal: p.focal };
+      }),
+    };
+
+    const res = await onCommit(commitPayload);
+    setPhase({ kind: 'idle' });
+    if (!res.ok) {
+      setError(res.error ?? 'Something went wrong.');
+      return;
+    }
+    // The progress UI on the Save button (Uploading photos… X% → Saving…)
+    // is the confirmation; modal-mode wrappers dismiss themselves here, and
+    // inline consumers (onboarding) navigate in their own onCommit.
+    onSaved?.();
+  }
+
+  function onFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    startSaving(executeSave);
   }
 
   const canSubmit =
@@ -256,6 +358,15 @@ export function ArtFormBody({
     year.trim().length > 0 &&
     medium.trim().length > 0 &&
     (lite || (width.trim().length > 0 && height.trim().length > 0));
+
+  const buttonLabel = (() => {
+    if (!saving) return submitLabel;
+    if (phase.kind === 'uploading') {
+      const pct = phase.total > 0 ? Math.min(100, Math.floor((phase.loaded / phase.total) * 100)) : 0;
+      return `Uploading photos… ${pct}%`;
+    }
+    return submittingLabel;
+  })();
 
   return (
     <form onSubmit={onFormSubmit} className="flex flex-col">
@@ -435,7 +546,7 @@ export function ArtFormBody({
               disabled={saving || deleting || (gateSubmit && !canSubmit)}
               className="flex-1 h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {saving ? submittingLabel : submitLabel}
+              {buttonLabel}
             </button>
           </div>
         ) : (
@@ -444,21 +555,12 @@ export function ArtFormBody({
             disabled={saving || (gateSubmit && !canSubmit)}
             className="w-full h-[48px] rounded-[8px] bg-accent text-surface font-semibold text-[16px] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {saving ? submittingLabel : submitLabel}
+            {buttonLabel}
           </button>
         )}
         {error && (
           <p role="alert" className="text-accent text-[13px] text-center">
             {error}
-          </p>
-        )}
-        {savedToast && !error && (
-          <p
-            role="status"
-            aria-live="polite"
-            className="font-sans font-medium text-[13px] text-accent text-center"
-          >
-            Saved.
           </p>
         )}
       </div>

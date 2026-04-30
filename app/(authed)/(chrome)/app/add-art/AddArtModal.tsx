@@ -1,7 +1,7 @@
 'use client';
 
-import { ArtForm, type ArtFormPayload } from '@/components/art-form/ArtForm';
-import { saveStep4Artwork } from '@/app/_actions/onboarding';
+import { ArtForm, type ArtFormCommitPayload } from '@/components/art-form/ArtForm';
+import { commitNewArtwork } from '@/app/_actions/artwork-upload';
 
 interface AddArtModalProps {
   /** Fallback URL used when the modal was opened via direct navigation
@@ -13,23 +13,28 @@ interface AddArtModalProps {
 }
 
 export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps) {
-  async function handleSubmit(payload: ArtFormPayload) {
-    const fd = new FormData();
-    fd.set('title', payload.title);
-    fd.set('year', payload.year);
-    fd.set('medium', payload.medium);
-    fd.set('width', payload.width);
-    fd.set('height', payload.height);
-    if (payload.depth) fd.set('depth', payload.depth);
-    fd.set('description', payload.description);
-    payload.photos.forEach((p) => {
-      if (p.kind === 'new') fd.append('photos', p.file, p.file.name || 'photo.jpg');
+  async function handleCommit(payload: ArtFormCommitPayload) {
+    return commitNewArtwork({
+      artworkId: payload.artworkId,
+      lite: false,
+      meta: {
+        title: payload.title,
+        year: payload.year,
+        medium: payload.medium,
+        width: payload.width || null,
+        height: payload.height || null,
+        depth: payload.depth || null,
+        description: payload.description || null,
+      },
+      photos: payload.photos.map((p) => {
+        if (p.kind === 'existing') {
+          // Should be impossible in Add mode (artwork=null seeds zero existing
+          // photos), but keep TS happy.
+          throw new Error('Unexpected existing photo in add-art commit.');
+        }
+        return { path: p.path, focal: [p.focal.x, p.focal.y] };
+      }),
     });
-    fd.append(
-      'photo_focals',
-      JSON.stringify(payload.photos.map((p) => [p.focal.x, p.focal.y])),
-    );
-    return saveStep4Artwork(fd);
   }
 
   return (
@@ -37,9 +42,9 @@ export function AddArtModal({ backHref, mode = 'standalone' }: AddArtModalProps)
       artwork={null}
       headerTitle="Add Art"
       submitLabel="Add Art"
-      submittingLabel="Uploading…"
+      submittingLabel="Saving…"
       successLabel="Art added"
-      onSubmit={handleSubmit}
+      onCommit={handleCommit}
       backHref={backHref}
       mode={mode}
     />

@@ -6,11 +6,11 @@ import { XClose, XCircle } from '@/components/icons';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { useFocusTrap } from '@/lib/use-focus-trap';
 import { ArtFormBody } from './ArtFormBody';
-import type { ArtFormPayload, ArtFormResult } from './ArtFormBody';
+import type { ArtFormCommitPayload, ArtFormResult } from './ArtFormBody';
 import type { ArtworkDetail } from '@/app/_lib/profile';
 
 // Re-export so existing consumers keep their imports working.
-export type { ArtFormPayload, ArtFormResult, ArtFormPhoto } from './ArtFormBody';
+export type { ArtFormCommitPayload, ArtFormCommitPhoto, ArtFormResult } from './ArtFormBody';
 
 const SUCCESS_DISPLAY_MS = 1200;
 
@@ -27,8 +27,9 @@ interface ArtFormProps {
   submittingLabel: string;
   /** Reserved for the post-save splash. Currently unused — save shows an inline toast in the body. */
   successLabel: string;
-  /** Called with assembled payload; consumer builds its own FormData and calls server action. */
-  onSubmit: (payload: ArtFormPayload) => Promise<ArtFormResult>;
+  /** Called after photos have been uploaded to Storage; consumer dispatches
+   *  the appropriate commit server action with the resulting paths + metadata. */
+  onCommit: (payload: ArtFormCommitPayload) => Promise<ArtFormResult>;
   /** When provided, renders the Delete button + confirm dialog. */
   onDelete?: () => Promise<ArtFormResult>;
   /** Success copy after delete (e.g. "Art deleted"). Required when onDelete is provided. */
@@ -45,7 +46,7 @@ export function ArtForm({
   headerSubtitle = "One piece you made, and would love another artist to have.",
   submitLabel,
   submittingLabel,
-  onSubmit,
+  onCommit,
   onDelete,
   deleteSuccessLabel,
   backHref,
@@ -143,7 +144,8 @@ export function ArtForm({
               artwork={artwork}
               submitLabel={submitLabel}
               submittingLabel={submittingLabel}
-              onSubmit={onSubmit}
+              onCommit={onCommit}
+              onSaved={close}
               onDeleteClick={onDelete ? () => setConfirmOpen(true) : undefined}
               deleting={deleting}
             />
