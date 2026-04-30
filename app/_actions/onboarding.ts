@@ -413,9 +413,6 @@ export async function saveStep3Links(formData: FormData): Promise<SaveResult> {
   return { ok: true };
 }
 
-// Width/height are nullable so onboarding step-3 can submit a piece with
-// just photos+title+year+medium. Add Art / Edit Art enforce them at the
-// client level — server stays permissive.
 const Step4MetaSchema = z.object({
   title: z.string().trim().min(1, 'Title is required.').max(160),
   year: z.coerce.number({ invalid_type_error: 'Year is required.' })
@@ -423,8 +420,8 @@ const Step4MetaSchema = z.object({
     .min(1000)
     .max(new Date().getFullYear() + 1),
   medium: z.string().trim().min(1, 'Medium is required.').max(160),
-  width:  z.coerce.number().positive('Width must be greater than 0.').max(10000).optional().nullable(),
-  height: z.coerce.number().positive('Height must be greater than 0.').max(10000).optional().nullable(),
+  width:  z.coerce.number({ invalid_type_error: 'Width is required.' }).positive('Width must be greater than 0.').max(10000),
+  height: z.coerce.number({ invalid_type_error: 'Height is required.' }).positive('Height must be greater than 0.').max(10000),
   depth:  z.coerce.number().nonnegative().max(10000).optional().nullable(),
   description: z.string().trim().max(160).optional().nullable(),
 });
@@ -499,8 +496,8 @@ export async function saveStep4Artwork(formData: FormData): Promise<SaveResult> 
       title: meta.data.title,
       year: meta.data.year ?? null,
       medium: meta.data.medium?.trim() || null,
-      height: meta.data.height ?? null,
-      width: meta.data.width ?? null,
+      height: meta.data.height,
+      width: meta.data.width,
       depth: meta.data.depth ?? null,
       dimension_unit: 'in',
       artist_statement: meta.data.description?.trim() || null,
