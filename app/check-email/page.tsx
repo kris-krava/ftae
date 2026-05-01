@@ -56,7 +56,7 @@ export default async function CheckEmailPage(props: Props) {
             <span className="font-semibold text-ink">your inbox</span>
           )}
         </p>
-        <p>Tap that link to create your profile.</p>
+        <p>Tap that link to create your profile or sign in.</p>
       </div>
       <Link
         href="/"
