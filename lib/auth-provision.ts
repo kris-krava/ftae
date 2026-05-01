@@ -10,7 +10,7 @@ import { REFERRAL_COOKIE } from '@/lib/referral';
 // The trailing founding-member star is appended inline by the renderer when
 // type === 'profile_nudge'; not a token in the text.
 const PROFILE_NUDGE_MESSAGE =
-  "Welcome to Free Trade Art Exchange!\nThank you for being a founding artist! Click to discover artwork you'll love.";
+  "Welcome to Free Trade Art Exchange!\nThank you for being a founding artist! Enjoy no per-trade fees, forever! Click to discover artists.";
 const PROFILE_NUDGE_ACTION_URL = '/app/discover';
 
 export type ProvisionOutcome =

@@ -45,7 +45,9 @@ export function NotificationItem({ type, message, isRead, actionUrl }: Notificat
           <p className="font-sans text-[13px] leading-[18px] text-muted">{body}</p>
         )}
       </div>
-      {actionUrl && <ChevronRight className="w-[20px] h-[20px] text-ink shrink-0" />}
+      {actionUrl && (
+        <ChevronRight className="w-[20px] h-[20px] text-ink shrink-0 self-center" />
+      )}
     </>
   );
 

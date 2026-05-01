@@ -238,7 +238,7 @@ export const SCENARIOS: Scenario[] = [
     followersCount: 2,
     notifications: [
       { type: 'referral_joined', message: 'Someone just signed up with your link.', is_read: false },
-      { type: 'profile_nudge', message: "Welcome to Free Trade Art Exchange!\nThank you for being a founding artist! Click to discover artwork you'll love.", is_read: true, action_url: '/app/discover' },
+      { type: 'profile_nudge', message: "Welcome to Free Trade Art Exchange!\nThank you for being a founding artist! Enjoy no per-trade fees, forever! Click to discover artists.", is_read: true, action_url: '/app/discover' },
     ],
   },
   {
