@@ -47,7 +47,7 @@ export function ReferralCTA({ referralUrl, onClose }: ReferralCTAProps) {
     <div className="w-[310px] bg-surface rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] px-[20px] py-[16px] flex flex-col items-center gap-[12px]">
       <div className="flex items-center gap-[12px] w-full">
         <p className="flex-1 min-w-0 font-sans font-medium text-[13px] leading-[20px] text-ink text-center">
-          Invite artists to join &amp; earn credits!
+          Invite artists to join &amp; add art!
         </p>
         {onClose && (
           <button
@@ -75,9 +75,6 @@ export function ReferralCTA({ referralUrl, onClose }: ReferralCTAProps) {
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <p className="font-sans text-[11px] leading-[16px] text-muted text-center">
-        What are credits worth? IDK yet, but earn up to 3 when your friends add their first piece of art!
-      </p>
     </div>
   );
 }
