@@ -168,6 +168,18 @@ export function ArtFormBody({
   const [saving, startSaving] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Latest-photos snapshot accessible inside async closures. The compression
+  // queue and the mint+upload pipeline both check this ref so that an entry
+  // the user removed mid-process can be SKIPPED — saving CPU on its
+  // compression and bandwidth on its upload, which would otherwise compete
+  // for resources with the entries the user actually still wants. Seeded
+  // at construction with any existing photos (Edit Art) and kept in sync
+  // synchronously by every code path that mutates `photos` (the useEffect
+  // below catches any cases that fall through, but it runs post-render so
+  // can't be the only update path — workers fire in microtasks before
+  // effects flush).
+  const photoIdsRef = useRef<Set<string>>(new Set(seedPhotos(artwork).map((p) => p.id)));
+
   // Once the first batch's signed URLs are minted, the server returns an
   // artworkId. Subsequent pick batches in the same form session pass it
   // back so the new photos land under the same `userId/artworkId/` prefix
@@ -230,6 +242,13 @@ export function ArtFormBody({
   function untrackObjectUrl(url: string): void {
     if (objectUrlsRef.current.delete(url)) URL.revokeObjectURL(url);
   }
+
+  // Keep photoIdsRef in sync with the latest photos array so async pipelines
+  // (compression queue, mint, upload progress) can short-circuit work on an
+  // entry the user removed during processing.
+  useEffect(() => {
+    photoIdsRef.current = new Set(photos.map((p) => p.id));
+  }, [photos]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -317,12 +336,19 @@ export function ArtFormBody({
 
     // Map server-returned slots back to our entry ids. Slot.index aligns
     // with the order we sent files, so items[slot.index] is its entry.
-    const uploads = slotsResp.uploads.map((slot) => ({
-      entryId: items[slot.index].entryId,
-      file: items[slot.index].file,
-      slot,
-      abort: new AbortController(),
-    }));
+    // Skip slots whose entry was removed between mint request and response —
+    // their PUT would just dump bytes into an orphan path and steal
+    // bandwidth from the entries the user actually still wants.
+    const uploads = slotsResp.uploads
+      .map((slot) => ({
+        entryId: items[slot.index].entryId,
+        file: items[slot.index].file,
+        slot,
+        abort: new AbortController(),
+      }))
+      .filter((u) => photoIdsRef.current.has(u.entryId));
+
+    if (uploads.length === 0) return;
 
     // Transition entries from compressing → uploading. This must happen in
     // a single setPhotos so React batches; otherwise progress events from
@@ -416,40 +442,40 @@ export function ArtFormBody({
       focal: { x: 0.5, y: 0.5 },
       status: { tag: 'compressing' },
     }));
+    // Update photoIdsRef synchronously so workers (which fire in microtasks
+    // before any useEffect flushes) can see these new ids during their
+    // pre-compress check. setPhotos alone wouldn't suffice — its effect
+    // runs post-render.
+    for (const e of newEntries) photoIdsRef.current.add(e.id);
     setPhotos((prev) => [...prev, ...newEntries]);
 
-    // Compress each file on its own track but with a global cap of
-    // COMPRESS_CONCURRENCY simultaneous workers. Two is the sweet spot:
-    // enough that fast files don't queue behind a slow file, few enough
-    // that mobile memory stays well under the iOS 50 MB/tab budget for
-    // 6×iPhone-resolution photos.
-    const slots: Array<File | null> = new Array(toProcess.length).fill(null);
-    const queue = newEntries.map((entry, i) => ({ slot: i, entryId: entry.id, file: toProcess[i] }));
+    // Per-file pipeline: as soon as each file finishes compression, fire
+    // its own mint+upload immediately. A slow 15 MB file no longer holds
+    // up the 500 KB file behind it, and a deleted entry's worker slot is
+    // freed within milliseconds of the deletion (vs minutes if we waited
+    // for the whole batch). The first-mint lock serializes the very first
+    // mint of a session so multiple files racing to create an artwork
+    // row don't collide; later mints run in parallel using the cached
+    // artworkId + HMAC token.
+    const queue = newEntries.map((entry, i) => ({ entryId: entry.id, file: toProcess[i] }));
     const worker = async () => {
       while (queue.length > 0) {
         const job = queue.shift();
         if (!job) return;
+        if (!photoIdsRef.current.has(job.entryId)) continue;
         const compressed = await compressOne(job.entryId, job.file);
-        if (compressed) slots[job.slot] = compressed;
+        if (!compressed || !photoIdsRef.current.has(job.entryId)) continue;
+        // Fire mint+upload without awaiting so the worker can move to the
+        // next compression. Errors are surfaced via per-tile state inside
+        // mintAndUpload; the void here is safe because we don't depend on
+        // the return value here.
+        void withFirstMintLock(() => mintAndUpload([{ entryId: job.entryId, file: compressed }]));
       }
     };
-    await Promise.all(Array.from({ length: COMPRESS_CONCURRENCY }, worker));
-
-    // Build the upload batch from compressions that succeeded AND whose
-    // entries are still in the photo list (a user can remove a tile mid-
-    // compression). Order matches the user's pick order so drag-reorder
-    // and submit-time stitching stay consistent.
-    const batch = newEntries
-      .map((entry, i) => ({ entryId: entry.id, file: slots[i] }))
-      .filter((it): it is { entryId: string; file: File } => it.file !== null);
-    if (batch.length === 0) return;
-
-    // ONE mint per pick batch — keeps Supabase Storage from getting hit by
-    // 6 simultaneous parallel PUTs and prevents the race where two parallel
-    // mints both send `artworkId: undefined` and create two separate
-    // artwork rows. The first-mint lock additionally guards against rapid
-    // back-to-back picks before the first mint returns.
-    await withFirstMintLock(() => mintAndUpload(batch));
+    // Don't await — let workers churn in the background while the function
+    // returns. Submit gating still prevents commit until all entries hit
+    // their terminal state.
+    void Promise.all(Array.from({ length: COMPRESS_CONCURRENCY }, worker));
   }
 
   // Compresses a single file end-to-end with size guards and a wall-clock
@@ -543,6 +569,10 @@ export function ArtFormBody({
   }
 
   function removePhoto(id: string) {
+    // Drop from the ref synchronously so any worker iteration scheduled
+    // for this microtask tick sees the removal — useEffect would catch up
+    // later but compression workers may already be picking the next job.
+    photoIdsRef.current.delete(id);
     setPhotos((prev) => {
       const target = prev.find((p) => p.id === id);
       if (target && target.kind === 'new') {
