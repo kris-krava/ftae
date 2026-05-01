@@ -152,7 +152,9 @@ function AreYouLikeMeSection() {
             'desk:mt-[24px] desk:text-[17px] desk:leading-[28px]'
           }
         >
-          Trade art you&rsquo;ve made for the art you love. No buying. No selling.
+          Trade art you&rsquo;ve made for the art you love.
+          <br aria-hidden="true" />
+          No buying. No selling.
         </p>
         {/* Symmetric breath: same gap above this kicker as the gap from
             the heading down to para1 (20 / 28 / 36). */}
@@ -254,7 +256,7 @@ function FoundingArtistsSection() {
         </ul>
 
         <div className="mt-[32px] tab:mt-[40px] desk:mt-[48px] flex flex-col items-center w-full">
-          <LandingForm submitLabel="Claim your founding spot" variant="dark" />
+          <LandingForm submitLabel="Create Profile or Sign In" variant="dark" />
         </div>
 
         <p
@@ -274,12 +276,16 @@ function FoundingArtistsSection() {
 function HowItWorksSection() {
   const steps: Array<{ title: string; body: React.ReactNode }> = [
     {
-      title: 'Find work you love.',
-      body: 'Browse other artists. Follow the ones whose work moves you. Bookmark the art you want.',
+      title: 'Find art you love.',
+      body: 'Browse other artists. Follow the ones whose work moves you. Bookmark the artwork you want.',
     },
     {
-      title: 'Add your work.',
-      body: <>Upload pieces from your catalog that you&rsquo;d be happy to trade.</>,
+      title: "Add art you've made.",
+      body: (
+        <>
+          Upload pieces from your catalog that you&rsquo;d be happy to trade for art you love.
+        </>
+      ),
     },
     {
       title: 'Propose a trade.',
@@ -451,8 +457,8 @@ function AboutMoneySection() {
             'desk:text-[13px] desk:leading-[21px]'
           }
         >
-          There&rsquo;s no subscription. No monthly fees. No commissions on your trades. No ads,
-          ever. Just a small per-trade fee after launch, with a pay-what-you-can option for artists
+          There&rsquo;s no subscription. No monthly fees. No commissions on your trades. No ads.
+          Just a small per-trade fee after launch, with a pay-what-you-can option for artists
           whose budget is tight.
         </p>
         <p
