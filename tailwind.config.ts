@@ -15,6 +15,7 @@ const config: Config = {
         muted: '#6d6360',
         accent: '#c45c3a',
         divider: '#d0b2aa',
+        peach: '#e6c2b8',
         field: '#c4a69d',
         placeholder: '#a8928c',
         surface: '#ffffff',

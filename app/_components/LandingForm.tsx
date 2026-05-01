@@ -7,9 +7,17 @@ import { requestMagicLink } from '@/app/_actions/sign-in';
 interface LandingFormProps {
   /** Optional same-origin path to land on after auth (deep-link funnel). */
   next?: string | null;
+  /** Submit button label. Defaults to "Create Account or Sign In" (used on /sign-in). */
+  submitLabel?: string;
+  /** Visual style. 'light' is the default white field; 'dark' is for placement on dark sections. */
+  variant?: 'light' | 'dark';
 }
 
-export function LandingForm({ next = null }: LandingFormProps) {
+export function LandingForm({
+  next = null,
+  submitLabel = 'Create Account or Sign In',
+  variant = 'light',
+}: LandingFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pending, setPending] = useState(false);
@@ -45,7 +53,7 @@ export function LandingForm({ next = null }: LandingFormProps) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="contents" aria-label="Sign in or sign up">
-      <div className="w-[310px] flex flex-col gap-[16px]">
+      <div className="w-full max-w-[326px] flex flex-col gap-[12px]">
         <input
           type="email"
           name="email"
@@ -56,8 +64,8 @@ export function LandingForm({ next = null }: LandingFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           disabled={pending}
           className={
-            'w-full rounded-lg bg-surface border border-field shadow-xs ' +
-            'text-ink placeholder:text-placeholder ' +
+            'w-full rounded-lg bg-surface border border-[#d4d4d4] shadow-xs ' +
+            'text-ink placeholder:text-[#737373] ' +
             'text-[16px] leading-[24px] px-[14px] py-[10px] ' +
             'focus:border-accent focus:outline-none focus:ring-0'
           }
@@ -73,12 +81,18 @@ export function LandingForm({ next = null }: LandingFormProps) {
             'transition-opacity disabled:opacity-60'
           }
         >
-          {pending ? 'Sending…' : 'Create Account or Sign In'}
+          {pending ? 'Sending…' : submitLabel}
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="text-accent text-[13px] leading-[20px] text-center">
+        <p
+          role="alert"
+          className={
+            (variant === 'dark' ? 'text-white ' : 'text-accent ') +
+            'text-[13px] leading-[20px] text-center'
+          }
+        >
           {error}
         </p>
       )}

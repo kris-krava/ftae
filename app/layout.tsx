@@ -22,9 +22,21 @@ const inter = localFont({
 });
 
 const playfair = localFont({
-  src: '../public/fonts/PlayfairDisplay-Bold.ttf',
-  weight: '700',
-  style: 'normal',
+  src: [
+    {
+      path: '../public/fonts/PlayfairDisplay-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    // Variable italic file covers weight 400-900 in italic, so a single
+    // declaration handles both Italic (400) and Bold Italic (700) used
+    // throughout the landing page.
+    {
+      path: '../public/fonts/PlayfairDisplay-Italic-Variable.ttf',
+      weight: '100 900',
+      style: 'italic',
+    },
+  ],
   variable: '--font-playfair',
   display: 'swap',
 });
