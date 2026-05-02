@@ -80,7 +80,7 @@ export function StatsBand() {
               'desk:mt-[12px] desk:text-[32px] desk:leading-[40px]'
             }
           >
-            Find the ones you love.
+            Find the art you love.
           </p>
 
           <div

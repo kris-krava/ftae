@@ -292,8 +292,8 @@ function HowItWorksSection() {
       body: 'When trading opens July 1, offer yours for theirs. They accept, decline, or counter.',
     },
     {
-      title: 'Ship and celebrate.',
-      body: 'Two artists. Two pieces. Two new homes.',
+      title: 'Bring it home.',
+      body: 'Live your life with art you love.',
     },
   ];
 
