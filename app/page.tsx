@@ -458,8 +458,7 @@ function AboutMoneySection() {
           }
         >
           There&rsquo;s no subscription. No monthly fees. No commissions on your trades. No ads.
-          Just a small per-trade fee after launch, with a pay-what-you-can option for artists
-          whose budget is tight.
+          Just a small per-trade fee after launch.
         </p>
         <p
           className={
